@@ -357,7 +357,7 @@ const styles: Record<string, React.CSSProperties> = {
   tableSection: { backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: '24px', marginBottom: '24px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px var(--shadow-color)' },
   tableSectionMobile: { padding: '16px', marginBottom: '16px' },
   applicationsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' },
-  applicationsGridMobile: { gridTemplateColumns: '1fr', gap: '16px' },
+  applicationsGridMobile: { gridTemplateColumns: '1fr', gap: '16px', padding: '0 16px' },
   appCard: { backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '0', border: '1px solid var(--border-color)', transition: 'all 0.2s ease', cursor: 'pointer', overflow: 'hidden' },
   appCardMobile: { padding: '0' },
   appCardTop: { display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border-light)' },
