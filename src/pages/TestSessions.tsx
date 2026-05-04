@@ -49,6 +49,7 @@ const TestSessions: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterApp, setFilterApp] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [isMobile, setIsMobile] = useState(false);
   
   const [formData, setFormData] = useState({ 
     nom: '', 
@@ -77,6 +78,15 @@ const TestSessions: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const filteredAndSortedSessions = useMemo(() => {
