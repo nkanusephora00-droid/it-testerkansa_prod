@@ -1,0 +1,237 @@
+/* Desktop styles - ensure content is visible */
+@media (min-width: 769px) {
+  main {
+    display: block !important;
+    width: 100% !important;
+  }
+  
+  .main-wrapper {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  /* Ensure tables are visible on desktop */
+  table {
+    display: table !important;
+  }
+}
+
+/* Mobile phones (small screens) */
+@media (max-width: 768px) {
+  /* Reset body and html for mobile scrolling */
+  html, body {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-x: hidden;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Container unified for mobile */
+  .container {
+    min-height: 100vh !important;
+    height: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Sidebar hidden by default on mobile */
+  aside.sidebar {
+    position: fixed !important;
+    left: -280px !important;
+    width: 260px !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    transition: left 0.3s ease !important;
+    top: 0;
+  }
+  
+  /* Sidebar shown when mobile menu is open */
+  aside.sidebar-open {
+    left: 0 !important;
+  }
+  
+  /* Make sidebar nav scrollable */
+  aside nav {
+    overflow-y: auto !important;
+    flex: 1 !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Main wrapper unified - no more division */
+  .main-wrapper {
+    margin: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+    height: auto !important;
+    position: relative !important;
+    flex: 1 !important;
+  }
+  
+  /* Header fixed on top */
+  header {
+    padding: 0 16px !important;
+    height: 60px !important;
+    position: fixed !important;
+    top: 0;
+    left: 0 !important;
+    right: 0;
+    z-index: 100;
+    flex-shrink: 0;
+    background: var(--bg-card) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+  
+  header h1 {
+    font-size: 16px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Show header actions on mobile */
+  .headerActions {
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
+  }
+  
+  /* Smaller badge on mobile */
+  .userBadge {
+    padding: 4px 8px !important;
+    font-size: 10px !important;
+  }
+  
+  /* Smaller buttons on mobile */
+  .notifBellButton,
+  .logoutIconButton {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 14px !important;
+  }
+  
+  /* Main content - unified and scrollable on mobile */
+  main {
+    padding: 75px 16px 80px 16px !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    min-height: calc(100vh - 60px) !important;
+    height: auto !important;
+    display: block !important;
+    width: 100% !important;
+    position: relative !important;
+    background: transparent !important;
+  }
+  
+  /* Ensure all pages content is unified */
+  main > div,
+  main > section,
+  main > form {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Page container unified */
+  .container > div > main,
+  [class*="main"] {
+    min-height: calc(100vh - 60px) !important;
+    width: 100% !important;
+  }
+  
+  /* Hide hamburger menu button on mobile (using bottom nav instead) */
+  .mobileMenuToggle {
+    display: none !important;
+  }
+
+  /* Show bottom navigation on mobile - unified */
+  .bottomNav {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 60px !important;
+    background: var(--bg-card) !important;
+    border-top: 1px solid var(--border-color) !important;
+    z-index: 100 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Mobile overlay */
+  .mobile-overlay {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    z-index: 999 !important;
+  }
+}
+
+/* Tablet specific fixes */
+@media (min-width: 481px) and (max-width: 768px) {
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+
+  header h1 {
+    font-size: 18px !important;
+  }
+}
+
+/* Login page mobile */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 24px 16px !important;
+    margin: 16px !important;
+    border-radius: 12px !important;
+  }
+  
+  .login-title {
+    font-size: 24px !important;
+  }
+}
+
+/* Prevent body scroll when mobile menu is open */
+body.menu-open {
+  overflow: hidden;
+}
+
+/* Mobile menu toggle button styles */
+.mobileMenuToggle {
+  display: none;
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1001;
+  width: 48px;
+  height: 48px;
+  
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .mobileMenuToggle {
+    display: flex !important;
+  }
+}
