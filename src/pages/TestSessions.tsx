@@ -418,7 +418,7 @@ const TestSessions: React.FC = () => {
           ) : viewMode === 'cards' ? (
             <div style={styles.cardsGrid}>
               {filteredSessions.map((session) => (
-                <div key={session.id} style={styles.sessionCard}>
+                <div key={session.id} style={{...styles.sessionCard, ...(isMobile ? styles.sessionCardMobile : {})}}>
                   <div style={styles.cardHeader}>
                     <h4 style={styles.cardTitle}>{session.nom}</h4>
                     <span style={{
@@ -889,7 +889,9 @@ const styles: Record<string, React.CSSProperties> = {
   
   // Card view styles
   cardsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px', padding: '0 12px' },
+  cardsGridMobile: { gridTemplateColumns: '1fr', gap: '16px', padding: '0 8px' },
   sessionCard: { backgroundColor: 'var(--bg-card)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px var(--shadow-color)', transition: 'transform 0.2s ease, box-shadow 0.2s ease' },
+  sessionCardMobile: { padding: '16px', marginBottom: '0' },
   cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', gap: '12px' },
   cardTitle: { margin: 0, fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)', flex: 1 },
   cardContent: { marginBottom: '16px' },
