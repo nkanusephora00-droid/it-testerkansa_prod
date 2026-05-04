@@ -14,9 +14,19 @@ const Applications: React.FC = () => {
   const [formData, setFormData] = useState({ nom: '', description: '', version: '', environnement: '' });
   const [editFormData, setEditFormData] = useState({ nom: '', description: '', version: '', environnement: '' });
   const [searchTerm, setSearchTerm] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetchApplications();
+  }, []);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   useEffect(() => {
@@ -119,7 +129,7 @@ const Applications: React.FC = () => {
           </div>
         )}
 
-        <div style={styles.tableSection}>
+        <div style={isMobile ? { ...styles.tableSection, ...styles.tableSectionMobile } : styles.tableSection}>
           <div style={styles.listHeader}>
             <div>
               <h3 style={styles.sectionTitle}>Liste des applications</h3>
@@ -138,6 +148,46 @@ const Applications: React.FC = () => {
           </div>
           {loading ? (
             <p>Chargement...</p>
+          ) : isMobile ? (
+            <div style={isMobile ? { ...styles.applicationsGrid, ...styles.applicationsGridMobile } : styles.applicationsGrid}>
+              {filteredApplications.map((app) => (
+                <div key={app.id} style={{...styles.appCard, ...(isMobile ? styles.appCardMobile : {})}}>
+                  <div style={styles.appCardTop}>
+                    <div style={styles.appIcon}>
+                      <i className="fas fa-mobile-alt"></i>
+                    </div>
+                  </div>
+                  <div style={styles.appCardContent}>
+                    <h4 style={styles.appName}>{app.nom}</h4>
+                    <div style={styles.appDetails}>
+                      {app.version && (
+                        <div style={styles.appDetail}>
+                          <span style={styles.detailLabel}>Version:</span>
+                          {app.version}
+                        </div>
+                      )}
+                      {app.environnement && (
+                        <div style={styles.appDetail}>
+                          <span style={styles.detailLabel}>Env:</span>
+                          {app.environnement}
+                        </div>
+                      )}
+                    </div>
+                    {app.description && (
+                      <p style={styles.appDescription}>{app.description}</p>
+                    )}
+                  </div>
+                  <div style={styles.appCardActions}>
+                    <button style={styles.iconButton} onClick={() => openEditModal(app)} title="Modifier">
+                      <FontAwesomeIcon icon={faPen} />
+                    </button>
+                    <button style={styles.iconButton} onClick={() => handleDelete(app.id)} title="Supprimer">
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
               <table style={styles.table}>

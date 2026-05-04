@@ -27,6 +27,7 @@ const Comptes: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [searchTerm, setSearchTerm] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
   
   const [formData, setFormData] = useState({ applicationId: 0, username: '', code: '', role: '', commentaire: '' });
   const [editFormData, setEditFormData] = useState({ applicationId: 0, username: '', code: '', role: '', commentaire: '' });
@@ -38,6 +39,15 @@ const Comptes: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   useEffect(() => {
@@ -175,6 +185,44 @@ const Comptes: React.FC = () => {
           </div>
           {loading ? (
             <p>Chargement...</p>
+          ) : isMobile ? (
+            <div style={isMobile ? { ...styles.comptesGrid, ...styles.comptesGridMobile } : styles.comptesGrid}>
+              {filteredComptes.map((compte) => (
+                <div key={compte.id} style={styles.compteCard}>
+                  <div style={styles.compteCardHeader}>
+                    <div style={styles.compteIcon}>
+                      <i className="fas fa-user"></i>
+                    </div>
+                    <div style={styles.compteInfo}>
+                      <h4 style={styles.compteUsername}>{compte.username}</h4>
+                      <p style={styles.compteApp}>{getAppName(compte.applicationId)}</p>
+                    </div>
+                  </div>
+                  <div style={styles.compteCardContent}>
+                    {compte.role && (
+                      <div style={styles.compteDetail}>
+                        <span style={styles.detailLabel}>Rôle:</span>
+                        {compte.role}
+                      </div>
+                    )}
+                    {compte.commentaire && (
+                      <p style={styles.compteCommentaire}>{compte.commentaire}</p>
+                    )}
+                  </div>
+                  <div style={styles.compteCardActions}>
+                    <button style={styles.iconButton} onClick={() => { setViewingCompte(compte); setShowViewModal(true); }} title="Voir">
+                      <FontAwesomeIcon icon={faEye} />
+                    </button>
+                    <button style={styles.iconButton} onClick={() => openEditModal(compte)} title="Modifier">
+                      <FontAwesomeIcon icon={faPen} />
+                    </button>
+                    <button style={styles.iconButton} onClick={() => handleDelete(compte.id)} title="Supprimer">
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
               <table style={styles.table}>
@@ -440,6 +488,7 @@ const styles: Record<string, React.CSSProperties> = {
   modal: { position: 'fixed' as const, top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', zIndex: 1000, paddingTop: '40px', overflowY: 'auto' as const, backdropFilter: 'blur(4px)' },
   modalContent: { backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '16px', width: '95%', maxWidth: '500px', position: 'relative' as const, margin: '0 auto 40px auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', border: '1px solid var(--border-light)' },
   comptesGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' },
+  comptesGridMobile: { gridTemplateColumns: '1fr', gap: '16px' },
   compteCard: { backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '0', border: '1px solid var(--border-color)', transition: 'all 0.2s ease', cursor: 'pointer', overflow: 'hidden' },
   compteCardHeader: { display: 'flex', alignItems: 'center', padding: '20px', borderBottom: '1px solid var(--border-light)' },
   compteIcon: { width: '50px', height: '50px', borderRadius: '10px', backgroundColor: 'var(--info-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '20px', marginRight: '16px' },
