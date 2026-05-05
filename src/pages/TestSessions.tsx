@@ -425,8 +425,8 @@ const TestSessions: React.FC = () => {
                 Réessayer
               </button>
             </div>
-          ) : isMobile || viewMode === 'cards' ? (
-            <div style={isMobile ? styles.cardsGridMobile : styles.cardsGrid}>
+          ) : isMobile ? (
+            <div style={styles.cardsGridMobile}>
               {filteredSessions.map((session) => (
                 <div key={session.id} style={{...styles.sessionCard, ...(isMobile ? styles.sessionCardMobile : {})}}>
                   <div style={styles.cardHeader}>
@@ -510,7 +510,92 @@ const TestSessions: React.FC = () => {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : viewMode === 'cards' ? (
+            <div style={styles.cardsGrid}>
+              {filteredSessions.map((session) => (
+                <div key={session.id} style={{...styles.sessionCard, ...(isMobile ? styles.sessionCardMobile : {})}}>
+                  <div style={styles.cardHeader}>
+                    <h4 style={styles.cardTitle}>{session.nom}</h4>
+                    <span style={{
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      backgroundColor: getStatusColor(session.statut) + '20',
+                      color: getStatusColor(session.statut),
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <FontAwesomeIcon icon={getStatusIcon(session.statut)} style={{ fontSize: '10px' }} />
+                      {session.statut}
+                    </span>
+                  </div>
+                  
+                  <div style={styles.cardContent}>
+                    <div style={styles.cardInfo}>
+                      <span style={styles.infoLabel}>Application:</span>
+                      <span style={styles.infoValue}>{getAppName(session.applicationId)}</span>
+                    </div>
+                    {session.environnement && (
+                      <div style={styles.cardInfo}>
+                        <span style={styles.infoLabel}>Environnement:</span>
+                        <span style={styles.infoValue}>{session.environnement}</span>
+                      </div>
+                    )}
+                    {session.version && (
+                      <div style={styles.cardInfo}>
+                        <span style={styles.infoLabel}>Version:</span>
+                        <span style={styles.infoValue}>{session.version}</span>
+                      </div>
+                    )}
+                    {session.description && (
+                      <p style={styles.cardDescription}>{session.description}</p>
+                    )}
+                  </div>
+                  
+                  {session.total_tests && (
+                    <div style={styles.progressSection}>
+                      <div style={styles.progressHeader}>
+                        <span style={styles.progressLabel}>Progression</span>
+                        <span style={styles.progressText}>
+                          {session.tests_ok || 0}/{session.total_tests}
+                        </span>
+                      </div>
+                      <div style={styles.progressBar}>
+                        <div style={{ 
+                          width: `${(session.tests_ok || 0) * 100 / session.total_tests}%`, 
+                          height: '100%', 
+                          backgroundColor: '#27ae60',
+                          borderRadius: '3px',
+                          transition: 'width 0.3s ease'
+                        }} />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div style={styles.cardActions}>
+                    <button 
+                      style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#3498db'}} 
+                      onClick={() => openEditModal(session)} 
+                      title="Modifier"
+                      disabled={actionLoading}
+                    >
+                      <FontAwesomeIcon icon={faPen} />
+                    </button>
+                    <button 
+                      style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b'}} 
+                      onClick={() => handleDelete(session.id)} 
+                      title="Supprimer"
+                      disabled={actionLoading}
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : !isMobile && (
             <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
               <table style={styles.table}>
                 <thead>
