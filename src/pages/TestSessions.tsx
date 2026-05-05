@@ -425,8 +425,8 @@ const TestSessions: React.FC = () => {
                 Réessayer
               </button>
             </div>
-          ) : viewMode === 'cards' ? (
-            <div style={isMobile ? { ...styles.cardsGrid, ...styles.cardsGridMobile } : styles.cardsGrid}>
+          ) : isMobile || viewMode === 'cards' ? (
+            <div style={isMobile ? styles.cardsGridMobile : styles.cardsGrid}>
               {filteredSessions.map((session) => (
                 <div key={session.id} style={{...styles.sessionCard, ...(isMobile ? styles.sessionCardMobile : {})}}>
                   <div style={styles.cardHeader}>
