@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { testSessionsAPI, applicationsAPI, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen, faTrash, faSearch, faSort, faChartBar, faClock, faCheckCircle, faExclamationTriangle, faPlayCircle, faTimesCircle, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faTrash, faSearch, faSort, faChartBar, faClock, faCheckCircle, faExclamationTriangle, faPlayCircle, faTimesCircle, faEye, faFileWord } from '@fortawesome/free-solid-svg-icons';
 import './TestSessions.css';
 
 interface TestSession {
@@ -206,6 +206,66 @@ const TestSessions: React.FC = () => {
       }
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleGenerateWord = async (id: number, sessionName: string) => {
+    try {
+      // Récupérer les détails de la session pour générer le document Word
+      const session = filteredSessions.find(s => s.id === id);
+      if (!session) {
+        setMessage({ type: 'error', text: 'Session non trouvée' });
+        return;
+      }
+
+      // Créer le contenu du document Word
+      const wordContent = `
+        RAPPORT DE SESSION DE TEST - ${sessionName}
+        ==========================================
+        
+        INFORMATIONS GÉNÉRALES
+        ------------------------
+        Nom de la session: ${session.nom}
+        Application: ${getAppName(session.applicationId || 0)}
+        ${session.environnement ? `Environnement: ${session.environnement}` : ''}
+        ${session.version ? `Version: ${session.version}` : ''}
+        Statut: ${session.statut}
+        Date de création: ${new Date(session.date_creation).toLocaleDateString('fr-FR')}
+        ${session.created_by ? `Créé par: Utilisateur ${session.created_by}` : 'Créé par: Système'}
+        
+        DESCRIPTION
+        -----------
+        ${session.description || 'Aucune description disponible'}
+        
+        PROGRESSION DES TESTS
+        --------------------
+        ${session.total_tests ? `Tests complétés: ${session.tests_ok || 0} / ${session.total_tests}` : 'Aucun test associé'}
+        ${session.total_tests ? `Taux de réussite: ${Math.round((session.tests_ok || 0) * 100 / session.total_tests)}%` : ''}
+        
+        INFORMATIONS TECHNIQUES
+        ----------------------
+        ${session.date_modification ? `Dernière modification: ${new Date(session.date_modification).toLocaleDateString('fr-FR')}` : 'Jamais modifié'}
+        
+        STATUT
+        ------
+        Ce rapport a été généré automatiquement le ${new Date().toLocaleDateString('fr-FR')}
+        Pour toute question, veuillez contacter l'administrateur système.
+      `;
+
+      // Créer un blob avec le contenu
+      const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rapport_Session_${sessionName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
     }
   };
 
@@ -461,6 +521,9 @@ const TestSessions: React.FC = () => {
                     )}
                   </div>
                   <div style={styles.simpleItemActions}>
+                    <button style={styles.simpleActionButton} onClick={() => handleGenerateWord(session.id, session.nom)}>
+                      📄
+                    </button>
                     <button style={styles.simpleActionButton} onClick={() => openEditModal(session)}>
                       ✏️
                     </button>
