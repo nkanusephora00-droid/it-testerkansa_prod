@@ -256,6 +256,7 @@ const TestSessions: React.FC = () => {
   const handleGeneratePDF = async (id: number, sessionName: string) => {
     try {
       // Simulation de génération PDF - à adapter selon votre API
+      console.log(`Génération PDF pour la session ${id}: ${sessionName}`);
       setMessage({ type: 'success', text: 'Document PDF généré avec succès!' });
       setShowExportMenu(null);
     } catch (err) {
