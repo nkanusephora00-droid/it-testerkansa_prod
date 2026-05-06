@@ -519,20 +519,20 @@ const Tests: React.FC = () => {
                 new TextRun({
                   text: "RAPPORT DE TEST INDIVIDUEL",
                   bold: true,
-                  size: 32,
-                  alignment: AlignmentType.CENTER
+                  size: 32
                 })
-              ]
+              ],
+              alignment: AlignmentType.CENTER
             }),
             new Paragraph({
               children: [
                 new TextRun({
                   text: "============================",
                   bold: true,
-                  size: 24,
-                  alignment: AlignmentType.CENTER
+                  size: 24
                 })
-              ]
+              ],
+              alignment: AlignmentType.CENTER
             }),
             new Paragraph({ text: "" }), // Espace
             new Paragraph({
@@ -808,20 +808,20 @@ const Tests: React.FC = () => {
             new TextRun({
               text: `RAPPORT DE TESTS - ${session.nom}`,
               bold: true,
-              size: 32,
-              alignment: AlignmentType.CENTER
+              size: 32
             })
-          ]
+          ],
+          alignment: AlignmentType.CENTER
         }),
         new Paragraph({
           children: [
             new TextRun({
               text: "=====================================",
               bold: true,
-              size: 24,
-              alignment: AlignmentType.CENTER
+              size: 24
             })
-          ]
+          ],
+          alignment: AlignmentType.CENTER
         }),
         new Paragraph({ text: "" }), // Espace
         new Paragraph({
