@@ -509,6 +509,7 @@ const Tests: React.FC = () => {
 
   const handleGenerateTestWord = async (test: Test) => {
     try {
+      console.log('Début de la génération Word pour le test:', test);
       // Créer un vrai document Word avec la librairie docx
       const doc = new Document({
         sections: [{
@@ -701,9 +702,8 @@ const Tests: React.FC = () => {
         }]
       });
 
-      // Générer le buffer et télécharger
-      const buffer = await Packer.toBuffer(doc);
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      // Générer le blob et télécharger
+      const blob = await Packer.toBlob(doc);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -715,6 +715,7 @@ const Tests: React.FC = () => {
       
       setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
     } catch (err) {
+      console.error('Erreur détaillée lors de la génération Word:', err);
       setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
     }
   };
@@ -1017,9 +1018,8 @@ const Tests: React.FC = () => {
         }]
       });
 
-      // Générer le buffer et télécharger
-      const buffer = await Packer.toBuffer(doc);
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      // Générer le blob et télécharger
+      const blob = await Packer.toBlob(doc);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -1031,6 +1031,7 @@ const Tests: React.FC = () => {
       
       setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
     } catch (err) {
+      console.error('Erreur détaillée lors de la génération Word session:', err);
       setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
     }
   };
