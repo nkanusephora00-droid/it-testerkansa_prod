@@ -863,9 +863,55 @@ const TestSessions: React.FC = () => {
                         ) : '-'}
                       </td>
                       <td style={{...styles.tableTd, display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <button style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#007bff'}} onClick={() => handleGenerateWord(session.id, session.nom)} title="Générer Word">
-                          📄
-                        </button>
+                        <div style={{ position: 'relative' }}>
+                          <button style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#007bff'}} onClick={() => toggleExportMenu(session.id)} title="Exporter">
+                            📄
+                          </button>
+                          {showExportMenu === session.id && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '100%',
+                              right: '0',
+                              backgroundColor: 'white',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                              zIndex: 1000,
+                              minWidth: '120px'
+                            }}>
+                              <button
+                                style={{
+                                  display: 'block',
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  border: 'none',
+                                  backgroundColor: 'transparent',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '12px'
+                                }}
+                                onClick={() => handleGeneratePDF(session.id, session.nom)}
+                              >
+                                📄 PDF
+                              </button>
+                              <button
+                                style={{
+                                  display: 'block',
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  border: 'none',
+                                  backgroundColor: 'transparent',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '12px'
+                                }}
+                                onClick={() => handleGenerateWord(session.id, session.nom)}
+                              >
+                                📄 Word
+                              </button>
+                            </div>
+                          )}
+                        </div>
                         <button style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#3498db'}} onClick={() => openEditModal(session)} title="Modifier">
                           <FontAwesomeIcon icon={faPen} />
                         </button>

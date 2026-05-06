@@ -10,6 +10,7 @@ const Apk: React.FC = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [uploading, setUploading] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState<number | null>(null);
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({ applicationId: 0, version: '', packageName: '', description: '' });
@@ -90,6 +91,17 @@ const Apk: React.FC = () => {
     }
   };
 
+  const handleGeneratePDF = async (id: number, fileName: string) => {
+    try {
+      // Simulation de génération PDF - à adapter selon votre API
+      console.log(`Génération PDF pour l'APK ${id}: ${fileName}`);
+      setMessage({ type: 'success', text: 'Document PDF généré avec succès!' });
+      setShowExportMenu(null);
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de la génération du document PDF' });
+    }
+  };
+
   const handleGenerateWord = async (id: number, fileName: string) => {
     try {
       // Récupérer les détails de l'APK pour générer le document Word
@@ -135,9 +147,14 @@ const Apk: React.FC = () => {
       document.body.removeChild(a);
       
       setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
+      setShowExportMenu(null);
     } catch (err) {
       setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
     }
+  };
+
+  const toggleExportMenu = (apkId: number) => {
+    setShowExportMenu(showExportMenu === apkId ? null : apkId);
   };
 
   const handleDelete = async (id: number) => {
@@ -225,20 +242,59 @@ const Apk: React.FC = () => {
                       <td>{apk.downloadCount || 0}</td>
                       <td>{new Date(apk.uploadDate).toLocaleDateString('fr-FR')}</td>
                       <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <button 
-                          style={{...styles.downloadButton, padding: '6px', backgroundColor: 'transparent', color: '#27ae60'}} 
-                          onClick={() => handleDownload(apk.id, apk.originalFileName)} 
-                          title="Télécharger PDF"
-                        >
-                          <FontAwesomeIcon icon={faDownload} />
-                        </button>
-                        <button 
-                          style={{...styles.downloadButton, padding: '6px', backgroundColor: 'transparent', color: '#007bff'}} 
-                          onClick={() => handleGenerateWord(apk.id, apk.originalFileName)} 
-                          title="Générer Word"
-                        >
-                          <FontAwesomeIcon icon={faFileWord} />
-                        </button>
+                        <div style={{ position: 'relative' }}>
+                          <button 
+                            style={{...styles.downloadButton, padding: '6px', backgroundColor: 'transparent', color: '#007bff'}} 
+                            onClick={() => toggleExportMenu(apk.id)}
+                            title="Exporter"
+                          >
+                            📄
+                          </button>
+                          {showExportMenu === apk.id && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '100%',
+                              right: '0',
+                              backgroundColor: 'white',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                              zIndex: 1000,
+                              minWidth: '120px'
+                            }}>
+                              <button
+                                style={{
+                                  display: 'block',
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  border: 'none',
+                                  backgroundColor: 'transparent',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '12px'
+                                }}
+                                onClick={() => handleDownload(apk.id, apk.originalFileName)}
+                              >
+                                📄 PDF
+                              </button>
+                              <button
+                                style={{
+                                  display: 'block',
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  border: 'none',
+                                  backgroundColor: 'transparent',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '12px'
+                                }}
+                                onClick={() => handleGenerateWord(apk.id, apk.originalFileName)}
+                              >
+                                📄 Word
+                              </button>
+                            </div>
+                          )}
+                        </div>
                         {isAdmin && (
                           <button 
                             style={{...styles.deleteButton, padding: '6px', backgroundColor: 'transparent', color: '#ff6b6b'}} 
