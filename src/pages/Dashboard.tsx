@@ -154,7 +154,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Cartes de statistiques principales */}
-        <div style={isMobile ? { ...styles.statsGrid, gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' } : styles.statsGrid}>
+        <div style={isMobile ? { ...styles.statsGrid, ...styles.statsGridMobile } : styles.statsGrid}>
           <div
             style={{
               ...styles.statCard,
@@ -165,7 +165,7 @@ const Dashboard: React.FC = () => {
             onMouseLeave={() => setHoveredCard(null)}
             onClick={() => navigate('/applications')}
           >
-            <div style={{ ...styles.statIcon, ...styles.statIconInfo }}>
+            <div style={{ ...styles.statIcon, ...styles.statIconInfo, ...(isMobile ? styles.statIconMobile : {}) }}>
               <i className="fas fa-mobile-alt"></i>
             </div>
             <div style={styles.statContent}>
@@ -185,7 +185,7 @@ const Dashboard: React.FC = () => {
             onMouseLeave={() => setHoveredCard(null)}
             onClick={() => navigate('/comptes')}
           >
-            <div style={{ ...styles.statIcon, ...styles.statIconPrimary }}>
+            <div style={{ ...styles.statIcon, ...styles.statIconPrimary, ...(isMobile ? styles.statIconMobile : {}) }}>
               <i className="fas fa-user-cog"></i>
             </div>
             <div style={styles.statContent}>
@@ -205,7 +205,7 @@ const Dashboard: React.FC = () => {
             onMouseLeave={() => setHoveredCard(null)}
             onClick={() => navigate('/tests')}
           >
-            <div style={{ ...styles.statIcon, ...styles.statIconSuccess }}>
+            <div style={{ ...styles.statIcon, ...styles.statIconSuccess, ...(isMobile ? styles.statIconMobile : {}) }}>
               <i className="fas fa-check-circle"></i>
             </div>
             <div style={styles.statContent}>
@@ -225,7 +225,7 @@ const Dashboard: React.FC = () => {
             onMouseLeave={() => setHoveredCard(null)}
             onClick={() => navigate('/users')}
           >
-            <div style={{ ...styles.statIcon, ...styles.statIconWarning }}>
+            <div style={{ ...styles.statIcon, ...styles.statIconWarning, ...(isMobile ? styles.statIconMobile : {}) }}>
               <i className="fas fa-users"></i>
             </div>
             <div style={styles.statContent}>
@@ -245,7 +245,7 @@ const Dashboard: React.FC = () => {
             onMouseLeave={() => setHoveredCard(null)}
             onClick={() => navigate('/tests')}
           >
-            <div style={{ ...styles.statIcon, ...styles.statIconPrimary }}>
+            <div style={{ ...styles.statIcon, ...styles.statIconPrimary, ...(isMobile ? styles.statIconMobile : {}) }}>
               <i className="fas fa-play-circle"></i>
             </div>
             <div style={styles.statContent}>
@@ -350,33 +350,33 @@ const Dashboard: React.FC = () => {
         {/* Actions rapides */}
         <div style={styles.actionsSection}>
           <h2 style={styles.sectionTitle}>Actions rapides</h2>
-          <div style={styles.actionsGrid}>
-            <button style={styles.actionButton} onClick={() => navigate('/applications')}>
+          <div style={isMobile ? { ...styles.actionsGrid, ...styles.actionsGridMobile } : styles.actionsGrid}>
+            <button style={{...styles.actionButton, ...(isMobile ? styles.actionButtonMobile : {})}} onClick={() => navigate('/applications')}>
               <span style={{ ...styles.actionIcon, ...styles.actionIconInfo }}>
                 <i className="fas fa-plus-circle"></i>
               </span>
               <span style={styles.actionText}>Nouvelle application</span>
             </button>
-            <button style={styles.actionButton} onClick={() => navigate('/comptes')}>
+            <button style={{...styles.actionButton, ...(isMobile ? styles.actionButtonMobile : {})}} onClick={() => navigate('/comptes')}>
               <span style={{ ...styles.actionIcon, ...styles.actionIconPrimary }}>
                 <i className="fas fa-user-plus"></i>
               </span>
               <span style={styles.actionText}>Nouveau compte</span>
             </button>
-            <button style={styles.actionButton} onClick={() => navigate('/tests')}>
+            <button style={{...styles.actionButton, ...(isMobile ? styles.actionButtonMobile : {})}} onClick={() => navigate('/tests')}>
               <span style={{ ...styles.actionIcon, ...styles.actionIconSuccess }}>
                 <i className="fas fa-play-circle"></i>
               </span>
               <span style={styles.actionText}>Nouveau test</span>
             </button>
-            <button style={styles.actionButton} onClick={() => navigate('/todos')}>
+            <button style={{...styles.actionButton, ...(isMobile ? styles.actionButtonMobile : {})}} onClick={() => navigate('/todos')}>
               <span style={{ ...styles.actionIcon, ...styles.actionIconSuccess }}>
                 <i className="fas fa-tasks"></i>
               </span>
               <span style={styles.actionText}>Nouvelle tâche</span>
             </button>
             {user?.role === 'admin' && (
-              <button style={styles.actionButton} onClick={() => navigate('/users')}>
+              <button style={{...styles.actionButton, ...(isMobile ? styles.actionButtonMobile : {})}} onClick={() => navigate('/users')}>
                 <span style={{ ...styles.actionIcon, ...styles.actionIconWarning }}>
                   <i className="fas fa-user-shield"></i>
                 </span>
@@ -488,6 +488,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: '24px',
     marginBottom: '40px',
   },
+  statsGridMobile: {
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '12px',
+    marginBottom: '24px',
+  },
   statCard: {
     borderRadius: '16px',
     padding: '24px',
@@ -501,8 +506,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: '1px solid var(--border-color)',
   },
   statCardMobile: {
-    padding: '16px',
-    gap: '12px',
+    padding: '12px',
+    gap: '8px',
+    flexDirection: 'column',
+    textAlign: 'center',
+    minHeight: '100px',
   },
   statCardHover: {
     transform: 'translateY(-2px)',
@@ -519,6 +527,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: '24px',
     backgroundColor: 'var(--bg-primary)',
     color: 'var(--text-primary)',
+  },
+  statIconMobile: {
+    width: '40px',
+    height: '40px',
+    fontSize: '18px',
   },
   statIconPrimary: {
     backgroundColor: 'rgba(124, 58, 237, 0.14)',
@@ -676,6 +689,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '16px',
   },
+  actionsGridMobile: {
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '12px',
+  },
   actionButton: {
     display: 'flex',
     alignItems: 'center',
@@ -691,6 +708,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: 'var(--text-primary)',
     transition: 'all 0.2s ease',
     boxShadow: '0 2px 8px var(--shadow-color)',
+  },
+  actionButtonMobile: {
+    padding: '12px 8px',
+    flexDirection: 'column',
+    textAlign: 'center',
+    fontSize: '12px',
+    gap: '8px',
   },
   actionIcon: {
     width: '40px',

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apkAPI, applicationsAPI, ApkFile, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDownload, faTrash, faUpload } from '@fortawesome/free-solid-svg-icons';
+import { faDownload, faTrash, faUpload, faFileWord } from '@fortawesome/free-solid-svg-icons';
 
 const Apk: React.FC = () => {
   const [apks, setApks] = useState<ApkFile[]>([]);
@@ -87,6 +87,56 @@ const Apk: React.FC = () => {
       document.body.removeChild(a);
     } catch (err) {
       setMessage({ type: 'error', text: 'Erreur lors du téléchargement' });
+    }
+  };
+
+  const handleGenerateWord = async (id: number, fileName: string) => {
+    try {
+      // Récupérer les détails de l'APK pour générer le document Word
+      const apk = apks.find(a => a.id === id);
+      if (!apk) {
+        setMessage({ type: 'error', text: 'APK non trouvée' });
+        return;
+      }
+
+      // Créer le contenu du document Word
+      const wordContent = `
+        RAPPORT DE TEST - ${apk.originalFileName}
+        =====================================
+        
+        INFORMATIONS GÉNÉRALES
+        -------------------
+        Nom du fichier: ${apk.originalFileName}
+        Version: ${apk.version || 'Non spécifiée'}
+        Package: ${apk.packageName || 'Non spécifié'}
+        Application: ${getAppName(apk.applicationId || 0)}
+        Taille: ${formatFileSize(apk.fileSize)}
+        Date d'upload: ${new Date(apk.uploadDate).toLocaleDateString('fr-FR')}
+        Nombre de téléchargements: ${apk.downloadCount || 0}
+        
+        DESCRIPTION
+        -----------
+        ${apk.description || 'Aucune description disponible'}
+        
+        STATUT
+        ------
+        Ce document a été généré automatiquement le ${new Date().toLocaleDateString('fr-FR')}
+      `;
+
+      // Créer un blob avec le contenu
+      const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rapport_${fileName.replace('.apk', '')}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
     }
   };
 
@@ -178,9 +228,16 @@ const Apk: React.FC = () => {
                         <button 
                           style={{...styles.downloadButton, padding: '6px', backgroundColor: 'transparent', color: '#27ae60'}} 
                           onClick={() => handleDownload(apk.id, apk.originalFileName)} 
-                          title="Télécharger"
+                          title="Télécharger PDF"
                         >
                           <FontAwesomeIcon icon={faDownload} />
+                        </button>
+                        <button 
+                          style={{...styles.downloadButton, padding: '6px', backgroundColor: 'transparent', color: '#007bff'}} 
+                          onClick={() => handleGenerateWord(apk.id, apk.originalFileName)} 
+                          title="Générer Word"
+                        >
+                          <FontAwesomeIcon icon={faFileWord} />
                         </button>
                         {isAdmin && (
                           <button 
