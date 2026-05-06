@@ -3,7 +3,7 @@ import { testsAPI, applicationsAPI, api, testSessionsAPI, Application, Test, Tes
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faEye, faFilePdf, faCheck, faTimes, faPlus, faEdit, faCompress, faExpand } from '@fortawesome/free-solid-svg-icons';
 import { consolidateSessionsByUser, consolidateAllSessions, ConsolidatedSession } from '../utils/sessionConsolidation';
-import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType } from 'docx';
 
 const Tests: React.FC = () => {
   const [tests, setTests] = useState<Test[]>([]);
@@ -357,6 +357,157 @@ const Tests: React.FC = () => {
       setTimeout(() => {
         printWindow.print();
       }, 500);
+    }
+  };
+
+  const handleExportConsolidatedWord = async (consolidated: ConsolidatedSession) => {
+    try {
+      const today = new Date();
+      const formattedDate = today.toLocaleDateString('fr-FR', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      });
+
+      // Créer les lignes du tableau pour les tests consolidés
+      const tableRows = [
+        // En-tête du tableau
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Fonction", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Précondition", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Étapes", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Résultat Attendu", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Résultat Obtenu", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Statut", bold: true })] })] })
+          ]
+        })
+      ];
+
+      // Ajouter chaque test consolidé comme une ligne du tableau
+      consolidated.consolidatedTests.forEach((test: Test) => {
+        tableRows.push(
+          new TableRow({
+            children: [
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.fonction || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.precondition || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.etapes || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.resultatAttendu || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.resultatObtenu || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.statut || '-' })] })] })
+            ]
+          })
+        );
+      });
+
+      // Créer le document Word pour les sessions consolidées
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            // En-tête
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Rapport de Tests Consolidés",
+                  bold: true,
+                  size: 32
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: consolidated.nom,
+                  italics: true,
+                  size: 20
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Informations de la session consolidée
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Utilisateur: ${consolidated.username}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `Date: ${new Date(consolidated.date_creation).toLocaleDateString('fr-FR')}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `Statut: ${consolidated.statut}` })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Statistiques
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Total: ${consolidated.total_tests}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `OK: ${consolidated.tests_ok}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `BUG: ${consolidated.tests_bug}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `En cours: ${consolidated.tests_en_cours}` })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Information de consolidation
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Information de Consolidation",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Cette session consolidée fusionne ${consolidated.originalSessions.length} session(s) originale(s)` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Sessions originales: ${consolidated.originalSessions.map(s => s.nom).join(', ')}` })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Tableau des tests consolidés
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: tableRows
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Pied de page
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Généré le ${formattedDate} - Session consolidée de ${consolidated.username}` })
+              ],
+              alignment: AlignmentType.CENTER
+            })
+          ]
+        }]
+      });
+
+      // Générer le blob et télécharger
+      const blob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rapport_Consolidated_${consolidated.nom.replace(/\s+/g, '_')}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setMessage({ type: 'success', text: 'Document Word consolidé généré avec succès!' });
+    } catch (err) {
+      console.error('Erreur détaillée lors de la génération Word consolidé:', err);
+      setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word consolidé' });
     }
   };
 
@@ -802,219 +953,114 @@ const Tests: React.FC = () => {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
       });
 
-      // Créer les paragraphes pour le document Word
-      const children: any[] = [
-        new Paragraph({
+      // Créer les lignes du tableau pour les tests
+      const tableRows = [
+        // En-tête du tableau
+        new TableRow({
           children: [
-            new TextRun({
-              text: `RAPPORT DE TESTS - ${session.nom}`,
-              bold: true,
-              size: 32
-            })
-          ],
-          alignment: AlignmentType.CENTER
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "=====================================",
-              bold: true,
-              size: 24
-            })
-          ],
-          alignment: AlignmentType.CENTER
-        }),
-        new Paragraph({ text: "" }), // Espace
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "INFORMATIONS GÉNÉRALES",
-              bold: true,
-              size: 24
-            })
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "ID", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Fonction", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Précondition", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Étapes", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Résultat Attendu", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Résultat Obtenu", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Statut", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Commentaires", bold: true })] })] })
           ]
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "-------------------",
-              bold: true
-            })
-          ]
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({ text: `Session: ${session.nom}` })
-          ]
-        }),
+        })
       ];
 
-      // Ajouter les informations supplémentaires si elles existent
-      if (session.applicationNom) {
-        children.push(new Paragraph({ children: [new TextRun({ text: `Application: ${session.applicationNom}` })] }));
-      }
-      if (session.environnement) {
-        children.push(new Paragraph({ children: [new TextRun({ text: `Environnement: ${session.environnement}` })] }));
-      }
-      if (session.version) {
-        children.push(new Paragraph({ children: [new TextRun({ text: `Version: ${session.version}` })] }));
-      }
-
-      children.push(
-        new Paragraph({ children: [new TextRun({ text: `Statut: ${session.statut}` })] }),
-        new Paragraph({ children: [new TextRun({ text: `Date: ${formattedDate}` })] }),
-        new Paragraph({ text: "" }), // Espace
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "STATISTIQUES",
-              bold: true,
-              size: 24
-            })
-          ]
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "------------",
-              bold: true
-            })
-          ]
-        }),
-        new Paragraph({ children: [new TextRun({ text: `Total tests: ${sessionTests.length}` })] }),
-        new Paragraph({ children: [new TextRun({ text: `Tests réussis: ${sessionTests.filter((t: Test) => t.statut === 'OK').length}` })] }),
-        new Paragraph({ children: [new TextRun({ text: `Tests en erreur: ${sessionTests.filter((t: Test) => t.statut === 'BUG').length}` })] }),
-        new Paragraph({ children: [new TextRun({ text: `Tests en cours: ${sessionTests.filter((t: Test) => t.statut === 'EN COURS').length}` })] }),
-        new Paragraph({ text: "" }), // Espace
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "DÉTAIL DES TESTS",
-              bold: true,
-              size: 24
-            })
-          ]
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "================",
-              bold: true
-            })
-          ]
-        }),
-        new Paragraph({ text: "" }) // Espace
-      );
-
-      // Ajouter chaque test
-      sessionTests.forEach((test: Test, index: number) => {
-        children.push(
-          new Paragraph({
+      // Ajouter chaque test comme une ligne du tableau
+      sessionTests.forEach((test: Test) => {
+        tableRows.push(
+          new TableRow({
             children: [
-              new TextRun({
-                text: `TEST ${index + 1}`,
-                bold: true,
-                size: 20
-              })
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${test.id}` })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.fonction || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.precondition || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.etapes || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.resultatAttendu || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.resultatObtenu || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.statut || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.commentaires || '-' })] })] })
             ]
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "----------",
-                bold: true
-              })
-            ]
-          }),
-          new Paragraph({ children: [new TextRun({ text: `ID: ${test.id}` })] }),
-          new Paragraph({ children: [new TextRun({ text: `Fonction: ${test.fonction || 'Non spécifiée'}` })] }),
-          new Paragraph({ children: [new TextRun({ text: `Précondition: ${test.precondition || 'Non spécifiée'}` })] }),
-          new Paragraph({ text: "" }), // Espace
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "Étapes:",
-                bold: true
-              })
-            ]
-          }),
-          new Paragraph({ children: [new TextRun({ text: test.etapes || 'Non spécifiées' })] }),
-          new Paragraph({ text: "" }), // Espace
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "Résultat attendu:",
-                bold: true
-              })
-            ]
-          }),
-          new Paragraph({ children: [new TextRun({ text: test.resultatAttendu || 'Non spécifié' })] }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "Résultat obtenu:",
-                bold: true
-              })
-            ]
-          }),
-          new Paragraph({ children: [new TextRun({ text: test.resultatObtenu || 'Non spécifié' })] }),
-          new Paragraph({ children: [new TextRun({ text: `Statut: ${test.statut || 'Non spécifié'}` })] }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "Commentaires:",
-                bold: true
-              })
-            ]
-          }),
-          new Paragraph({ children: [new TextRun({ text: test.commentaires || 'Aucun' })] }),
-          new Paragraph({ text: "" }), // Espace
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "--------------------",
-                bold: true
-              })
-            ]
-          }),
-          new Paragraph({ text: "" }) // Espace
+          })
         );
       });
 
-      // Ajouter la fin du rapport
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "FIN DU RAPPORT",
-              bold: true,
-              size: 24
-            })
-          ]
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "==============",
-              bold: true
-            })
-          ]
-        }),
-        new Paragraph({ text: "" }), // Espace
-        new Paragraph({
-          children: [
-            new TextRun({ text: "Document généré automatiquement par IT Access Manager" })
-          ]
-        }),
-        new Paragraph({ children: [new TextRun({ text: `Date de génération: ${formattedDate}` })] }),
-        new Paragraph({ children: [new TextRun({ text: `Heure de génération: ${new Date().toLocaleTimeString('fr-FR')}` })] })
-      );
-
-      // Créer le document Word
+      // Créer le document Word avec le même format que le PDF
       const doc = new Document({
         sections: [{
           properties: {},
-          children
+          children: [
+            // En-tête
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: session.applicationNom || session.nom,
+                  bold: true,
+                  size: 32
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: session.nom ? `Session: ${session.nom}` : '',
+                  italics: true,
+                  size: 20
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Informations de la session
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Date: ${formattedDate}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `Environnement: ${session.environnement || '-'}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `Version: ${session.version || '-'}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `Statut: ${session.statut}` })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Statistiques
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Total: ${sessionTests.length}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `OK: ${sessionTests.filter((t: Test) => t.statut === 'OK').length}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `BUG: ${sessionTests.filter((t: Test) => t.statut === 'BUG').length}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `EN COURS: ${sessionTests.filter((t: Test) => t.statut === 'EN COURS').length}` })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Tableau des tests
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: tableRows
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Pied de page
+            new Paragraph({
+              children: [
+                new TextRun({ text: "IT Access Manager - Document de test" })
+              ],
+              alignment: AlignmentType.CENTER
+            })
+          ]
         }]
       });
 
@@ -1279,6 +1325,13 @@ const Tests: React.FC = () => {
                   title="Exporter en PDF"
                 >
                   <FontAwesomeIcon icon={faFilePdf} /> PDF
+                </button>
+                <button 
+                  style={styles.exportButton}
+                  onClick={() => handleExportConsolidatedWord(consolidated)}
+                  title="Exporter en Word"
+                >
+                  📄 Word
                 </button>
               </div>
             </div>
