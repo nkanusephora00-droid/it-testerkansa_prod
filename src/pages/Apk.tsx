@@ -177,59 +177,13 @@ const Apk: React.FC = () => {
                       <td>{apk.downloadCount || 0}</td>
                       <td>{new Date(apk.uploadDate).toLocaleDateString('fr-FR')}</td>
                       <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <div style={{ position: 'relative' }}>
-                          <button 
-                            style={{...styles.downloadButton, padding: '6px', backgroundColor: 'transparent', color: '#007bff'}} 
-                            onClick={() => toggleExportMenu(apk.id)}
-                            title="Exporter"
-                          >
-                            📄
-                          </button>
-                          {showExportMenu === apk.id && (
-                            <div style={{
-                              position: 'absolute',
-                              top: '100%',
-                              right: '0',
-                              backgroundColor: 'white',
-                              border: '1px solid #ddd',
-                              borderRadius: '4px',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                              zIndex: 1000,
-                              minWidth: '120px'
-                            }}>
-                              <button
-                                style={{
-                                  display: 'block',
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  border: 'none',
-                                  backgroundColor: 'transparent',
-                                  textAlign: 'left',
-                                  cursor: 'pointer',
-                                  fontSize: '12px'
-                                }}
-                                onClick={() => handleDownload(apk.id, apk.originalFileName)}
-                              >
-                                📄 PDF
-                              </button>
-                              <button
-                                style={{
-                                  display: 'block',
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  border: 'none',
-                                  backgroundColor: 'transparent',
-                                  textAlign: 'left',
-                                  cursor: 'pointer',
-                                  fontSize: '12px'
-                                }}
-                                onClick={() => handleGenerateWord(apk.id, apk.originalFileName)}
-                              >
-                                📄 Word
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                        <button 
+                          style={{...styles.downloadButton, padding: '6px', backgroundColor: 'transparent', color: '#27ae60'}} 
+                          onClick={() => handleDownload(apk.id, apk.originalFileName)} 
+                          title="Télécharger"
+                        >
+                          📥
+                        </button>
                         {isAdmin && (
                           <button 
                             style={{...styles.deleteButton, padding: '6px', backgroundColor: 'transparent', color: '#ff6b6b'}} 
