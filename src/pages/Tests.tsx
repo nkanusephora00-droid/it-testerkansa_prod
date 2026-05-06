@@ -3,6 +3,7 @@ import { testsAPI, applicationsAPI, api, testSessionsAPI, Application, Test, Tes
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faEye, faFilePdf, faCheck, faTimes, faPlus, faEdit, faCompress, faExpand } from '@fortawesome/free-solid-svg-icons';
 import { consolidateSessionsByUser, consolidateAllSessions, ConsolidatedSession } from '../utils/sessionConsolidation';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 
 const Tests: React.FC = () => {
   const [tests, setTests] = useState<Test[]>([]);
@@ -508,43 +509,201 @@ const Tests: React.FC = () => {
 
   const handleGenerateTestWord = async (test: Test) => {
     try {
-      // Créer le contenu du document Word
-      const wordContent = `
-        RAPPORT DE TEST INDIVIDUEL
-        ============================
-        
-        INFORMATIONS GÉNÉRALES
-        -------------------
-        ID du test: ${test.id}
-        Fonction: ${test.fonction || 'Non spécifiée'}
-        Précondition: ${test.precondition || 'Non spécifiée'}
-        
-        DÉTAILS DU TEST
-        ---------------
-        Étapes: ${test.etapes || 'Non spécifiées'}
-        
-        RÉSULTATS
-        ----------
-        Résultat attendu: ${test.resultatAttendu || 'Non spécifié'}
-        Résultat obtenu: ${test.resultatObtenu || 'Non spécifié'}
-        Statut: ${test.statut || 'Non spécifié'}
-        
-        COMMENTAIRES
-        ------------
-        ${test.commentaires || 'Aucun commentaire'}
-        
-        MÉTADONNÉES
-        ------------
-        Date de génération: ${new Date().toLocaleDateString('fr-FR')}
-        Heure de génération: ${new Date().toLocaleTimeString('fr-FR')}
-        
-        STATUT
-        ------
-        Ce document a été généré automatiquement par IT Access Manager
-      `;
+      // Créer un vrai document Word avec la librairie docx
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "RAPPORT DE TEST INDIVIDUEL",
+                  bold: true,
+                  size: 32,
+                  alignment: AlignmentType.CENTER
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "============================",
+                  bold: true,
+                  size: 24,
+                  alignment: AlignmentType.CENTER
+                })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "INFORMATIONS GÉNÉRALES",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "-------------------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `ID du test: ${test.id}` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Fonction: ${test.fonction || 'Non spécifiée'}` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Précondition: ${test.precondition || 'Non spécifiée'}` })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "DÉTAILS DU TEST",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "---------------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Étapes: ${test.etapes || 'Non spécifiées'}` })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "RÉSULTATS",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "----------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Résultat attendu: ${test.resultatAttendu || 'Non spécifié'}` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Résultat obtenu: ${test.resultatObtenu || 'Non spécifié'}` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Statut: ${test.statut || 'Non spécifié'}` })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "COMMENTAIRES",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "------------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: test.commentaires || 'Aucun commentaire' })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "MÉTADONNÉES",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "------------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Date de génération: ${new Date().toLocaleDateString('fr-FR')}` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Heure de génération: ${new Date().toLocaleTimeString('fr-FR')}` })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "STATUT",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: "Ce document a été généré automatiquement par IT Access Manager" })
+              ]
+            })
+          ]
+        }]
+      });
 
-      // Créer un blob avec le contenu
-      const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      // Générer le buffer et télécharger
+      const buffer = await Packer.toBuffer(doc);
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -634,81 +793,246 @@ const Tests: React.FC = () => {
     }
   };
 
-  const handleExportSessionWord = (session: TestSession) => {
-    const sessionTests = getSessionTests(session.id);
-    const today = new Date();
-    const formattedDate = today.toLocaleDateString('fr-FR', { 
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-    });
+  const handleExportSessionWord = async (session: TestSession) => {
+    try {
+      const sessionTests = getSessionTests(session.id);
+      const today = new Date();
+      const formattedDate = today.toLocaleDateString('fr-FR', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      });
 
-    // Créer le contenu du document Word
-    let wordContent = `
-      RAPPORT DE TESTS - ${session.nom}
-      =====================================
-      
-      INFORMATIONS GÉNÉRALES
-      -------------------
-      Session: ${session.nom}
-      ${session.applicationNom ? `Application: ${session.applicationNom}` : ''}
-      ${session.environnement ? `Environnement: ${session.environnement}` : ''}
-      ${session.version ? `Version: ${session.version}` : ''}
-      Statut: ${session.statut}
-      Date: ${formattedDate}
-      
-      STATISTIQUES
-      ------------
-      Total tests: ${sessionTests.length}
-      Tests réussis: ${sessionTests.filter((t: Test) => t.statut === 'OK').length}
-      Tests en erreur: ${sessionTests.filter((t: Test) => t.statut === 'BUG').length}
-      Tests en cours: ${sessionTests.filter((t: Test) => t.statut === 'EN COURS').length}
-      
-      DÉTAIL DES TESTS
-      ================
-      
-    `;
+      // Créer les paragraphes pour le document Word
+      const children: any[] = [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `RAPPORT DE TESTS - ${session.nom}`,
+              bold: true,
+              size: 32,
+              alignment: AlignmentType.CENTER
+            })
+          ]
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "=====================================",
+              bold: true,
+              size: 24,
+              alignment: AlignmentType.CENTER
+            })
+          ]
+        }),
+        new Paragraph({ text: "" }), // Espace
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "INFORMATIONS GÉNÉRALES",
+              bold: true,
+              size: 24
+            })
+          ]
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "-------------------",
+              bold: true
+            })
+          ]
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: `Session: ${session.nom}` })
+          ]
+        }),
+      ];
 
-    // Ajouter chaque test
-    sessionTests.forEach((test: Test, index: number) => {
-      wordContent += `
-      TEST ${index + 1}
-      ----------
-      ID: ${test.id}
-      Fonction: ${test.fonction || 'Non spécifiée'}
-      Précondition: ${test.precondition || 'Non spécifiée'}
-      
-      Étapes:
-      ${test.etapes || 'Non spécifiées'}
-      
-      Résultat attendu: ${test.resultatAttendu || 'Non spécifié'}
-      Résultat obtenu: ${test.resultatObtenu || 'Non spécifié'}
-      Statut: ${test.statut || 'Non spécifié'}
-      Commentaires: ${test.commentaires || 'Aucun'}
-      
-      --------------------
-      `;
-    });
+      // Ajouter les informations supplémentaires si elles existent
+      if (session.applicationNom) {
+        children.push(new Paragraph({ children: [new TextRun({ text: `Application: ${session.applicationNom}` })] }));
+      }
+      if (session.environnement) {
+        children.push(new Paragraph({ children: [new TextRun({ text: `Environnement: ${session.environnement}` })] }));
+      }
+      if (session.version) {
+        children.push(new Paragraph({ children: [new TextRun({ text: `Version: ${session.version}` })] }));
+      }
 
-    wordContent += `
-      FIN DU RAPPORT
-      ==============
-      
-      Document généré automatiquement par IT Access Manager
-      Date de génération: ${formattedDate}
-      Heure de génération: ${new Date().toLocaleTimeString('fr-FR')}
-    `;
+      children.push(
+        new Paragraph({ children: [new TextRun({ text: `Statut: ${session.statut}` })] }),
+        new Paragraph({ children: [new TextRun({ text: `Date: ${formattedDate}` })] }),
+        new Paragraph({ text: "" }), // Espace
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "STATISTIQUES",
+              bold: true,
+              size: 24
+            })
+          ]
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "------------",
+              bold: true
+            })
+          ]
+        }),
+        new Paragraph({ children: [new TextRun({ text: `Total tests: ${sessionTests.length}` })] }),
+        new Paragraph({ children: [new TextRun({ text: `Tests réussis: ${sessionTests.filter((t: Test) => t.statut === 'OK').length}` })] }),
+        new Paragraph({ children: [new TextRun({ text: `Tests en erreur: ${sessionTests.filter((t: Test) => t.statut === 'BUG').length}` })] }),
+        new Paragraph({ children: [new TextRun({ text: `Tests en cours: ${sessionTests.filter((t: Test) => t.statut === 'EN COURS').length}` })] }),
+        new Paragraph({ text: "" }), // Espace
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "DÉTAIL DES TESTS",
+              bold: true,
+              size: 24
+            })
+          ]
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "================",
+              bold: true
+            })
+          ]
+        }),
+        new Paragraph({ text: "" }) // Espace
+      );
 
-    // Créer un blob avec le contenu
-    const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Rapport_Tests_${session.nom.replace(/\s+/g, '_')}.docx`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    
-    setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
+      // Ajouter chaque test
+      sessionTests.forEach((test: Test, index: number) => {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `TEST ${index + 1}`,
+                bold: true,
+                size: 20
+              })
+            ]
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "----------",
+                bold: true
+              })
+            ]
+          }),
+          new Paragraph({ children: [new TextRun({ text: `ID: ${test.id}` })] }),
+          new Paragraph({ children: [new TextRun({ text: `Fonction: ${test.fonction || 'Non spécifiée'}` })] }),
+          new Paragraph({ children: [new TextRun({ text: `Précondition: ${test.precondition || 'Non spécifiée'}` })] }),
+          new Paragraph({ text: "" }), // Espace
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Étapes:",
+                bold: true
+              })
+            ]
+          }),
+          new Paragraph({ children: [new TextRun({ text: test.etapes || 'Non spécifiées' })] }),
+          new Paragraph({ text: "" }), // Espace
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Résultat attendu:",
+                bold: true
+              })
+            ]
+          }),
+          new Paragraph({ children: [new TextRun({ text: test.resultatAttendu || 'Non spécifié' })] }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Résultat obtenu:",
+                bold: true
+              })
+            ]
+          }),
+          new Paragraph({ children: [new TextRun({ text: test.resultatObtenu || 'Non spécifié' })] }),
+          new Paragraph({ children: [new TextRun({ text: `Statut: ${test.statut || 'Non spécifié'}` })] }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Commentaires:",
+                bold: true
+              })
+            ]
+          }),
+          new Paragraph({ children: [new TextRun({ text: test.commentaires || 'Aucun' })] }),
+          new Paragraph({ text: "" }), // Espace
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "--------------------",
+                bold: true
+              })
+            ]
+          }),
+          new Paragraph({ text: "" }) // Espace
+        );
+      });
+
+      // Ajouter la fin du rapport
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "FIN DU RAPPORT",
+              bold: true,
+              size: 24
+            })
+          ]
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "==============",
+              bold: true
+            })
+          ]
+        }),
+        new Paragraph({ text: "" }), // Espace
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Document généré automatiquement par IT Access Manager" })
+          ]
+        }),
+        new Paragraph({ children: [new TextRun({ text: `Date de génération: ${formattedDate}` })] }),
+        new Paragraph({ children: [new TextRun({ text: `Heure de génération: ${new Date().toLocaleTimeString('fr-FR')}` })] })
+      );
+
+      // Créer le document Word
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children
+        }]
+      });
+
+      // Générer le buffer et télécharger
+      const buffer = await Packer.toBuffer(doc);
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rapport_Tests_${session.nom.replace(/\s+/g, '_')}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
+    }
   };
 
   const handleExportSessionPDF = (session: TestSession) => {
