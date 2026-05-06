@@ -634,6 +634,83 @@ const Tests: React.FC = () => {
     }
   };
 
+  const handleExportSessionWord = (session: TestSession) => {
+    const sessionTests = getSessionTests(session.id);
+    const today = new Date();
+    const formattedDate = today.toLocaleDateString('fr-FR', { 
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+    });
+
+    // Créer le contenu du document Word
+    let wordContent = `
+      RAPPORT DE TESTS - ${session.nom}
+      =====================================
+      
+      INFORMATIONS GÉNÉRALES
+      -------------------
+      Session: ${session.nom}
+      ${session.applicationNom ? `Application: ${session.applicationNom}` : ''}
+      ${session.environnement ? `Environnement: ${session.environnement}` : ''}
+      ${session.version ? `Version: ${session.version}` : ''}
+      Statut: ${session.statut}
+      Date: ${formattedDate}
+      
+      STATISTIQUES
+      ------------
+      Total tests: ${sessionTests.length}
+      Tests réussis: ${sessionTests.filter((t: Test) => t.statut === 'OK').length}
+      Tests en erreur: ${sessionTests.filter((t: Test) => t.statut === 'BUG').length}
+      Tests en cours: ${sessionTests.filter((t: Test) => t.statut === 'EN COURS').length}
+      
+      DÉTAIL DES TESTS
+      ================
+      
+    `;
+
+    // Ajouter chaque test
+    sessionTests.forEach((test: Test, index: number) => {
+      wordContent += `
+      TEST ${index + 1}
+      ----------
+      ID: ${test.id}
+      Fonction: ${test.fonction || 'Non spécifiée'}
+      Précondition: ${test.precondition || 'Non spécifiée'}
+      
+      Étapes:
+      ${test.etapes || 'Non spécifiées'}
+      
+      Résultat attendu: ${test.resultatAttendu || 'Non spécifié'}
+      Résultat obtenu: ${test.resultatObtenu || 'Non spécifié'}
+      Statut: ${test.statut || 'Non spécifié'}
+      Commentaires: ${test.commentaires || 'Aucun'}
+      
+      --------------------
+      `;
+    });
+
+    wordContent += `
+      FIN DU RAPPORT
+      ==============
+      
+      Document généré automatiquement par IT Access Manager
+      Date de génération: ${formattedDate}
+      Heure de génération: ${new Date().toLocaleTimeString('fr-FR')}
+    `;
+
+    // Créer un blob avec le contenu
+    const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Rapport_Tests_${session.nom.replace(/\s+/g, '_')}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
+  };
+
   const handleExportSessionPDF = (session: TestSession) => {
     const sessionTests = getSessionTests(session.id);
     const today = new Date();
@@ -950,6 +1027,14 @@ const Tests: React.FC = () => {
                   }}
                 >
                   <FontAwesomeIcon icon={faFilePdf} /> PDF
+                </button>
+                <button 
+                  style={styles.exportButton} 
+                  onClick={() => {
+                    handleExportSessionWord(session);
+                  }}
+                >
+                  📄 Word
                 </button>
                 {session.statut !== 'Terminé' && (
                   <button 
