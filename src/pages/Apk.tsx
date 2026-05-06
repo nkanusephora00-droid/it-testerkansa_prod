@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apkAPI, applicationsAPI, ApkFile, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDownload, faTrash, faUpload, faFileWord } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faUpload } from '@fortawesome/free-solid-svg-icons';
 
 const Apk: React.FC = () => {
   const [apks, setApks] = useState<ApkFile[]>([]);
@@ -10,7 +10,6 @@ const Apk: React.FC = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [uploading, setUploading] = useState(false);
-  const [showExportMenu, setShowExportMenu] = useState<number | null>(null);
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({ applicationId: 0, version: '', packageName: '', description: '' });
@@ -91,72 +90,8 @@ const Apk: React.FC = () => {
     }
   };
 
-  const handleGeneratePDF = async (id: number, fileName: string) => {
-    try {
-      // Simulation de génération PDF - à adapter selon votre API
-      console.log(`Génération PDF pour l'APK ${id}: ${fileName}`);
-      setMessage({ type: 'success', text: 'Document PDF généré avec succès!' });
-      setShowExportMenu(null);
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Erreur lors de la génération du document PDF' });
-    }
-  };
-
-  const handleGenerateWord = async (id: number, fileName: string) => {
-    try {
-      // Récupérer les détails de l'APK pour générer le document Word
-      const apk = apks.find(a => a.id === id);
-      if (!apk) {
-        setMessage({ type: 'error', text: 'APK non trouvée' });
-        return;
-      }
-
-      // Créer le contenu du document Word
-      const wordContent = `
-        RAPPORT DE TEST - ${apk.originalFileName}
-        =====================================
-        
-        INFORMATIONS GÉNÉRALES
-        -------------------
-        Nom du fichier: ${apk.originalFileName}
-        Version: ${apk.version || 'Non spécifiée'}
-        Package: ${apk.packageName || 'Non spécifié'}
-        Application: ${getAppName(apk.applicationId || 0)}
-        Taille: ${formatFileSize(apk.fileSize)}
-        Date d'upload: ${new Date(apk.uploadDate).toLocaleDateString('fr-FR')}
-        Nombre de téléchargements: ${apk.downloadCount || 0}
-        
-        DESCRIPTION
-        -----------
-        ${apk.description || 'Aucune description disponible'}
-        
-        STATUT
-        ------
-        Ce document a été généré automatiquement le ${new Date().toLocaleDateString('fr-FR')}
-      `;
-
-      // Créer un blob avec le contenu
-      const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Rapport_${fileName.replace('.apk', '')}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
-      setShowExportMenu(null);
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
-    }
-  };
-
-  const toggleExportMenu = (apkId: number) => {
-    setShowExportMenu(showExportMenu === apkId ? null : apkId);
-  };
-
+  
+  
   const handleDelete = async (id: number) => {
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce APK ?')) return;
     
