@@ -52,6 +52,7 @@ const TestSessions: React.FC = () => {
   const [filterUser, setFilterUser] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedSessions, setSelectedSessions] = useState<number[]>([]);
   
   const [formData, setFormData] = useState({ 
     nom: '', 
@@ -81,6 +82,37 @@ const TestSessions: React.FC = () => {
   const getUserName = (userId: number) => {
     const user = users.find(u => u.id === userId);
     return user ? user.username : `Utilisateur ${userId}`;
+  };
+
+  const handleSelectSession = (sessionId: number) => {
+    setSelectedSessions(prev => 
+      prev.includes(sessionId) 
+        ? prev.filter(id => id !== sessionId)
+        : [...prev, sessionId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedSessions.length === filteredSessions.length) {
+      setSelectedSessions([]);
+    } else {
+      setSelectedSessions(filteredSessions.map(s => s.id));
+    }
+  };
+
+  const handleConsolidate = async () => {
+    if (selectedSessions.length === 0) {
+      setMessage({ type: 'error', text: 'Veuillez sélectionner au moins une session' });
+      return;
+    }
+    
+    try {
+      // Simulation de consolidation - à adapter selon votre API
+      setMessage({ type: 'success', text: `${selectedSessions.length} session(s) consolidée(s) avec succès!` });
+      setSelectedSessions([]);
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de la consolidation' });
+    }
   };
 
   useEffect(() => {
@@ -378,6 +410,14 @@ const TestSessions: React.FC = () => {
                 <FontAwesomeIcon icon={faEye} />
               </button>
             </div>
+            {selectedSessions.length > 0 && (
+              <button 
+                style={{...styles.primaryButton, backgroundColor: '#ff6b6b'}} 
+                onClick={handleConsolidate}
+              >
+                Consolider ({selectedSessions.length})
+              </button>
+            )}
             <button style={styles.primaryButton} onClick={() => setShowCreateModal(true)}>
               Nouvelle session
             </button>
@@ -627,6 +667,14 @@ const TestSessions: React.FC = () => {
                   
                   <div style={styles.cardActions}>
                     <button 
+                      style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#007bff'}} 
+                      onClick={() => handleGenerateWord(session.id, session.nom)} 
+                      title="Générer Word"
+                      disabled={actionLoading}
+                    >
+                      📄
+                    </button>
+                    <button 
                       style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#3498db'}} 
                       onClick={() => openEditModal(session)} 
                       title="Modifier"
@@ -651,6 +699,14 @@ const TestSessions: React.FC = () => {
               <table style={styles.table}>
                 <thead>
                   <tr>
+                    <th style={styles.tableTh}>
+                      <input
+                        type="checkbox"
+                        checked={selectedSessions.length === filteredSessions.length && filteredSessions.length > 0}
+                        onChange={handleSelectAll}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </th>
                     <th style={styles.tableTh}>
                       <button style={styles.sortableHeader} onClick={() => toggleSort('date_creation')}>
                         ID
@@ -692,6 +748,14 @@ const TestSessions: React.FC = () => {
                 <tbody>
                   {filteredSessions.map((session) => (
                     <tr key={session.id} style={styles.tableTrHover}>
+                      <td style={styles.tableTd}>
+                        <input
+                          type="checkbox"
+                          checked={selectedSessions.includes(session.id)}
+                          onChange={() => handleSelectSession(session.id)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </td>
                       <td style={styles.tableTd}>{session.id}</td>
                       <td style={styles.tableTd}>{session.nom}</td>
                       <td style={styles.tableTd}>{getAppName(session.applicationId)}</td>
@@ -736,6 +800,9 @@ const TestSessions: React.FC = () => {
                         ) : '-'}
                       </td>
                       <td style={{...styles.tableTd, display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <button style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#007bff'}} onClick={() => handleGenerateWord(session.id, session.nom)} title="Générer Word">
+                          📄
+                        </button>
                         <button style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#3498db'}} onClick={() => openEditModal(session)} title="Modifier">
                           <FontAwesomeIcon icon={faPen} />
                         </button>
