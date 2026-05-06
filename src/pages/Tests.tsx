@@ -506,6 +506,60 @@ const Tests: React.FC = () => {
     setShowEditModal(true);
   };
 
+  const handleGenerateTestWord = async (test: Test) => {
+    try {
+      // Créer le contenu du document Word
+      const wordContent = `
+        RAPPORT DE TEST INDIVIDUEL
+        ============================
+        
+        INFORMATIONS GÉNÉRALES
+        -------------------
+        ID du test: ${test.id}
+        Fonction: ${test.fonction || 'Non spécifiée'}
+        Précondition: ${test.precondition || 'Non spécifiée'}
+        
+        DÉTAILS DU TEST
+        ---------------
+        Étapes: ${test.etapes || 'Non spécifiées'}
+        
+        RÉSULTATS
+        ----------
+        Résultat attendu: ${test.resultatAttendu || 'Non spécifié'}
+        Résultat obtenu: ${test.resultatObtenu || 'Non spécifié'}
+        Statut: ${test.statut || 'Non spécifié'}
+        
+        COMMENTAIRES
+        ------------
+        ${test.commentaires || 'Aucun commentaire'}
+        
+        MÉTADONNÉES
+        ------------
+        Date de génération: ${new Date().toLocaleDateString('fr-FR')}
+        Heure de génération: ${new Date().toLocaleTimeString('fr-FR')}
+        
+        STATUT
+        ------
+        Ce document a été généré automatiquement par IT Access Manager
+      `;
+
+      // Créer un blob avec le contenu
+      const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Test_${test.id}_${test.fonction || 'test'}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
+    }
+  };
+
   const handleUpdateTest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTest) return;
@@ -1000,6 +1054,9 @@ const Tests: React.FC = () => {
                   <td><span style={getStatutClass(test.statut)}>{test.statut}</span></td>
                   <td>{test.commentaires || '-'}</td>
                   <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    <button style={{...styles.editButton, padding: '6px', backgroundColor: 'transparent', color: '#007bff'}} onClick={() => handleGenerateTestWord(test)} title="Générer Word">
+                      📄
+                    </button>
                     <button style={{...styles.editButton, padding: '6px', backgroundColor: 'transparent', color: '#4a90e2'}} onClick={() => handleEditTest(test)} title="Modifier">
                       <FontAwesomeIcon icon={faEdit} />
                     </button>
