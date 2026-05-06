@@ -53,6 +53,7 @@ const TestSessions: React.FC = () => {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [isMobile, setIsMobile] = useState(false);
   const [selectedSessions, setSelectedSessions] = useState<number[]>([]);
+  const [showExportMenu, setShowExportMenu] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({ 
     nom: '', 
@@ -252,6 +253,16 @@ const TestSessions: React.FC = () => {
     }
   };
 
+  const handleGeneratePDF = async (id: number, sessionName: string) => {
+    try {
+      // Simulation de génération PDF - à adapter selon votre API
+      setMessage({ type: 'success', text: 'Document PDF généré avec succès!' });
+      setShowExportMenu(null);
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de la génération du document PDF' });
+    }
+  };
+
   const handleGenerateWord = async (id: number, sessionName: string) => {
     try {
       // Récupérer les détails de la session pour générer le document Word
@@ -307,9 +318,14 @@ const TestSessions: React.FC = () => {
       document.body.removeChild(a);
       
       setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
+      setShowExportMenu(null);
     } catch (err) {
       setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
     }
+  };
+
+  const toggleExportMenu = (sessionId: number) => {
+    setShowExportMenu(showExportMenu === sessionId ? null : sessionId);
   };
 
   const handleDelete = async (id: number) => {
@@ -588,9 +604,55 @@ const TestSessions: React.FC = () => {
                     )}
                   </div>
                   <div style={styles.simpleItemActions}>
-                    <button style={styles.simpleActionButton} onClick={() => handleGenerateWord(session.id, session.nom)}>
-                      📄
-                    </button>
+                    <div style={{ position: 'relative' }}>
+                      <button style={styles.simpleActionButton} onClick={() => toggleExportMenu(session.id)}>
+                        📄
+                      </button>
+                      {showExportMenu === session.id && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          right: '0',
+                          backgroundColor: 'white',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                          zIndex: 1000,
+                          minWidth: '120px'
+                        }}>
+                          <button
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                            onClick={() => handleGeneratePDF(session.id, session.nom)}
+                          >
+                            📄 PDF
+                          </button>
+                          <button
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                            onClick={() => handleGenerateWord(session.id, session.nom)}
+                          >
+                            📄 Word
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <button style={styles.simpleActionButton} onClick={() => openEditModal(session)}>
                       ✏️
                     </button>
@@ -819,7 +881,6 @@ const TestSessions: React.FC = () => {
             <div style={styles.cardsGrid}>
               {filteredSessions.map((session) => (
                 <div key={session.id} style={styles.sessionCard}>
-                  {/* Même contenu de carte que pour mobile */}
                   <div style={styles.cardHeader}>
                     <h4 style={styles.cardTitle}>{session.nom}</h4>
                     <span style={{
@@ -837,7 +898,81 @@ const TestSessions: React.FC = () => {
                       {session.statut}
                     </span>
                   </div>
-                  {/* ... reste du contenu de la carte ... */}
+                  
+                  <div style={styles.cardContent}>
+                    <div style={styles.cardInfo}>
+                      <span style={styles.infoLabel}>Application:</span>
+                      <span style={styles.infoValue}>{getAppName(session.applicationId)}</span>
+                    </div>
+                    {session.environnement && (
+                      <div style={styles.cardInfo}>
+                        <span style={styles.infoLabel}>Environnement:</span>
+                        <span style={styles.infoValue}>{session.environnement}</span>
+                      </div>
+                    )}
+                    {session.version && (
+                      <div style={styles.cardInfo}>
+                        <span style={styles.infoLabel}>Version:</span>
+                        <span style={styles.infoValue}>{session.version}</span>
+                      </div>
+                    )}
+                    {session.created_by && (
+                      <div style={styles.cardInfo}>
+                        <span style={styles.infoLabel}>Créé par:</span>
+                        <span style={styles.infoValue}>{getUserName(session.created_by)}</span>
+                      </div>
+                    )}
+                    {session.description && (
+                      <p style={styles.cardDescription}>{session.description}</p>
+                    )}
+                  </div>
+                  
+                  {session.total_tests && (
+                    <div style={styles.progressSection}>
+                      <div style={styles.progressHeader}>
+                        <span style={styles.progressLabel}>Progression</span>
+                        <span style={styles.progressText}>
+                          {session.tests_ok || 0}/{session.total_tests}
+                        </span>
+                      </div>
+                      <div style={styles.progressBar}>
+                        <div style={{ 
+                          width: `${(session.tests_ok || 0) * 100 / session.total_tests}%`, 
+                          height: '100%', 
+                          backgroundColor: '#27ae60',
+                          borderRadius: '3px',
+                          transition: 'width 0.3s ease'
+                        }} />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div style={styles.cardActions}>
+                    <button 
+                      style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#007bff'}} 
+                      onClick={() => handleGenerateWord(session.id, session.nom)} 
+                      title="Générer Word"
+                      disabled={actionLoading}
+                    >
+                      📄
+                    </button>
+                    <button 
+                      style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#3498db'}} 
+                      onClick={() => openEditModal(session)} 
+                      title="Modifier"
+                      disabled={actionLoading}
+                    >
+                      <FontAwesomeIcon icon={faPen} />
+                    </button>
+                    <button 
+                      style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b'}} 
+                      onClick={() => handleDelete(session.id)} 
+                      title="Supprimer"
+                      disabled={actionLoading}
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -315,9 +315,11 @@ const Todos: React.FC = () => {
                           {todo.priority === 'low' && (
                             <span style={styles.priorityBadge}>Basse</span>
                           )}
-                          <span style={styles.creatorBadge}>
-                              Par: {todo.created_by ? getUserName(todo.created_by) : 'Utilisateur actuel'}
+                          {todo.created_by && (
+                            <span style={styles.creatorBadge}>
+                              Par: {getUserName(todo.created_by)}
                             </span>
+                          )}
                           {todo.dueDate && (
                             <span style={styles.dueDate}>
                               <FontAwesomeIcon icon={faCheck} style={{ marginRight: 4 }} />
@@ -358,11 +360,13 @@ const Todos: React.FC = () => {
                         {todo.description && (
                           <div style={styles.todoDescription}>{todo.description}</div>
                         )}
-                        <div style={styles.todoMeta}>
-                          <span style={styles.creatorBadge}>
-                            Par: {todo.created_by ? getUserName(todo.created_by) : 'Utilisateur actuel'}
-                          </span>
-                        </div>
+                        {todo.created_by && (
+                          <div style={styles.todoMeta}>
+                            <span style={styles.creatorBadge}>
+                              Par: {getUserName(todo.created_by)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div style={styles.todoActions}>
                         <button style={styles.deleteButton} onClick={() => handleDelete(todo.id)} title="Supprimer">
