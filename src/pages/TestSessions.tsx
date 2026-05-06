@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { testSessionsAPI, applicationsAPI, Application } from '../services/api';
+import { testSessionsAPI, applicationsAPI, usersAPI, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen, faTrash, faSearch, faSort, faChartBar, faClock, faCheckCircle, faExclamationTriangle, faPlayCircle, faTimesCircle, faEye, faFileWord } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faTrash, faSearch, faSort, faChartBar, faClock, faCheckCircle, faExclamationTriangle, faPlayCircle, faTimesCircle, faEye } from '@fortawesome/free-solid-svg-icons';
 import './TestSessions.css';
 
 interface TestSession {
@@ -36,6 +36,7 @@ const TestSessions: React.FC = () => {
   const [sessions, setSessions] = useState<TestSession[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<TestSession[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +49,7 @@ const TestSessions: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterApp, setFilterApp] = useState<string>('all');
+  const [filterUser, setFilterUser] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [isMobile, setIsMobile] = useState(false);
   
@@ -76,6 +78,11 @@ const TestSessions: React.FC = () => {
     return app ? app.nom : 'Application inconnue';
   }, [applications]);
 
+  const getUserName = (userId: number) => {
+    const user = users.find(u => u.id === userId);
+    return user ? user.username : `Utilisateur ${userId}`;
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -99,8 +106,9 @@ const TestSessions: React.FC = () => {
       
       const matchesStatus = filterStatus === 'all' || session.statut === filterStatus;
       const matchesApp = filterApp === 'all' || session.applicationId === parseInt(filterApp);
+      const matchesUser = filterUser === 'all' || session.created_by === parseInt(filterUser);
       
-      return matchesSearch && matchesStatus && matchesApp;
+      return matchesSearch && matchesStatus && matchesApp && matchesUser;
     });
 
     return filtered.sort((a, b) => {
@@ -116,7 +124,7 @@ const TestSessions: React.FC = () => {
       if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [sessions, searchTerm, filterStatus, filterApp, sortBy, sortOrder, getAppName]);
+  }, [sessions, searchTerm, filterStatus, filterApp, filterUser, sortBy, sortOrder, getAppName]);
 
   useEffect(() => {
     setFilteredSessions(filteredAndSortedSessions);
@@ -125,16 +133,19 @@ const TestSessions: React.FC = () => {
   const fetchData = async () => {
     try {
       setError(null);
-      const [sessionsData, appsData] = await Promise.all([
+      const [sessionsData, appsData, usersData] = await Promise.all([
         testSessionsAPI.getAll(),
         applicationsAPI.getAll(),
+        usersAPI.getAll(),
       ]);
       const sessions: any = sessionsData;
       const apps: any = appsData;
+      const users: any = usersData;
       const sessionsList = Array.isArray(sessions) ? sessions : (sessions?.content || []);
       setSessions(sessionsList);
       setFilteredSessions(sessionsList);
       setApplications(Array.isArray(apps) ? apps : (apps?.content || []));
+      setUsers(Array.isArray(users) ? users : (users?.content || []));
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       const errorMessage = error.response?.data?.detail || 'Erreur de chargement des données';
@@ -231,7 +242,7 @@ const TestSessions: React.FC = () => {
         ${session.version ? `Version: ${session.version}` : ''}
         Statut: ${session.statut}
         Date de création: ${new Date(session.date_creation).toLocaleDateString('fr-FR')}
-        ${session.created_by ? `Créé par: Utilisateur ${session.created_by}` : 'Créé par: Système'}
+        ${session.created_by ? `Créé par: ${getUserName(session.created_by)}` : 'Créé par: Système'}
         
         DESCRIPTION
         -----------
@@ -244,7 +255,7 @@ const TestSessions: React.FC = () => {
         
         INFORMATIONS TECHNIQUES
         ----------------------
-        ${session.date_modification ? `Dernière modification: ${new Date(session.date_modification).toLocaleDateString('fr-FR')}` : 'Jamais modifié'}
+        Jamais modifié
         
         STATUT
         ------
@@ -458,6 +469,16 @@ const TestSessions: React.FC = () => {
                     <option key={app.id} value={app.id}>{app.nom}</option>
                   ))}
                 </select>
+                <select
+                  value={filterUser}
+                  onChange={(e) => setFilterUser(e.target.value)}
+                  style={styles.filterSelect}
+                >
+                  <option value="all">Tous les utilisateurs</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>{user.username}</option>
+                  ))}
+                </select>
               </div>
               <div style={styles.searchWrapper}>
                 <FontAwesomeIcon icon={faSearch} className="search-icon" />
@@ -517,6 +538,12 @@ const TestSessions: React.FC = () => {
                       <div style={styles.simpleItemRow}>
                         <span style={styles.simpleItemLabel}>Progression:</span>
                         <span style={styles.simpleItemValue}>{session.tests_ok || 0}/{session.total_tests}</span>
+                      </div>
+                    )}
+                    {session.created_by && (
+                      <div style={styles.simpleItemRow}>
+                        <span style={styles.simpleItemLabel}>Créé par:</span>
+                        <span style={styles.simpleItemValue}>{getUserName(session.created_by)}</span>
                       </div>
                     )}
                   </div>

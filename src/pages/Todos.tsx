@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { todosAPI } from '../services/api';
+import { todosAPI, usersAPI } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faTrash, faCheck, faTimes, faDownload, faEdit, faListCheck } from '@fortawesome/free-solid-svg-icons';
 
@@ -11,10 +11,12 @@ interface Todo {
   priority: string;
   dueDate: string | null;
   createdAt: string;
+  created_by?: number;
 }
 
 const Todos: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
@@ -34,8 +36,12 @@ const Todos: React.FC = () => {
 
   const fetchTodos = async () => {
     try {
-      const data = await todosAPI.getAll();
-      setTodos(data);
+      const [todosData, usersData] = await Promise.all([
+        todosAPI.getAll(),
+        usersAPI.getAll(),
+      ]);
+      setTodos(todosData);
+      setUsers(usersData);
     } catch (err: unknown) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Error fetching todos:', err);
@@ -44,6 +50,11 @@ const Todos: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getUserName = (userId: number) => {
+    const user = users.find(u => u.id === userId);
+    return user ? user.username : `Utilisateur ${userId}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -296,6 +307,11 @@ const Todos: React.FC = () => {
                           {todo.priority === 'low' && (
                             <span style={styles.priorityBadge}>Basse</span>
                           )}
+                          {todo.created_by && (
+                            <span style={styles.creatorBadge}>
+                              Par: {getUserName(todo.created_by)}
+                            </span>
+                          )}
                           {todo.dueDate && (
                             <span style={styles.dueDate}>
                               <FontAwesomeIcon icon={faCheck} style={{ marginRight: 4 }} />
@@ -393,6 +409,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   todoDescription: { fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' },
   todoMeta: { display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '12px' },
   priorityBadge: { padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--text-muted)', color: 'white', fontSize: '11px' },
+  creatorBadge: { padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--info-color)', color: 'white', fontSize: '11px' },
   dueDate: { color: 'var(--text-muted)' },
   todoActions: { display: 'flex', gap: '8px' },
   editButton: { padding: '8px', backgroundColor: 'transparent', color: 'var(--text-secondary)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' },
