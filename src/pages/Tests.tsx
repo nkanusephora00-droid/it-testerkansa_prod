@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { testsAPI, applicationsAPI, api, testSessionsAPI, Application, Test, TestSession } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faEye, faFilePdf, faCheck, faTimes, faPlus, faEdit, faCompress, faExpand } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faEye, faFilePdf, faFileWord, faCheck, faTimes, faPlus, faEdit, faCompress, faExpand } from '@fortawesome/free-solid-svg-icons';
 import { consolidateSessionsByUser, consolidateAllSessions, ConsolidatedSession } from '../utils/sessionConsolidation';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType } from 'docx';
 
@@ -1324,14 +1324,14 @@ const Tests: React.FC = () => {
                   onClick={() => handleExportConsolidatedPDF(consolidated)}
                   title="Exporter en PDF"
                 >
-                  <FontAwesomeIcon icon={faFilePdf} /> PDF
+                  <FontAwesomeIcon icon={faFilePdf} />
                 </button>
                 <button 
                   style={styles.exportButton}
                   onClick={() => handleExportConsolidatedWord(consolidated)}
                   title="Exporter en Word"
                 >
-                  📄 Word
+                  <FontAwesomeIcon icon={faFileWord} />
                 </button>
               </div>
             </div>
