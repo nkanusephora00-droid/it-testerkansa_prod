@@ -935,16 +935,6 @@ const Tests: React.FC = () => {
     return tests.filter(t => t.sessionId === sessionId);
   };
 
-  const getStatutClass = (statut: string) => {
-    switch(statut) {
-      case 'OK': return styles.statutOk;
-      case 'BUG': return styles.statutBug;
-      case 'EN COURS': return styles.statutEnCours;
-      case 'BLOQUE': return styles.statutBloque;
-      default: return {};
-    }
-  };
-
   const handleExportSessionWord = async (session: TestSession) => {
     try {
       const sessionTests = getSessionTests(session.id);
@@ -1937,11 +1927,7 @@ input: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadi
   table: { width: '100%', borderCollapse: 'collapse' as const, borderRadius: '8px', overflow: 'hidden' },
   success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' },
   error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' },
-  statutOk: { padding: '6px 12px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' },
-  statutBug: { padding: '6px 12px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' },
-  statutEnCours: { padding: '6px 12px', backgroundColor: 'var(--warning-color)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' },
-  statutBloque: { padding: '6px 12px', backgroundColor: 'var(--text-muted)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' },
-  testsHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '12px' },
+    testsHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '12px' },
   testsSubtitle: { fontSize: '13px', color: 'var(--text-secondary)' },
   sessionInfo: { fontSize: '13px', color: 'var(--text-secondary)', margin: '5px 0' },
   modal: { position: 'fixed' as const, top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, overflowY: 'auto' as const, backdropFilter: 'blur(8px)' },
