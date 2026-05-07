@@ -1491,46 +1491,75 @@ const Tests: React.FC = () => {
               </p>
             </div>
           </div>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Fonction</th>
-                <th>Précondition</th>
-                <th>Étapes</th>
-                <th>Résultat Attendu</th>
-                <th>Résultat Obtenu</th>
-                <th>Statut</th>
-                <th>Commentaires</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sessionTests.map((test: Test) => (
-                <tr key={test.id}>
-                  <td>{test.id}</td>
-                  <td>{test.fonction}</td>
-                  <td>{test.precondition || '-'}</td>
-                  <td>{test.etapes || '-'}</td>
-                  <td>{test.resultatAttendu || '-'}</td>
-                  <td>{test.resultatObtenu || '-'}</td>
-                  <td><span style={getStatutClass(test.statut)}>{test.statut}</span></td>
-                  <td>{test.commentaires || '-'}</td>
-                  <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                    <button style={{...styles.editButton, padding: '6px', backgroundColor: 'transparent', color: '#007bff'}} onClick={() => handleGenerateTestWord(test)} title="Générer Word">
-                      <FontAwesomeIcon icon={faFileWord} />
-                    </button>
-                    <button style={{...styles.editButton, padding: '6px', backgroundColor: 'transparent', color: '#4a90e2'}} onClick={() => handleEditTest(test)} title="Modifier">
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                    <button style={{...styles.deleteButton, padding: '6px', backgroundColor: 'transparent', color: '#ff6b6b'}} onClick={() => handleDeleteTest(test.id)} title="Supprimer">
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          
+          {/* Affichage en liste verticale pour mobile comme les todos */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {sessionTests.map((test: Test) => (
+              <div key={test.id} style={{
+                ...styles.sessionCard,
+                border: `2px solid ${getStatusColor(test.statut)}`,
+                backgroundColor: '#fff',
+                padding: '15px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}>
+                <div style={styles.sessionHeader}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#2c3e50' }}>
+                    {test.fonction || 'Test sans fonction'}
+                  </h4>
+                  <span style={{...styles.statusBadge, backgroundColor: getStatusColor(test.statut)}}>
+                    {test.statut}
+                  </span>
+                </div>
+                
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>Précondition:</strong> {test.precondition || '-'}
+                </div>
+                
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>Étapes:</strong> 
+                  <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
+                    {test.etapes || '-'}
+                  </div>
+                </div>
+                
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>Résultat Attendu:</strong>
+                  <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
+                    {test.resultatAttendu || '-'}
+                  </div>
+                </div>
+                
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>Résultat Obtenu:</strong>
+                  <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
+                    {test.resultatObtenu || '-'}
+                  </div>
+                </div>
+                
+                {test.commentaires && (
+                  <div style={{ marginBottom: '10px' }}>
+                    <strong>Commentaires:</strong>
+                    <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
+                      {test.commentaires}
+                    </div>
+                  </div>
+                )}
+                
+                <div style={styles.sessionActions}>
+                  <button style={{...styles.editButton, padding: '8px 12px', marginRight: '8px'}} onClick={() => handleGenerateTestWord(test)} title="Générer Word">
+                    <FontAwesomeIcon icon={faFileWord} />
+                  </button>
+                  <button style={{...styles.editButton, padding: '8px 12px', marginRight: '8px'}} onClick={() => handleEditTest(test)} title="Modifier">
+                    <FontAwesomeIcon icon={faEdit} />
+                  </button>
+                  <button style={{...styles.deleteButton, padding: '8px 12px'}} onClick={() => handleDeleteTest(test.id)} title="Supprimer">
+                    <FontAwesomeIcon icon={faTrash} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -1561,7 +1590,7 @@ const Tests: React.FC = () => {
           <div style={{ ...styles.modalContent, ...styles.sessionModalContent }}>
             <span style={styles.close} onClick={() => setShowSessionModal(false)}>&times;</span>
             <div style={styles.modalHeader}>
-              <h3 style={styles.sectionTitle}>Nouvelle session de test</h3>
+              <h3 style={styles.sectionTitle}>Nouvelle session</h3>
               <p style={styles.modalSubtitle}>
                 Créez une session pour regrouper vos cas de test et générer un export PDF.
               </p>
