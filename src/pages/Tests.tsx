@@ -1327,7 +1327,7 @@ const Tests: React.FC = () => {
             </div>
           ))
         ) : (
-          <div style={styles.sessionsGrid}>
+          <div style={window.innerWidth <= 768 ? styles.sessionsGrid : styles.sessionsGridDesktop}>
             {sessions.map((session) => (
             <div key={session.id} style={{
               ...styles.sessionCard, 
@@ -1953,7 +1953,20 @@ input: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadi
   resetButton: { padding: '8px 12px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', transition: 'background-color 0.2s' },
   selectionInfo: { padding: '6px 10px', backgroundColor: '#e9ecef', color: '#495057', borderRadius: '4px', fontSize: '12px', fontWeight: '500' },
   selectionCheckbox: { position: 'absolute' as const, top: '10px', right: '10px', zIndex: 10, backgroundColor: 'rgba(255, 255, 255, 0.95)', padding: '4px', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
-  sessionsGrid: { display: 'grid', gridTemplateColumns: '1fr', gap: '16px', padding: '0 20px', width: '100%' },
+  sessionsGrid: { 
+    display: 'grid', 
+    gridTemplateColumns: '1fr', 
+    gap: '16px', 
+    padding: '0 20px',
+    width: '100%'
+  },
+  sessionsGridDesktop: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '16px',
+    padding: '0 20px',
+    width: '100%'
+  },
   sessionCard: { backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', border: '1px solid #e1e5e9', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s ease', position: 'relative' as const, minHeight: '280px', display: 'flex', flexDirection: 'column', cursor: 'pointer' },
   sessionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', gap: '8px' },
   sessionTitle: { margin: 0, color: '#1a1a1a', fontSize: '18px', fontWeight: '700', flex: 1, lineHeight: '1.3' },
