@@ -1952,36 +1952,9 @@ input: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadi
   consolidationButton: { padding: '8px 12px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', transition: 'background-color 0.2s' },
   resetButton: { padding: '8px 12px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', transition: 'background-color 0.2s' },
   selectionInfo: { padding: '6px 10px', backgroundColor: '#e9ecef', color: '#495057', borderRadius: '4px', fontSize: '12px', fontWeight: '500' },
-  selectionCheckbox: { 
-  position: 'absolute' as const, 
-  top: '10px', 
-  right: '10px', 
-  zIndex: 10,
-  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-  padding: '4px',
-  borderRadius: '6px',
-  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-},
-  sessionsGrid: { 
-  display: 'grid', 
-  gridTemplateColumns: 'repeat(3, 1fr)', 
-  gap: '16px',
-  padding: '0 20px',
-  width: '100%'
-},
-sessionCard: {
-  backgroundColor: '#ffffff',
-  borderRadius: '8px',
-  padding: '24px',
-  border: '1px solid #e1e5e9',
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04)',
-  transition: 'all 0.3s ease',
-  position: 'relative' as const,
-  minHeight: '280px',
-  display: 'flex',
-  flexDirection: 'column',
-  cursor: 'pointer'
-},
+  selectionCheckbox: { position: 'absolute' as const, top: '10px', right: '10px', zIndex: 10, backgroundColor: 'rgba(255, 255, 255, 0.95)', padding: '4px', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
+  sessionsGrid: { display: 'grid', gridTemplateColumns: '1fr', gap: '16px', padding: '0 20px', width: '100%' },
+  sessionCard: { backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', border: '1px solid #e1e5e9', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s ease', position: 'relative' as const, minHeight: '280px', display: 'flex', flexDirection: 'column', cursor: 'pointer' },
   sessionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', gap: '8px' },
   sessionTitle: { margin: 0, color: '#1a1a1a', fontSize: '18px', fontWeight: '700', flex: 1, lineHeight: '1.3' },
   statusBadge: { padding: '6px 12px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', color: 'white', textTransform: 'uppercase' as const, letterSpacing: '0.5px' },
@@ -1993,7 +1966,7 @@ sessionCard: {
   exportButton: { padding: '10px 16px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)' },
   backButton: { padding: '10px 16px', backgroundColor: 'var(--text-muted)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', marginBottom: '12px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', transition: 'opacity 0.2s' },
   currentSessionInfo: { backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '10px', marginBottom: '14px', boxShadow: '0 2px 8px var(--shadow-color)', border: '1px solid var(--border-light)' },
-  statutTermine: { padding: '6px 12px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' },
+  statutTermine: { padding: '6px 12px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' }
 };
 
 export default Tests;
