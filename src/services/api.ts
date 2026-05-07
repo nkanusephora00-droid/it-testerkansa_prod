@@ -111,6 +111,17 @@ export interface Todo {
   createdAt: string;
 }
 
+export interface UserWithTodos {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  profilePhoto: string;
+  createdAt: string;
+  todos: Todo[];
+}
+
 export interface Message {
   id: number;
   senderId: number;
@@ -208,12 +219,18 @@ export const authAPI = {
 
 // Users API
 export const usersAPI = {
-  getAll: async () => (await api.get<User[]>("/users")).data,
+  getAll: async () => {
+    const response = await api.get("/users", { 
+      params: { page: 0, size: 1000, sortBy: 'id', sortDir: 'asc' } 
+    });
+    return response.data.content || response.data;
+  },
   getAvailable: async () => (await api.get<User[]>("/users/available")).data,
   getById: async (id: number) => (await api.get<User>(`/users/${id}`)).data,
   create: async (data: Partial<User>) => (await api.post<User>("/users", data)).data,
   update: async (id: number, data: Partial<User>) => (await api.put<User>(`/users/${id}`, data)).data,
   delete: async (id: number) => (await api.delete(`/users/${id}`)).data,
+  toggleStatus: async (id: number) => (await api.patch<User>(`/users/${id}/toggle-status`)).data,
 };
 
 // Profile API
@@ -303,6 +320,7 @@ export const todosAPI = {
   update: async (id: number, data: Partial<Todo>) => (await api.put<Todo>(`/todos/${id}`, data)).data,
   delete: async (id: number) => (await api.delete(`/todos/${id}`)).data,
   toggle: async (id: number) => (await api.patch(`/todos/${id}/toggle`)).data,
+  getUsersWithTodos: async () => (await api.get<UserWithTodos[]>("/todos/users")).data,
 };
 
 // Messages API

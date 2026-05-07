@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { todosAPI, usersAPI } from '../services/api';
+import { todosAPI, usersAPI, UserWithTodos } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTrash, faCheck, faTimes, faDownload, faEdit, faListCheck } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTrash, faCheck, faTimes, faDownload, faEdit, faListCheck, faUsers } from '@fortawesome/free-solid-svg-icons';
 
 interface Todo {
   id: number;
@@ -17,11 +17,13 @@ interface Todo {
 const Todos: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [usersWithTodos, setUsersWithTodos] = useState<UserWithTodos[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [quickAddMode, setQuickAddMode] = useState(false);
+  const [viewMode, setViewMode] = useState<'todos' | 'users'>('todos');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -31,8 +33,12 @@ const Todos: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchTodos();
-  }, []);
+    if (viewMode === 'todos') {
+      fetchTodos();
+    } else {
+      fetchUsersWithTodos();
+    }
+  }, [viewMode]);
 
   const fetchTodos = async () => {
     try {
@@ -47,6 +53,20 @@ const Todos: React.FC = () => {
         console.error('Error fetching todos:', err);
       }
       setMessage({ type: 'error', text: 'Erreur lors du chargement des tâches' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUsersWithTodos = async () => {
+    try {
+      const data = await todosAPI.getUsersWithTodos();
+      setUsersWithTodos(data);
+    } catch (err: unknown) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching users with todos:', err);
+      }
+      setMessage({ type: 'error', text: 'Erreur lors du chargement des utilisateurs avec leurs tâches' });
     } finally {
       setLoading(false);
     }
@@ -91,7 +111,11 @@ const Todos: React.FC = () => {
           resetForm();
         }
       }
-      fetchTodos();
+      if (viewMode === 'todos') {
+        fetchTodos();
+      } else {
+        fetchUsersWithTodos();
+      }
     } catch (err: unknown) {
       setMessage({ type: 'error', text: 'Erreur lors de la sauvegarde' });
     }
@@ -100,7 +124,11 @@ const Todos: React.FC = () => {
   const handleToggle = async (id: number) => {
     try {
       await todosAPI.toggle(id);
-      fetchTodos();
+      if (viewMode === 'todos') {
+        fetchTodos();
+      } else {
+        fetchUsersWithTodos();
+      }
     } catch (err: unknown) {
       setMessage({ type: 'error', text: 'Erreur lors de la mise à jour' });
     }
@@ -111,7 +139,11 @@ const Todos: React.FC = () => {
     try {
       await todosAPI.delete(id);
       setMessage({ type: 'success', text: 'Tâche supprimée!' });
-      fetchTodos();
+      if (viewMode === 'todos') {
+        fetchTodos();
+      } else {
+        fetchUsersWithTodos();
+      }
     } catch (err: unknown) {
       setMessage({ type: 'error', text: 'Erreur lors de la suppression' });
     }
@@ -182,18 +214,42 @@ const Todos: React.FC = () => {
       <main style={styles.main}>
         <div style={styles.pageHeader}>
           <div>
-            <h2 style={styles.pageTitle}><FontAwesomeIcon icon={faListCheck} /> Liste des tâches</h2>
+            <h2 style={styles.pageTitle}>
+              {viewMode === 'todos' ? <><FontAwesomeIcon icon={faListCheck} /> Liste des tâches</> : <><FontAwesomeIcon icon={faUsers} /> Utilisateurs avec leurs tâches</>}
+            </h2>
             <p style={styles.pageSubtitle}>
-              {pendingTodos.length} tâche{pendingTodos.length !== 1 ? 's' : ''} en attente · {completedTodos.length} terminée{completedTodos.length !== 1 ? 's' : ''}
+              {viewMode === 'todos' ? (
+                <>{pendingTodos.length} tâche{pendingTodos.length !== 1 ? 's' : ''} en attente · {completedTodos.length} terminée{completedTodos.length !== 1 ? 's' : ''}</>
+              ) : (
+                <>{usersWithTodos.length} utilisateur{usersWithTodos.length !== 1 ? 's' : ''} avec {usersWithTodos.reduce((acc, user) => acc + user.todos.length, 0)} tâche{usersWithTodos.reduce((acc, user) => acc + user.todos.length, 0) !== 1 ? 's' : ''}</>
+              )}
             </p>
           </div>
           <div style={styles.headerActions}>
-            <button style={styles.downloadButton} onClick={downloadTodos} disabled={todos.length === 0}>
-              <FontAwesomeIcon icon={faDownload} /> Télécharger
-            </button>
-            <button style={styles.addButton} onClick={() => { resetForm(); setShowForm(true); }}>
-              <FontAwesomeIcon icon={faPlus} /> Nouvelle tâche
-            </button>
+            <div style={styles.viewToggle}>
+              <button 
+                style={viewMode === 'todos' ? styles.viewButtonActive : styles.viewButton}
+                onClick={() => setViewMode('todos')}
+              >
+                <FontAwesomeIcon icon={faListCheck} /> Tâches
+              </button>
+              <button 
+                style={viewMode === 'users' ? styles.viewButtonActive : styles.viewButton}
+                onClick={() => setViewMode('users')}
+              >
+                <FontAwesomeIcon icon={faUsers} /> Utilisateurs
+              </button>
+            </div>
+            {viewMode === 'todos' && (
+              <>
+                <button style={styles.downloadButton} onClick={downloadTodos} disabled={todos.length === 0}>
+                  <FontAwesomeIcon icon={faDownload} /> Télécharger
+                </button>
+                <button style={styles.addButton} onClick={() => { resetForm(); setShowForm(true); }}>
+                  <FontAwesomeIcon icon={faPlus} /> Nouvelle tâche
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -380,6 +436,117 @@ const Todos: React.FC = () => {
             )}
           </div>
         )}
+
+        {viewMode === 'users' && (
+          <div style={styles.usersContainer}>
+            {usersWithTodos.length === 0 ? (
+              <div style={styles.emptyState}>
+                <div style={styles.emptyIcon}>
+                  <FontAwesomeIcon icon={faUsers} />
+                </div>
+                <h3>Aucun utilisateur avec des tâches</h3>
+                <p>Aucun utilisateur n'a de tâches assignées</p>
+              </div>
+            ) : (
+              usersWithTodos.map((user) => (
+                <div key={user.id} style={styles.userCard}>
+                  <div style={styles.userHeader}>
+                    <div style={styles.userInfo}>
+                      <h3 style={styles.userName}>{user.username}</h3>
+                      <p style={styles.userEmail}>{user.email}</p>
+                      <span style={{ ...styles.roleBadge, backgroundColor: user.role === 'admin' ? 'var(--danger-color)' : 'var(--info-color)' }}>
+                        {user.role}
+                      </span>
+                    </div>
+                    <div style={styles.userStats}>
+                      <span style={styles.statBadge}>
+                        {user.todos.filter(t => !t.completed).length} en cours
+                      </span>
+                      <span style={{ ...styles.statBadge, backgroundColor: 'var(--success-color)' }}>
+                        {user.todos.filter(t => t.completed).length} terminées
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {user.todos.length === 0 ? (
+                    <p style={styles.noTodos}>Aucune tâche assignée</p>
+                  ) : (
+                    <div style={styles.userTodos}>
+                      {user.todos.filter(t => !t.completed).map((todo) => (
+                        <div key={todo.id} style={styles.todoItem}>
+                          <button
+                            style={styles.checkButton}
+                            onClick={() => handleToggle(todo.id)}
+                            title="Marquer comme terminé"
+                          >
+                            <FontAwesomeIcon icon={faCheck} />
+                          </button>
+                          <div style={styles.todoContent}>
+                            <div style={styles.todoTitle}>{todo.title}</div>
+                            {todo.description && (
+                              <div style={styles.todoDescription}>{todo.description}</div>
+                            )}
+                            <div style={styles.todoMeta}>
+                              {todo.priority === 'high' && (
+                                <span style={{ ...styles.priorityBadge, backgroundColor: 'var(--danger-color)' }}>
+                                  Haute
+                                </span>
+                              )}
+                              {todo.priority === 'low' && (
+                                <span style={styles.priorityBadge}>Basse</span>
+                              )}
+                              {todo.dueDate && (
+                                <span style={styles.dueDate}>
+                                  Échéance: {todo.dueDate}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div style={styles.todoActions}>
+                            <button style={styles.editButton} onClick={() => handleEdit(todo)} title="Modifier">
+                              <FontAwesomeIcon icon={faEdit} />
+                            </button>
+                            <button style={styles.deleteButton} onClick={() => handleDelete(todo.id)} title="Supprimer">
+                              <FontAwesomeIcon icon={faTrash} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {user.todos.filter(t => t.completed).length > 0 && (
+                        <>
+                          <h4 style={styles.completedTitle}>Terminées ({user.todos.filter(t => t.completed).length})</h4>
+                          {user.todos.filter(t => t.completed).map((todo) => (
+                            <div key={todo.id} style={{ ...styles.todoItem, opacity: 0.7 }}>
+                              <button
+                                style={{ ...styles.checkButton, backgroundColor: 'var(--success-color)' }}
+                                onClick={() => handleToggle(todo.id)}
+                                title="Marquer comme non terminé"
+                              >
+                                <FontAwesomeIcon icon={faCheck} />
+                              </button>
+                              <div style={styles.todoContent}>
+                                <div style={{ ...styles.todoTitle, textDecoration: 'line-through' }}>{todo.title}</div>
+                                {todo.description && (
+                                  <div style={styles.todoDescription}>{todo.description}</div>
+                                )}
+                              </div>
+                              <div style={styles.todoActions}>
+                                <button style={styles.deleteButton} onClick={() => handleDelete(todo.id)} title="Supprimer">
+                                  <FontAwesomeIcon icon={faTrash} />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </main>
     </div>
   );
@@ -429,6 +596,21 @@ const styles: { [key: string]: React.CSSProperties } = {
   todoActions: { display: 'flex', gap: '8px' },
   editButton: { padding: '8px', backgroundColor: 'transparent', color: 'var(--text-secondary)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' },
   deleteButton: { padding: '8px', backgroundColor: 'transparent', color: 'var(--danger-color)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' },
+  viewToggle: { display: 'flex', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', overflow: 'hidden' },
+  viewButton: { padding: '10px 16px', backgroundColor: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' },
+  viewButtonActive: { padding: '10px 16px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' },
+  usersContainer: { display: 'flex', flexDirection: 'column', gap: '20px' },
+  userCard: { backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: '20px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px var(--shadow-color)' },
+  userHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' },
+  userInfo: { flex: 1 },
+  userName: { margin: '0 0 4px', fontSize: '18px', color: 'var(--text-primary)' },
+  userEmail: { margin: '0 0 8px', color: 'var(--text-secondary)', fontSize: '14px' },
+  roleBadge: { padding: '4px 8px', borderRadius: 'var(--radius-full)', color: 'white', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' },
+  userStats: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
+  statBadge: { padding: '4px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--text-muted)', color: 'white', fontSize: '11px', fontWeight: 600 },
+  noTodos: { color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center', padding: '20px' },
+  userTodos: { display: 'flex', flexDirection: 'column', gap: '8px' },
+  completedTitle: { margin: '16px 0 8px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 500 },
 };
 
 export default Todos;
