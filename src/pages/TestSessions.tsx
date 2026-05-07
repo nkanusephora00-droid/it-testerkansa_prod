@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { testSessionsAPI, applicationsAPI, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faFilePdf, faFileWord, faEdit, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faMinus } from '@fortawesome/free-solid-svg-icons';
 
 interface TestSession {
   id: number;
@@ -61,19 +61,16 @@ const TestSessions: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (statut: string) => {
-    const color = getStatusColor(statut);
-    return {
-      padding: '6px 12px',
-      borderRadius: '20px',
-      fontSize: '12px',
-      fontWeight: 600,
-      backgroundColor: color,
-      color: 'white',
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.5px'
-    };
-  };
+  const getStatusBadge = (statut: string) => ({
+    padding: '4px 10px',
+    borderRadius: '12px',
+    fontSize: '11px',
+    fontWeight: 600,
+    backgroundColor: getStatusColor(statut),
+    color: 'white',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px'
+  });
 
   const fetchData = useCallback(async () => {
     try {
@@ -264,24 +261,22 @@ const TestSessions: React.FC = () => {
     }
   };
 
-  const openSessionDetails = (session: TestSession) => {
-    setSelectedSession(session);
-  };
-
-  const closeSessionDetails = () => {
-    setSelectedSession(null);
-  };
+  if (loading) {
+    return <div style={styles.loading}>Chargement...</div>;
+  }
 
   return (
     <div style={styles.container}>
       <main style={styles.main}>
-        <div style={styles.header}>
+        <div style={styles.pageHeader}>
           <div>
             <h2 style={styles.pageTitle}>Gestion des Sessions</h2>
-            <p style={styles.pageSubtitle}>Créez et gérez vos sessions de test</p>
+            <p style={styles.pageSubtitle}>
+              {sessions.length} session{sessions.length !== 1 ? 's' : ''} · {sessions.reduce((acc, s) => acc + (s.total_tests || 0), 0)} tests au total
+            </p>
           </div>
-          <button style={styles.newButton} onClick={() => setShowCreateModal(true)}>
-            <FontAwesomeIcon icon={faEdit} /> Nouvelle session
+          <button style={styles.addButton} onClick={() => setShowCreateModal(true)}>
+            <FontAwesomeIcon icon={faPlus} /> Nouvelle session
           </button>
         </div>
 
@@ -295,20 +290,58 @@ const TestSessions: React.FC = () => {
           <div style={styles.sessionDetails}>
             <div style={styles.sessionDetailsHeader}>
               <h3 style={styles.sessionDetailsTitle}>{selectedSession.nom}</h3>
-              <button style={styles.closeButton} onClick={closeSessionDetails}>×</button>
+              <button style={styles.closeButton} onClick={() => setSelectedSession(null)}>
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
             </div>
             <div style={styles.sessionDetailsContent}>
-              <p><strong>Statut:</strong> <span style={getStatusBadge(selectedSession.statut)}>{selectedSession.statut}</span></p>
-              <p><strong>Application:</strong> {getAppName(selectedSession.applicationId)}</p>
-              {selectedSession.environnement && <p><strong>Environnement:</strong> {selectedSession.environnement}</p>}
-              {selectedSession.version && <p><strong>Version:</strong> {selectedSession.version}</p>}
-              {selectedSession.nom_document && <p><strong>Document:</strong> {selectedSession.nom_document}</p>}
-              <p><strong>Total tests:</strong> {selectedSession.total_tests || 0}</p>
-              <p><strong>Tests OK:</strong> {selectedSession.tests_ok || 0}</p>
-              <p><strong>Tests BUG:</strong> {selectedSession.tests_bug || 0}</p>
+              <div style={styles.detailRow}>
+                <span style={styles.detailLabel}>Statut:</span>
+                <span style={getStatusBadge(selectedSession.statut)}>{selectedSession.statut}</span>
+              </div>
+              <div style={styles.detailRow}>
+                <span style={styles.detailLabel}>Application:</span>
+                <span>{getAppName(selectedSession.applicationId)}</span>
+              </div>
+              {selectedSession.environnement && (
+                <div style={styles.detailRow}>
+                  <span style={styles.detailLabel}>Environnement:</span>
+                  <span>{selectedSession.environnement}</span>
+                </div>
+              )}
+              {selectedSession.version && (
+                <div style={styles.detailRow}>
+                  <span style={styles.detailLabel}>Version:</span>
+                  <span>{selectedSession.version}</span>
+                </div>
+              )}
+              {selectedSession.nom_document && (
+                <div style={styles.detailRow}>
+                  <span style={styles.detailLabel}>Document:</span>
+                  <span>{selectedSession.nom_document}</span>
+                </div>
+              )}
+              <div style={styles.detailRow}>
+                <span style={styles.detailLabel}>Total tests:</span>
+                <span>{selectedSession.total_tests || 0}</span>
+              </div>
+              <div style={styles.detailRow}>
+                <span style={styles.detailLabel}>Tests OK:</span>
+                <span style={{ color: '#27ae60', fontWeight: 600 }}>{selectedSession.tests_ok || 0}</span>
+              </div>
+              <div style={styles.detailRow}>
+                <span style={styles.detailLabel}>Tests BUG:</span>
+                <span style={{ color: '#dc3545', fontWeight: 600 }}>{selectedSession.tests_bug || 0}</span>
+              </div>
+              {selectedSession.description && (
+                <div style={styles.detailRow}>
+                  <span style={styles.detailLabel}>Description:</span>
+                  <span style={{ maxWidth: '400px' }}>{selectedSession.description}</span>
+                </div>
+              )}
               <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
                 <button 
-                  style={styles.exportButton}
+                  style={styles.exportPdfButton}
                   onClick={() => handleExportPDF(selectedSession)}
                 >
                   <FontAwesomeIcon icon={faFilePdf} /> Exporter PDF
@@ -324,96 +357,91 @@ const TestSessions: React.FC = () => {
           </div>
         )}
 
-        <div style={styles.tableSection}>
-          <h3 style={styles.sectionTitle}>Liste des sessions</h3>
-          {loading ? (
-            <p>Chargement...</p>
-          ) : (
-            <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.tableTh}>ID</th>
-                    <th style={styles.tableTh}>Nom</th>
-                    <th style={styles.tableTh}>Application</th>
-                    <th style={styles.tableTh}>Environnement</th>
-                    <th style={styles.tableTh}>Version</th>
-                    <th style={styles.tableTh}>Statut</th>
-                    <th style={styles.tableTh}>Tests</th>
-                    <th style={styles.tableTh}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessions.map((session) => (
-                    <tr key={session.id} style={styles.tableTrHover}>
-                      <td style={styles.tableTd}>{session.id}</td>
-                      <td style={styles.tableTd}>{session.nom}</td>
-                      <td style={styles.tableTd}>{getAppName(session.applicationId)}</td>
-                      <td style={styles.tableTd}>{session.environnement || '-'}</td>
-                      <td style={styles.tableTd}>{session.version || '-'}</td>
-                      <td style={styles.tableTd}>
-                        <span style={getStatusBadge(session.statut)}>
-                          {session.statut}
-                        </span>
-                      </td>
-                      <td style={styles.tableTd}>
-                        {session.total_tests || 0} / OK: {session.tests_ok || 0} / BUG: {session.tests_bug || 0}
-                      </td>
-                      <td style={styles.tableTd}>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                          <button 
-                            style={styles.viewButton}
-                            onClick={() => openSessionDetails(session)}
-                            title="Voir détails"
-                          >
-                            <FontAwesomeIcon icon={faEye} />
-                          </button>
-                          <button 
-                            style={styles.editButton}
-                            onClick={() => openEditModal(session)}
-                            title="Modifier"
-                          >
-                            <FontAwesomeIcon icon={faEdit} />
-                          </button>
-                          <button 
-                            style={styles.deleteButton}
-                            onClick={() => handleDelete(session.id)}
-                            title="Supprimer"
-                          >
-                            <FontAwesomeIcon icon={faTrash} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {sessions.length === 0 ? (
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIcon}>
+              <FontAwesomeIcon icon={faPlus} />
             </div>
-          )}
-        </div>
+            <h3>Aucune session</h3>
+            <p>Créez votre première session de test pour commencer</p>
+            <button style={styles.emptyButton} onClick={() => setShowCreateModal(true)}>
+              <FontAwesomeIcon icon={faPlus} /> Créer une session
+            </button>
+          </div>
+        ) : (
+          <div style={styles.sessionsList}>
+            {sessions.map((session) => (
+              <div key={session.id} style={styles.sessionItem}>
+                <div style={styles.sessionMain}>
+                  <div style={styles.sessionLeft}>
+                    <div style={styles.sessionHeader}>
+                      <h3 style={styles.sessionTitle}>{session.nom}</h3>
+                      <span style={getStatusBadge(session.statut)}>{session.statut}</span>
+                    </div>
+                    <div style={styles.sessionMeta}>
+                      <span><FontAwesomeIcon icon={faMinus} /> {getAppName(session.applicationId)}</span>
+                      {session.environnement && <span><FontAwesomeIcon icon={faMinus} /> {session.environnement}</span>}
+                      {session.version && <span><FontAwesomeIcon icon={faMinus} /> v{session.version}</span>}
+                    </div>
+                    {session.description && (
+                      <p style={styles.sessionDescription}>{session.description}</p>
+                    )}
+                    <div style={styles.sessionStats}>
+                      <span>Total: <strong>{session.total_tests || 0}</strong></span>
+                      <span style={{ color: '#27ae60' }}>OK: <strong>{session.tests_ok || 0}</strong></span>
+                      <span style={{ color: '#dc3545' }}>BUG: <strong>{session.tests_bug || 0}</strong></span>
+                    </div>
+                  </div>
+                  <div style={styles.sessionActions}>
+                    <button 
+                      style={styles.viewButton}
+                      onClick={() => setSelectedSession(session)}
+                      title="Voir détails"
+                    >
+                      <FontAwesomeIcon icon={faEye} />
+                    </button>
+                    <button 
+                      style={styles.editButton}
+                      onClick={() => openEditModal(session)}
+                      title="Modifier"
+                    >
+                      <FontAwesomeIcon icon={faEdit} />
+                    </button>
+                    <button 
+                      style={styles.deleteButton}
+                      onClick={() => handleDelete(session.id)}
+                      title="Supprimer"
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
 
+      {/* Modal création */}
       {showCreateModal && (
         <div style={styles.modal}>
           <div style={styles.modalContent}>
-            <span style={styles.close} onClick={() => setShowCreateModal(false)}>&times;</span>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.sectionTitle}>Nouvelle session</h3>
-              <p style={styles.modalSubtitle}>Créez une session pour regrouper vos cas de test.</p>
-            </div>
+            <span style={styles.closeButton} onClick={() => setShowCreateModal(false)}>&times;</span>
+            <h3 style={styles.modalTitle}>Nouvelle session</h3>
+            <p style={styles.modalSubtitle}>Créez une session pour regrouper vos cas de test.</p>
             <form onSubmit={handleCreateSession} style={styles.modalForm}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Nom *</label>
+                <input
+                  type="text"
+                  value={sessionForm.nom}
+                  onChange={(e) => setSessionForm({ ...sessionForm, nom: e.target.value })}
+                  style={styles.input}
+                  required
+                  placeholder="Nom de la session"
+                />
+              </div>
               <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Nom *</label>
-                  <input
-                    type="text"
-                    value={sessionForm.nom}
-                    onChange={(e) => setSessionForm({ ...sessionForm, nom: e.target.value })}
-                    style={styles.input}
-                    required
-                    placeholder="Nom de la session"
-                  />
-                </div>
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Application</label>
                   <select
@@ -421,23 +449,11 @@ const TestSessions: React.FC = () => {
                     onChange={(e) => setSessionForm({ ...sessionForm, applicationId: Number(e.target.value) })}
                     style={styles.select}
                   >
-                    <option value="">Sélectionner une application</option>
+                    <option value="">Sélectionner</option>
                     {applications.map((app) => (
                       <option key={app.id} value={app.id}>{app.nom}</option>
                     ))}
                   </select>
-                </div>
-              </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Nom du document</label>
-                  <input
-                    type="text"
-                    value={sessionForm.nom_document}
-                    onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
-                    style={styles.input}
-                    placeholder="Ex: Plan de tests v1.0"
-                  />
                 </div>
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Statut</label>
@@ -452,13 +468,23 @@ const TestSessions: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <div style={styles.formGroupFull}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Nom du document</label>
+                <input
+                  type="text"
+                  value={sessionForm.nom_document}
+                  onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
+                  style={styles.input}
+                  placeholder="Ex: Plan de tests v1.0"
+                />
+              </div>
+              <div style={styles.formGroup}>
                 <label style={styles.label}>Description</label>
                 <textarea
                   value={sessionForm.description}
                   onChange={(e) => setSessionForm({ ...sessionForm, description: e.target.value })}
                   style={styles.textarea}
-                  placeholder="Description de la session..."
+                  placeholder="Description..."
                   rows={3}
                 />
               </div>
@@ -471,15 +497,14 @@ const TestSessions: React.FC = () => {
         </div>
       )}
 
+      {/* Modal édition */}
       {showModal && (
         <div style={styles.modal}>
           <div style={styles.modalContent}>
-            <span style={styles.close} onClick={() => setShowModal(false)}>&times;</span>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.sectionTitle}>Modifier la session</h3>
-            </div>
+            <span style={styles.closeButton} onClick={() => setShowModal(false)}>&times;</span>
+            <h3 style={styles.modalTitle}>Modifier la session</h3>
             <form onSubmit={handleUpdateSession} style={styles.modalForm}>
-              <div style={styles.formGroupFull}>
+              <div style={styles.formGroup}>
                 <label style={styles.label}>Nom *</label>
                 <input
                   type="text"
@@ -535,7 +560,7 @@ const TestSessions: React.FC = () => {
                   />
                 </div>
               </div>
-              <div style={styles.formGroupFull}>
+              <div style={styles.formGroup}>
                 <label style={styles.label}>Nom du document</label>
                 <input
                   type="text"
@@ -544,7 +569,7 @@ const TestSessions: React.FC = () => {
                   style={styles.input}
                 />
               </div>
-              <div style={styles.formGroupFull}>
+              <div style={styles.formGroup}>
                 <label style={styles.label}>Description</label>
                 <textarea
                   value={editFormData.description}
@@ -567,125 +592,334 @@ const TestSessions: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
-  main: { padding: '30px', maxWidth: '1400px', margin: '0 auto', minHeight: 'calc(100vh - 70px)' },
+  main: { padding: '30px', maxWidth: '900px', margin: '0 auto', width: '100%', minHeight: 'calc(100vh - 70px)' },
   
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap' as const, gap: '16px' },
+  pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' },
   pageTitle: { margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' },
   pageSubtitle: { margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '14px' },
-  
-  newButton: { padding: '10px 20px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '14px', display: 'inline-flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s ease' },
-  
-  success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: 'var(--radius-md)', marginBottom: '20px' },
-  error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: 'var(--radius-md)', marginBottom: '20px' },
-  
-  tableSection: { backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px var(--shadow-color)' },
-  sectionTitle: { margin: '0 0 20px', fontSize: '18px' },
-  
-  table: { 
-    width: '100%', 
-    borderCollapse: 'collapse' as const, 
-    borderRadius: 'var(--radius-md)', 
-    overflow: 'hidden',
-    backgroundColor: 'var(--bg-card)'
-  },
-  tableTh: { 
-    padding: '12px', 
-    textAlign: 'left' as const, 
-    backgroundColor: 'var(--hover-bg)', 
-    fontWeight: 600, 
-    color: 'var(--text-primary)',
-    borderBottom: '1px solid var(--border-color)',
-    fontSize: '13px'
-  },
-  tableTd: { 
-    padding: '12px', 
-    borderBottom: '1px solid var(--border-color)', 
-    color: 'var(--text-primary)',
-    fontSize: '13px'
-  },
-  tableTrHover: { 
-    backgroundColor: 'var(--hover-bg)',
-    transition: 'background-color 0.2s ease'
-  },
-  
-  viewButton: { padding: '8px 12px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' },
-  editButton: { padding: '8px 12px', backgroundColor: '#3498db', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' },
-  deleteButton: { padding: '8px 12px', backgroundColor: '#ff6b6b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' },
-  exportButton: { padding: '8px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' },
-  exportWordButton: { padding: '8px 12px', backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' },
 
-  // Session details panel
-  sessionDetails: { 
-    backgroundColor: 'var(--bg-card)', 
-    borderRadius: 'var(--radius-lg)', 
-    padding: '24px', 
-    marginBottom: '24px', 
-    border: '1px solid var(--border-color)', 
-    boxShadow: '0 2px 8px var(--shadow-color)' 
+  addButton: { padding: '12px 20px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' },
+
+  success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '8px', marginBottom: '20px' },
+  error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: '8px', marginBottom: '20px' },
+
+  loading: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--text-secondary)' },
+
+  emptyState: { textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' },
+  emptyIcon: { fontSize: '48px', marginBottom: '16px', opacity: 0.5, color: 'var(--text-secondary)' },
+  emptyButton: { marginTop: '16px', padding: '12px 24px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '8px' },
+
+  sessionsList: { display: 'flex', flexDirection: 'column', gap: '16px' },
+
+  sessionItem: {
+    backgroundColor: 'var(--bg-card)',
+    borderRadius: '12px',
+    padding: '20px',
+    border: '1px solid var(--border-color)',
+    boxShadow: '0 2px 8px var(--shadow-color)',
+    transition: 'all 0.2s ease'
   },
-  sessionDetailsHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
-  sessionDetailsTitle: { margin: 0, fontSize: '18px', color: 'var(--text-primary)' },
-  closeButton: { 
-    background: 'none', 
-    border: 'none', 
-    fontSize: '28px', 
-    cursor: 'pointer', 
+
+  sessionMain: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '16px',
+    flexWrap: 'wrap' as const
+  },
+
+  sessionLeft: {
+    flex: 1,
+    minWidth: '280px'
+  },
+
+  sessionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '12px',
+    gap: '12px',
+    flexWrap: 'wrap' as const
+  },
+
+  sessionTitle: {
+    margin: 0,
+    fontSize: '18px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+    lineHeight: '1.3'
+  },
+
+  sessionMeta: {
+    display: 'flex',
+    gap: '16px',
+    flexWrap: 'wrap' as const,
+    fontSize: '13px',
+    color: 'var(--text-secondary)',
+    marginBottom: '12px'
+  },
+
+  sessionDescription: {
+    fontSize: '14px',
+    color: 'var(--text-secondary)',
+    marginBottom: '12px',
+    lineHeight: '1.5'
+  },
+
+  sessionStats: {
+    display: 'flex',
+    gap: '16px',
+    fontSize: '13px',
+    color: 'var(--text-secondary)',
+    padding: '10px 14px',
+    backgroundColor: 'var(--hover-bg)',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color)'
+  },
+
+  sessionActions: {
+    display: 'flex',
+    gap: '8px',
+    flexShrink: 0
+  },
+
+  viewButton: { padding: '8px 12px', backgroundColor: 'var(--info-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 },
+  editButton: { padding: '8px 12px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 },
+  deleteButton: { padding: '8px 12px', backgroundColor: 'var(--danger-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 },
+
+  // Session details panel (comme Todos)
+  sessionDetails: {
+    backgroundColor: 'var(--bg-card)',
+    borderRadius: '12px',
+    padding: '24px',
+    marginBottom: '24px',
+    border: '1px solid var(--border-color)',
+    boxShadow: '0 2px 8px var(--shadow-color)'
+  },
+
+  sessionDetailsHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '20px'
+  },
+
+  sessionDetailsTitle: {
+    margin: 0,
+    fontSize: '20px',
+    fontWeight: 600,
+    color: 'var(--text-primary)'
+  },
+
+  closeButton: {
+    background: 'none',
+    border: 'none',
+    fontSize: '28px',
+    cursor: 'pointer',
     color: 'var(--text-muted)',
     lineHeight: 1,
-    padding: 0,
     width: '32px',
     height: '32px',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    borderRadius: '50%',
+    transition: 'background-color 0.2s'
   },
-  sessionDetailsContent: { display: 'flex', flexDirection: 'column' as const, gap: '8px', fontSize: '14px' },
+
+  sessionDetailsContent: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '12px',
+    fontSize: '14px'
+  },
+
+  detailRow: {
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'flex-start'
+  },
+
+  detailLabel: {
+    fontWeight: 600,
+    color: 'var(--text-secondary)',
+    minWidth: '140px',
+    flexShrink: 0
+  },
+
+  exportPdfButton: {
+    padding: '10px 16px',
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: 600,
+    fontSize: '13px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+
+  exportWordButton: {
+    padding: '10px 16px',
+    backgroundColor: '#17a2b8',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: 600,
+    fontSize: '13px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
 
   // Modal styles
-  modal: { 
-    position: 'fixed' as const, 
-    top: 0, 
-    left: 0, 
-    right: 0, 
-    bottom: 0, 
-    width: '100%', 
-    height: '100%', 
-    backgroundColor: 'rgba(0,0,0,0.6)', 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'flex-start', 
+  modal: {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
     zIndex: 1000,
     paddingTop: '40px',
     overflowY: 'auto' as const,
     backdropFilter: 'blur(4px)'
   },
-  modalContent: { 
-    backgroundColor: 'var(--bg-card)', 
-    padding: '20px', 
-    borderRadius: '16px', 
-    width: '95%', 
-    maxWidth: '500px', 
+
+  modalContent: {
+    backgroundColor: 'var(--bg-card)',
+    padding: '24px',
+    borderRadius: '16px',
+    width: '95%',
+    maxWidth: '500px',
     position: 'relative' as const,
     margin: '0 auto 40px auto',
     boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
     border: '1px solid var(--border-light)'
   },
-  modalHeader: { marginBottom: '20px' },
-  modalSubtitle: { fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' },
-  close: { position: 'absolute' as const, top: '15px', right: '20px', fontSize: '24px', cursor: 'pointer', color: 'var(--text-muted)' },
 
-  modalForm: { display: 'flex', flexDirection: 'column' as const, gap: '20px', padding: '8px 0' },
-  formRow: { display: 'flex', gap: '16px', flexWrap: 'wrap' as const },
-  formGroup: { marginBottom: '16px', flex: 1 },
-  formGroupFull: { marginBottom: '16px', width: '100%' },
-  label: { display: 'block', marginBottom: '6px', fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' },
-  input: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)' },
-  select: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)' },
-  textarea: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', resize: 'vertical', minHeight: '100px' },
-  formActions: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '20px', flexWrap: 'wrap' as const },
-  
-  submitButton: { padding: '12px 24px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '14px' },
-  cancelButton: { padding: '12px 24px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', fontWeight: 500, fontSize: '14px' },
+  modalTitle: {
+    margin: '0 0 4px',
+    fontSize: '20px',
+    fontWeight: 600,
+    color: 'var(--text-primary)'
+  },
+
+  modalSubtitle: {
+    margin: '0 0 20px',
+    fontSize: '13px',
+    color: 'var(--text-secondary)'
+  },
+
+  closeButton: {
+    position: 'absolute' as const,
+    top: '12px',
+    right: '16px',
+    cursor: 'pointer',
+    color: 'var(--text-muted)',
+    fontSize: '24px',
+    background: 'none',
+    border: 'none',
+    width: '28px',
+    height: '28px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '50%'
+  },
+
+  modalForm: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '16px'
+  },
+
+  formRow: {
+    display: 'flex',
+    gap: '16px',
+    flexWrap: 'wrap' as const
+  },
+
+  formGroup: {
+    flex: 1,
+    minWidth: '200px'
+  },
+
+  label: {
+    display: 'block',
+    marginBottom: '6px',
+    fontWeight: 500,
+    color: 'var(--text-secondary)',
+    fontSize: '13px'
+  },
+
+  input: {
+    width: '100%',
+    padding: '12px 14px',
+    border: '1px solid var(--border-color)',
+    borderRadius: '8px',
+    fontSize: '14px',
+    backgroundColor: 'var(--input-bg)',
+    color: 'var(--text-primary)'
+  },
+
+  select: {
+    width: '100%',
+    padding: '12px 14px',
+    border: '1px solid var(--border-color)',
+    borderRadius: '8px',
+    fontSize: '14px',
+    backgroundColor: 'var(--input-bg)',
+    color: 'var(--text-primary)',
+    cursor: 'pointer'
+  },
+
+  textarea: {
+    width: '100%',
+    padding: '12px 14px',
+    border: '1px solid var(--border-color)',
+    borderRadius: '8px',
+    fontSize: '14px',
+    backgroundColor: 'var(--input-bg)',
+    color: 'var(--text-primary)',
+    resize: 'vertical' as const,
+    minHeight: '80px'
+  },
+
+  formActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '12px',
+    marginTop: '8px'
+  },
+
+  submitButton: {
+    padding: '10px 20px',
+    backgroundColor: 'var(--success-color)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: 600
+  },
+
+  cancelButton: {
+    padding: '10px 20px',
+    backgroundColor: 'transparent',
+    color: 'var(--text-secondary)',
+    border: '1px solid var(--border-color)',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: 500
+  }
 };
 
 export default TestSessions;
