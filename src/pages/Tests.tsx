@@ -1233,7 +1233,7 @@ const Tests: React.FC = () => {
                     onClick={handleToggleSelectionMode}
                     title={selectionMode ? "Arrêter la sélection" : "Sélectionner des sessions"}
                   >
-                    <FontAwesomeIcon icon={faCompress} /> {selectionMode ? 'Sélection active' : 'Sélectionner'}
+                    <FontAwesomeIcon icon={faCompress} />
                   </button>
                   {selectionMode && (
                     <>
@@ -1262,7 +1262,7 @@ const Tests: React.FC = () => {
                     title="Consolider par utilisateur"
                     disabled={selectionMode && selectedSessions.length === 0}
                   >
-                    <FontAwesomeIcon icon={faCompress} /> Par utilisateur
+                    <FontAwesomeIcon icon={faCompress} />
                   </button>
                   <button 
                     style={styles.consolidationButton} 
@@ -1270,7 +1270,7 @@ const Tests: React.FC = () => {
                     title="Consolider globalement"
                     disabled={selectionMode && selectedSessions.length === 0}
                   >
-                    <FontAwesomeIcon icon={faCompress} /> Global
+                    <FontAwesomeIcon icon={faCompress} />
                   </button>
                 </>
               ) : (
@@ -1279,14 +1279,14 @@ const Tests: React.FC = () => {
                   onClick={handleResetConsolidation}
                   title="Réinitialiser la consolidation"
                 >
-                  <FontAwesomeIcon icon={faExpand} /> Réinitialiser
+                  <FontAwesomeIcon icon={faExpand} />
                 </button>
               )}
             </div>
           )}
         </div>
         <button style={styles.newSessionButton} onClick={() => { setShowSessionModal(true); }}>
-          <FontAwesomeIcon icon={faPlus} /> Nouvelle Session
+          <FontAwesomeIcon icon={faPlus} />
         </button>
       </div>
       <div style={styles.sessionsGrid}>
@@ -1317,7 +1317,7 @@ const Tests: React.FC = () => {
                   onClick={() => handleViewConsolidatedSession(consolidated)}
                   title="Voir les détails"
                 >
-                  <FontAwesomeIcon icon={faEye} /> Voir les tests
+                  <FontAwesomeIcon icon={faEye} />
                 </button>
                 <button 
                   style={styles.exportButton}
@@ -1396,7 +1396,7 @@ const Tests: React.FC = () => {
                     setView('tests');
                   }}
                 >
-                  <FontAwesomeIcon icon={faEye} /> Voir les tests
+                  <FontAwesomeIcon icon={faEye} />
                 </button>
                 <button 
                   style={styles.exportButton} 
@@ -1404,7 +1404,7 @@ const Tests: React.FC = () => {
                     handleExportSessionPDF(session);
                   }}
                 >
-                  <FontAwesomeIcon icon={faFilePdf} /> PDF
+                  <FontAwesomeIcon icon={faFilePdf} />
                 </button>
                 <button 
                   style={styles.exportButton} 
@@ -1412,7 +1412,7 @@ const Tests: React.FC = () => {
                     handleExportSessionWord(session);
                   }}
                 >
-                  📄 Word
+                  <FontAwesomeIcon icon={faFileWord} />
                 </button>
                 {session.statut !== 'Terminé' && (
                   <button 
@@ -1476,7 +1476,7 @@ const Tests: React.FC = () => {
               setShowTestForm(true);
             }}
           >
-            <FontAwesomeIcon icon={faPlus} /> Ajouter un test
+            <FontAwesomeIcon icon={faPlus} />
           </button>
         </div>
 
@@ -1518,7 +1518,7 @@ const Tests: React.FC = () => {
                   <td>{test.commentaires || '-'}</td>
                   <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                     <button style={{...styles.editButton, padding: '6px', backgroundColor: 'transparent', color: '#007bff'}} onClick={() => handleGenerateTestWord(test)} title="Générer Word">
-                      📄
+                      <FontAwesomeIcon icon={faFileWord} />
                     </button>
                     <button style={{...styles.editButton, padding: '6px', backgroundColor: 'transparent', color: '#4a90e2'}} onClick={() => handleEditTest(test)} title="Modifier">
                       <FontAwesomeIcon icon={faEdit} />
