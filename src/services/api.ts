@@ -133,6 +133,18 @@ export interface Message {
   read: boolean;
 }
 
+export interface SystemNotification {
+  id: number;
+  title: string;
+  message: string;
+  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'SYSTEM';
+  read: boolean;
+  targetUserId?: number;
+  createdBy: number;
+  createdAt: string;
+  actionUrl?: string;
+}
+
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -331,6 +343,19 @@ export const messagesAPI = {
   markAsRead: async (messageId: number) => (await api.patch(`/messages/${messageId}/read`)).data,
   getUnreadCount: async () => (await api.get<number>("/messages/unread-count")).data,
   getUnreadByUser: async () => (await api.get<Record<number, number>>("/messages/unread-by-user")).data,
+};
+
+// System Notifications API
+export const systemNotificationsAPI = {
+  getAll: async () => (await api.get<SystemNotification[]>("/system-notifications")).data,
+  getUnread: async () => (await api.get<SystemNotification[]>("/system-notifications/unread")).data,
+  getUnreadCount: async () => (await api.get<number>("/system-notifications/unread-count")).data,
+  markAsRead: async (id: number) => (await api.patch<SystemNotification>(`/system-notifications/${id}/read`)).data,
+  markAllAsRead: async () => (await api.patch("/system-notifications/read-all")).data,
+  create: async (data: { title: string; message: string; type: SystemNotification['type']; targetUserId?: number; actionUrl?: string }) => 
+    (await api.post<SystemNotification>("/system-notifications", data)).data,
+  createGlobal: async (data: { title: string; message: string; type: SystemNotification['type']; actionUrl?: string }) => 
+    (await api.post<SystemNotification>("/system-notifications/global", data)).data,
 };
 
 export default api;

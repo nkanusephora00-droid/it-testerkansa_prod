@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBell, faTimes, faCheck, faExclamationTriangle, faInfoCircle, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faBell, faTimes, faCheck, faExclamationTriangle, faInfoCircle, faCheckCircle, faEnvelope } from '@fortawesome/free-solid-svg-icons';
+import { messagesAPI, todosAPI, testsAPI, systemNotificationsAPI } from '../services/api';
 import './NotificationBell.css';
 
 interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: 'info' | 'success' | 'warning' | 'error' | 'message';
   timestamp: Date;
   read: boolean;
   actionUrl?: string;
+  senderId?: number;
+  senderUsername?: string;
 }
 
 const NotificationBell: React.FC = () => {
@@ -21,41 +24,102 @@ const NotificationBell: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Simuler des notifications initiales
+  // Charger les notifications depuis le backend
   useEffect(() => {
-    const initialNotifications: Notification[] = [
-      {
-        id: '1',
-        title: 'Nouvelle session de test',
-        message: 'La session "Tests Release v2.0" a été créée avec succès',
-        type: 'success',
-        timestamp: new Date(Date.now() - 1000 * 60 * 5), // Il y a 5 minutes
-        read: false,
-        actionUrl: '/tests'
-      },
-      {
-        id: '2',
-        title: 'Rappel de tâche',
-        message: 'Vous avez 3 tâches en attente de validation',
-        type: 'warning',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30), // Il y a 30 minutes
-        read: false,
-        actionUrl: '/todos'
-      },
-      {
-        id: '3',
-        title: 'Message reçu',
-        message: 'Vous avez reçu un nouveau message de l\'administrateur',
-        type: 'info',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60), // Il y a 1 heure
-        read: true,
-        actionUrl: '/messages'
-      }
-    ];
+    fetchNotifications();
     
-    setNotifications(initialNotifications);
-    setUnreadCount(initialNotifications.filter(n => !n.read).length);
+    // Rafraîchir automatiquement toutes les 30 secondes
+    const interval = setInterval(fetchNotifications, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const [messages, todos, tests, systemNotifications] = await Promise.all([
+        messagesAPI.getAll(),
+        todosAPI.getAll(),
+        testsAPI.getAll(),
+        systemNotificationsAPI.getAll()
+      ]);
+
+      const allNotifications: Notification[] = [];
+
+      // Ajouter les messages non lus comme notifications
+      messages.forEach((message: any) => {
+        allNotifications.push({
+          id: `msg_${message.id}`,
+          title: `Message de ${message.senderUsername}`,
+          message: message.content,
+          type: 'message',
+          timestamp: new Date(message.timestamp),
+          read: message.read,
+          actionUrl: '/messages',
+          senderId: message.senderId,
+          senderUsername: message.senderUsername
+        });
+      });
+
+      // Ajouter les notifications système
+      systemNotifications.forEach((notif: any) => {
+        allNotifications.push({
+          id: `sys_${notif.id}`,
+          title: notif.title,
+          message: notif.message,
+          type: notif.type.toLowerCase() as Notification['type'],
+          timestamp: new Date(notif.createdAt),
+          read: notif.read,
+          actionUrl: notif.actionUrl
+        });
+      });
+
+      // Ajouter les tâches en attente
+      todos.filter((t: any) => !t.completed).forEach((todo: any) => {
+        allNotifications.push({
+          id: `todo_${todo.id}`,
+          title: 'Tâche en attente',
+          message: todo.title,
+          type: 'warning',
+          timestamp: new Date(todo.createdAt),
+          read: false,
+          actionUrl: '/todos'
+        });
+      });
+
+      // Ajouter les tests avec des problèmes
+      tests.filter((t: any) => t.statut === 'BUG').forEach((test: any) => {
+        allNotifications.push({
+          id: `test_bug_${test.id}`,
+          title: 'BUG détecté',
+          message: `Test "${test.fonction}" - Statut: BUG`,
+          type: 'error',
+          timestamp: new Date(test.createdAt || Date.now()),
+          read: false,
+          actionUrl: '/tests'
+        });
+      });
+
+      tests.filter((t: any) => t.statut === 'EN COURS').forEach((test: any) => {
+        allNotifications.push({
+          id: `test_progress_${test.id}`,
+          title: 'Test en cours',
+          message: `Test "${test.fonction}" - En cours de vérification`,
+          type: 'info',
+          timestamp: new Date(test.createdAt || Date.now()),
+          read: false,
+          actionUrl: '/tests'
+        });
+      });
+
+      // Trier par date (plus récent en premier)
+      allNotifications.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+      setNotifications(allNotifications);
+      setUnreadCount(allNotifications.filter(n => !n.read).length);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
 
   // Fermer le dropdown quand on clique ailleurs
   useEffect(() => {
@@ -69,14 +133,49 @@ const NotificationBell: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const markAsRead = (notificationId: string) => {
+  const markAsRead = async (notificationId: string) => {
+    try {
+      // Si c'est un message, utiliser l'API messages
+      if (notificationId.startsWith('msg_')) {
+        const messageId = parseInt(notificationId.replace('msg_', ''));
+        await messagesAPI.markAsRead(messageId);
+      }
+      // Si c'est une notification système, utiliser l'API systemNotifications
+      else if (notificationId.startsWith('sys_')) {
+        const notifId = parseInt(notificationId.replace('sys_', ''));
+        await systemNotificationsAPI.markAsRead(notifId);
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+
+    // Mettre à jour l'état local
     setNotifications(prev => 
       prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
     );
     setUnreadCount(prev => Math.max(0, prev - 1));
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    try {
+      // Marquer tous les messages comme lus via l'API
+      const messageNotifications = notifications.filter(n => n.id.startsWith('msg_'));
+      for (const notification of messageNotifications) {
+        const messageId = parseInt(notification.id.replace('msg_', ''));
+        await messagesAPI.markAsRead(messageId);
+      }
+
+      // Marquer toutes les notifications système comme lues via l'API
+      const systemNotifs = notifications.filter(n => n.id.startsWith('sys_'));
+      for (const notification of systemNotifs) {
+        const notifId = parseInt(notification.id.replace('sys_', ''));
+        await systemNotificationsAPI.markAsRead(notifId);
+      }
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+    }
+
+    // Mettre à jour l'état local
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
   };
@@ -103,6 +202,7 @@ const NotificationBell: React.FC = () => {
       case 'warning': return faExclamationTriangle;
       case 'error': return faTimes;
       case 'info': return faInfoCircle;
+      case 'message': return faEnvelope;
       default: return faInfoCircle;
     }
   };
@@ -113,6 +213,7 @@ const NotificationBell: React.FC = () => {
       case 'warning': return '#f39c12';
       case 'error': return '#e74c3c';
       case 'info': return '#3498db';
+      case 'message': return '#9b59b6';
       default: return '#3498db';
     }
   };

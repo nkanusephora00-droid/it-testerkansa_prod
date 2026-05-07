@@ -105,12 +105,11 @@ const Users: React.FC = () => {
 
   const handleToggleUser = async (user: User) => {
     try {
-      await usersAPI.update(user.id, { isActive: !user.isActive });
+      await usersAPI.toggleStatus(user.id);
       setMessage({ type: 'success', text: user.isActive ? 'Utilisateur désactivé!' : 'Utilisateur activé!' });
       fetchUsers();
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { detail?: string } } };
-      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erreur lors de la mise à jour' });
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erreur lors de la modification du statut' });
     }
   };
 

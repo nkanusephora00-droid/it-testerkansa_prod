@@ -116,6 +116,16 @@ const TestSessions: React.FC = () => {
     }
   };
 
+  const handleStatusUpdate = async (sessionId: number, newStatus: string) => {
+    try {
+      await testSessionsAPI.update(sessionId, { statut: newStatus });
+      setMessage({ type: 'success', text: `Statut de la session mis à jour avec succès!` });
+      fetchData();
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de la mise à jour du statut' });
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -910,8 +920,12 @@ const TestSessions: React.FC = () => {
                       </td>
                       <td style={{...styles.tableTd, display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
                         <div style={{ position: 'relative' }}>
-                          <button style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#007bff'}} onClick={() => toggleExportMenu(session.id)} title="Exporter">
-                            📄
+                          <button 
+                            style={{...styles.editButton, padding: '8px 12px', backgroundColor: getStatusColor(session.statut), color: 'white'}} 
+                            onClick={() => toggleExportMenu(session.id)} 
+                            title="Changer le statut"
+                          >
+                            {session.statut} ▼
                           </button>
                           {showExportMenu === session.id && (
                             <div style={{
@@ -923,7 +937,7 @@ const TestSessions: React.FC = () => {
                               borderRadius: '4px',
                               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                               zIndex: 1000,
-                              minWidth: '120px'
+                              minWidth: '150px'
                             }}>
                               <button
                                 style={{
@@ -931,15 +945,58 @@ const TestSessions: React.FC = () => {
                                   width: '100%',
                                   padding: '8px 12px',
                                   border: 'none',
-                                  backgroundColor: 'transparent',
+                                  backgroundColor: session.statut === 'En cours' ? '#3498db' : 'transparent',
                                   textAlign: 'left',
                                   cursor: 'pointer',
-                                  fontSize: '12px'
+                                  fontSize: '12px',
+                                  color: session.statut === 'En cours' ? 'white' : '#3498db'
                                 }}
-                                onClick={() => handleGeneratePDF(session.id, session.nom)}
+                                onClick={() => {
+                                  handleStatusUpdate(session.id, 'En cours');
+                                  toggleExportMenu(null);
+                                }}
                               >
-                                📄 PDF
+                                🔄 En cours
                               </button>
+                              <button
+                                style={{
+                                  display: 'block',
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  border: 'none',
+                                  backgroundColor: session.statut === 'Terminée' ? '#27ae60' : 'transparent',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  color: session.statut === 'Terminée' ? 'white' : '#27ae60'
+                                }}
+                                onClick={() => {
+                                  handleStatusUpdate(session.id, 'Terminée');
+                                  toggleExportMenu(null);
+                                }}
+                              >
+                                ✅ Terminée
+                              </button>
+                              <button
+                                style={{
+                                  display: 'block',
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  border: 'none',
+                                  backgroundColor: session.statut === 'Bloquée' ? '#e74c3c' : 'transparent',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  color: session.statut === 'Bloquée' ? 'white' : '#e74c3c'
+                                }}
+                                onClick={() => {
+                                  handleStatusUpdate(session.id, 'Bloquée');
+                                  toggleExportMenu(null);
+                                }}
+                              >
+                                🚫 Bloquée
+                              </button>
+                              <div style={{ borderTop: '1px solid #eee' }}></div>
                               <button
                                 style={{
                                   display: 'block',
@@ -949,11 +1006,15 @@ const TestSessions: React.FC = () => {
                                   backgroundColor: 'transparent',
                                   textAlign: 'left',
                                   cursor: 'pointer',
-                                  fontSize: '12px'
+                                  fontSize: '12px',
+                                  color: '#007bff'
                                 }}
-                                onClick={() => handleGenerateWord(session.id, session.nom)}
+                                onClick={() => {
+                                  handleGeneratePDF(session.id, session.nom);
+                                  toggleExportMenu(null);
+                                }}
                               >
-                                📄 Word
+                                📄 Exporter PDF
                               </button>
                             </div>
                           )}
