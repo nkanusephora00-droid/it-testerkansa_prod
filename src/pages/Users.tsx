@@ -222,7 +222,16 @@ const Users: React.FC = () => {
                       <td>{user.role === 'admin' ? 'Administrateur' : 'Utilisateur'}</td>
                       <td>{user.isActive ? 'Oui' : 'Non'}</td>
                       <td style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button style={user.isActive ? {...styles.toggleOnButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#27ae60'} : {...styles.toggleOffButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#95a5a6'}} onClick={() => handleToggleUser(user)} title={user.isActive ? 'Désactiver' : 'Activer'}>
+                        <button 
+                          style={{
+                            ...styles.toggleOnButton,
+                            padding: '8px 12px',
+                            backgroundColor: 'transparent',
+                            color: user.isActive ? '#27ae60' : '#95a5a6'
+                          }} 
+                          onClick={() => handleToggleUser(user)} 
+                          title={user.isActive ? 'Désactiver' : 'Activer'}
+                        >
                           <FontAwesomeIcon icon={user.isActive ? faToggleOn : faToggleOff} />
                         </button>
                         <button style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#3498db'}} onClick={() => openEditModal(user)} title="Modifier">
