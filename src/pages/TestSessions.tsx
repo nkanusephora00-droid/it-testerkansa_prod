@@ -290,7 +290,7 @@ const TestSessions: React.FC = () => {
           <div style={styles.sessionDetails}>
             <div style={styles.sessionDetailsHeader}>
               <h3 style={styles.sessionDetailsTitle}>{selectedSession.nom}</h3>
-              <button style={styles.closeButton} onClick={() => setSelectedSession(null)}>
+              <button style={styles.closeDetailButton} onClick={() => setSelectedSession(null)}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
@@ -426,7 +426,7 @@ const TestSessions: React.FC = () => {
       {showCreateModal && (
         <div style={styles.modal}>
           <div style={styles.modalContent}>
-            <span style={styles.closeButton} onClick={() => setShowCreateModal(false)}>&times;</span>
+            <span style={styles.modalCloseButton} onClick={() => setShowCreateModal(false)}>&times;</span>
             <h3 style={styles.modalTitle}>Nouvelle session</h3>
             <p style={styles.modalSubtitle}>Créez une session pour regrouper vos cas de test.</p>
             <form onSubmit={handleCreateSession} style={styles.modalForm}>
@@ -501,7 +501,7 @@ const TestSessions: React.FC = () => {
       {showModal && (
         <div style={styles.modal}>
           <div style={styles.modalContent}>
-            <span style={styles.closeButton} onClick={() => setShowModal(false)}>&times;</span>
+            <span style={styles.modalCloseButton} onClick={() => setShowModal(false)}>&times;</span>
             <h3 style={styles.modalTitle}>Modifier la session</h3>
             <form onSubmit={handleUpdateSession} style={styles.modalForm}>
               <div style={styles.formGroup}>
@@ -711,7 +711,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-primary)'
   },
 
-  closeButton: {
+  closeDetailButton: {
     background: 'none',
     border: 'none',
     fontSize: '28px',
@@ -819,7 +819,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-secondary)'
   },
 
-  closeButton: {
+  modalCloseButton: {
     position: 'absolute' as const,
     top: '12px',
     right: '16px',
