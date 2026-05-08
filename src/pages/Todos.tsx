@@ -12,6 +12,7 @@ interface Todo {
   dueDate: string | null;
   createdAt: string;
   created_by?: number;
+  createdByUsername?: string;
 }
 
 const Todos: React.FC = () => {
@@ -86,11 +87,7 @@ const Todos: React.FC = () => {
     }
   };
 
-  const getUserName = (userId: number) => {
-    const user = users.find(u => u.id === userId);
-    return user ? user.username : `Utilisateur ${userId}`;
-  };
-
+  
   // Debug: voir les données des todos
   useEffect(() => {
     if (todos.length > 0) {
@@ -385,9 +382,9 @@ const Todos: React.FC = () => {
                           {todo.priority === 'low' && (
                             <span style={styles.priorityBadge}>Basse</span>
                           )}
-                          {todo.created_by && (
+                          {todo.createdByUsername && (
                             <span style={styles.creatorBadge}>
-                              Par: {getUserName(todo.created_by)}
+                              Par: {todo.createdByUsername}
                             </span>
                           )}
                           {todo.dueDate && (
@@ -430,10 +427,10 @@ const Todos: React.FC = () => {
                         {todo.description && (
                           <div style={styles.todoDescription}>{todo.description}</div>
                         )}
-                        {todo.created_by && (
+                        {todo.createdByUsername && (
                           <div style={styles.todoMeta}>
                             <span style={styles.creatorBadge}>
-                              Par: {getUserName(todo.created_by)}
+                              Par: {todo.createdByUsername}
                             </span>
                           </div>
                         )}

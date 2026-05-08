@@ -209,37 +209,31 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
          <div style={{
            ...styles.headerActions,
            ...(isMobile ? { 
-             gap: "12px",
+             gap: "8px",
              display: "flex",
              alignItems: "center",
              justifyContent: "flex-end",
-             flexShrink: 0
+             flexShrink: 0,
+             flexDirection: "row"
            } : {})
          }}>
-           <div style={{
-             ...(isMobile ? {
-               display: "flex",
-               alignItems: "center",
-               justifyContent: "center"
-             } : {})
-           }}>
-             <NotificationBell />
-           </div>
+           <NotificationBell />
            <button
             onClick={handleLogout}
             style={{
               ...styles.logoutButton,
               ...(isMobile ? {
-                width: "36px",
-                height: "36px",
+                width: "32px",
+                height: "32px",
                 borderRadius: "8px",
                 backgroundColor: "var(--danger-color)",
                 color: "white",
-                fontSize: "16px",
+                fontSize: "14px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                border: "none"
+                border: "none",
+                padding: "0"
               } : {})
             }}
             title="Se déconnecter"

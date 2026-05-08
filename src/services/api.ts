@@ -109,6 +109,7 @@ export interface Todo {
   priority: string;
   dueDate: string | null;
   createdAt: string;
+  createdByUsername?: string;
 }
 
 export interface UserWithTodos {

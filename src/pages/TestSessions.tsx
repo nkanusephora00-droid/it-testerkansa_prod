@@ -146,8 +146,10 @@ const TestSessions: React.FC = () => {
   };
 
   const openEditModal = (session: TestSession) => {
+    console.log('Ouverture du formulaire d\'édition pour la session:', session);
     setEditingSession(session);
-    setEditFormData({
+    
+    const formData = {
       nom: session.nom,
       description: session.description || '',
       applicationId: session.applicationId || 0,
@@ -155,20 +157,29 @@ const TestSessions: React.FC = () => {
       version: session.version || '',
       nom_document: session.nom_document || '',
       statut: session.statut || 'En cours'
-    });
+    };
+    
+    console.log('Données du formulaire d\'édition:', formData);
+    setEditFormData(formData);
     setShowModal(true);
   };
 
   const handleUpdateSession = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSession) return;
+    
+    console.log('Tentative de mise à jour de la session:', editingSession.id);
+    console.log('Données envoyées:', editFormData);
+    
     try {
-      await testSessionsAPI.update(editingSession.id, editFormData);
+      const response = await testSessionsAPI.update(editingSession.id, editFormData);
+      console.log('Mise à jour réussie:', response);
       setMessage({ type: 'success', text: 'Session mise à jour!' });
       setShowModal(false);
       setEditingSession(null);
       fetchData();
     } catch (err: unknown) {
+      console.error('Erreur lors de la mise à jour:', err);
       const error = err as { response?: { data?: { detail?: string } } };
       setMessage({ type: 'error', text: error.response?.data?.detail || 'Erreur lors de la mise à jour' });
     }
@@ -418,29 +429,36 @@ const TestSessions: React.FC = () => {
         ) : (
           /* Affichage en fonction de la taille d'écran */
           isMobile ? (
-            /* Affichage en cartes pour mobile - COMME DASHBOARD */
+            /* Affichage en cartes pour mobile - FORCE UNE SESSION PAR LIGNE */
             <div style={{ 
               display: 'block', 
               width: '100%',
               margin: '0',
-              padding: '0'
+              padding: '0',
+              flexDirection: 'column'
             }}>
             {sessions.map((session) => (
               <div key={session.id} style={{
-                // Style COMME LES CARDS DU DASHBOARD
+                // FORCE UNE SESSION PAR LIGNE - STYLES RADICAUX
                 border: `2px solid ${getStatusColor(session.statut)}`,
                 backgroundColor: '#fff',
                 padding: '15px',
                 borderRadius: '8px',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 width: '100%',
+                maxWidth: '100%',
+                minWidth: '100%',
                 marginBottom: '15px',
                 boxSizing: 'border-box',
                 display: 'block',
                 clear: 'both',
                 float: 'none',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                flex: '0 0 100%',
+                flexBasis: '100%',
+                flexGrow: '0',
+                flexShrink: '0'
               }}>
                 <div style={styles.sessionHeader}>
                   <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#2c3e50' }}>
@@ -504,9 +522,15 @@ const TestSessions: React.FC = () => {
                       alignItems: 'center',
                       justifyContent: 'center',
                       visibility: 'visible',
-                      opacity: 1
+                      opacity: 1,
+                      position: 'relative',
+                      zIndex: 10,
+                      pointerEvents: 'auto',
+                      cursor: 'pointer'
                     }}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       console.log('Bouton modifier cliqué pour session:', session.id);
                       openEditModal(session);
                     }}
@@ -565,9 +589,15 @@ const TestSessions: React.FC = () => {
                           alignItems: 'center',
                           justifyContent: 'center',
                           visibility: 'visible',
-                          opacity: 1
+                          opacity: 1,
+                          position: 'relative',
+                          zIndex: 10,
+                          pointerEvents: 'auto',
+                          cursor: 'pointer'
                         }}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           console.log('Bouton modifier cliqué pour session (desktop):', session.id);
                           openEditModal(session);
                         }}
@@ -700,7 +730,10 @@ const TestSessions: React.FC = () => {
                   <label style={styles.label}>Statut</label>
                   <select
                     value={editFormData.statut}
-                    onChange={(e) => setEditFormData({ ...editFormData, statut: e.target.value })}
+                    onChange={(e) => {
+                      console.log('Changement de statut:', e.target.value);
+                      setEditFormData({ ...editFormData, statut: e.target.value });
+                    }}
                     style={styles.select}
                   >
                     <option value="En cours">En cours</option>
