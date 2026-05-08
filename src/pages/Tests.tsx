@@ -19,6 +19,7 @@ const Tests: React.FC = () => {
   const [consolidatedSessions, setConsolidatedSessions] = useState<ConsolidatedSession[]>([]);
   const [selectedSessions, setSelectedSessions] = useState<number[]>([]);
   const [selectionMode, setSelectionMode] = useState<boolean>(false);
+  const [displayMode, setDisplayMode] = useState<'cards' | 'table'>('cards');
   
   // Récupérer le rôle de l'utilisateur
   const userRole = localStorage.getItem('user_role');
@@ -1275,9 +1276,6 @@ const Tests: React.FC = () => {
             </div>
           )}
         </div>
-        <button style={styles.newSessionButton} onClick={() => { setShowSessionModal(true); }}>
-          <FontAwesomeIcon icon={faPlus} />
-        </button>
       </div>
       <div style={styles.sessionsGrid}>
         {consolidationMode !== 'none' ? (
@@ -1424,6 +1422,231 @@ const Tests: React.FC = () => {
     </div>
   );
 
+  // Render Sessions in Table View
+  const renderSessionsTable = () => {
+    const sessionsToRender = consolidationMode !== 'none' ? consolidatedSessions : sessions;
+    
+    return (
+      <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nom</th>
+              <th>Description</th>
+              <th>Utilisateur</th>
+              <th>Application</th>
+              <th>Statut</th>
+              <th>Total Tests</th>
+              <th>OK</th>
+              <th>BUG</th>
+              <th>En cours</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sessionsToRender.map((session: any) => (
+              <tr key={session.id}>
+                <td>{session.id}</td>
+                <td>{session.nom}</td>
+                <td>{session.description ? (session.description.length > 50 ? session.description.substring(0, 50) + '...' : session.description) : '-'}</td>
+                <td>{session.username || session.createdByUsername || '-'}</td>
+                <td>{session.applicationNom || getAppName(session.applicationId)}</td>
+                <td>
+                  <span style={{
+                    ...styles.statusBadge,
+                    backgroundColor: getStatusColor(session.statut)
+                  }}>
+                    {session.statut}
+                  </span>
+                </td>
+                <td>{session.total_tests || 0}</td>
+                <td style={{ color: '#27ae60', fontWeight: 600 }}>{session.tests_ok || 0}</td>
+                <td style={{ color: '#dc3545', fontWeight: 600 }}>{session.tests_bug || 0}</td>
+                <td style={{ color: '#ffc107', fontWeight: 600 }}>{session.tests_en_cours || 0}</td>
+                <td>{new Date(session.date_creation).toLocaleDateString('fr-FR')}</td>
+                <td style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {consolidationMode !== 'none' ? (
+                    <>
+                      <button 
+                        style={styles.viewButton}
+                        onClick={() => handleViewConsolidatedSession(session)}
+                        title="Voir les détails"
+                      >
+                        <FontAwesomeIcon icon={faEye} />
+                      </button>
+                      <button 
+                        style={styles.exportButton}
+                        onClick={() => handleExportConsolidatedPDF(session)}
+                        title="Exporter en PDF"
+                      >
+                        <FontAwesomeIcon icon={faFilePdf} />
+                      </button>
+                      <button 
+                        style={styles.exportButton}
+                        onClick={() => handleExportConsolidatedWord(session)}
+                        title="Exporter en Word"
+                      >
+                        <FontAwesomeIcon icon={faFileWord} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button 
+                        style={styles.viewButton}
+                        onClick={() => {
+                          setSelectedSession(session.id);
+                          setView('tests');
+                        }}
+                        title="Voir les tests"
+                      >
+                        <FontAwesomeIcon icon={faEye} />
+                      </button>
+                      <button 
+                        style={styles.exportButton}
+                        onClick={() => handleExportSessionPDF(session)}
+                        title="Exporter en PDF"
+                      >
+                        <FontAwesomeIcon icon={faFilePdf} />
+                      </button>
+                      <button 
+                        style={styles.exportButton}
+                        onClick={() => handleExportSessionWord(session)}
+                        title="Exporter en Word"
+                      >
+                        <FontAwesomeIcon icon={faFileWord} />
+                      </button>
+                      {session.statut !== 'Terminé' && (
+                        <button 
+                          style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b', border: '1px solid #ff6b6b'}} 
+                          onClick={() => handleDeleteSession(session.id)}
+                          title="Supprimer"
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  // Render Tests in Table View
+  const renderTestsTable = () => {
+    const sessionTests = selectedSession ? getSessionTests(selectedSession) : tests;
+    const currentSession = sessions.find(s => s.id === selectedSession);
+    
+    return (
+      <div>
+        <button style={styles.backButton} onClick={() => { setSelectedSession(null); setView('sessions'); }}>
+          <i className="fas fa-arrow-left"></i> Retour aux sessions
+        </button>
+        
+        {currentSession && (
+          <div style={styles.currentSessionInfo}>
+            <h3><i className="fas fa-file-alt"></i> {currentSession.nom}</h3>
+            <p>{currentSession.description}</p>
+            {currentSession.nom_document && <p style={styles.sessionInfo}><i className="fas fa-file"></i> Document: {currentSession.nom_document}</p>}
+          </div>
+        )}
+
+        <div style={styles.formSection}>
+          <button 
+            style={styles.addTestButton} 
+            onClick={() => {
+              const currentSession = sessions.find(s => s.id === selectedSession);
+              if (currentSession) {
+                setFormData({
+                  sessionId: selectedSession || 0,
+                  applicationId: currentSession.applicationId || 0,
+                  fonction: '',
+                  precondition: '',
+                  etapes: '',
+                  resultatAttendu: '',
+                  resultatObtenu: '',
+                  statut: '',
+                  commentaires: '',
+                  image: ''
+                });
+              }
+              setShowTestForm(true);
+            }}
+          >
+            <FontAwesomeIcon icon={faPlus} />
+          </button>
+        </div>
+
+        <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Fonction</th>
+                <th>Précondition</th>
+                <th>Étapes</th>
+                <th>Résultat Attendu</th>
+                <th>Résultat Obtenu</th>
+                <th>Statut</th>
+                <th>Commentaires</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessionTests.map((test: Test) => (
+                <tr key={test.id}>
+                  <td>{test.id}</td>
+                  <td>{test.fonction || '-'}</td>
+                  <td>{test.precondition ? (test.precondition.length > 50 ? test.precondition.substring(0, 50) + '...' : test.precondition) : '-'}</td>
+                  <td>{test.etapes ? (test.etapes.length > 50 ? test.etapes.substring(0, 50) + '...' : test.etapes) : '-'}</td>
+                  <td>{test.resultatAttendu ? (test.resultatAttendu.length > 50 ? test.resultatAttendu.substring(0, 50) + '...' : test.resultatAttendu) : '-'}</td>
+                  <td>{test.resultatObtenu ? (test.resultatObtenu.length > 50 ? test.resultatObtenu.substring(0, 50) + '...' : test.resultatObtenu) : '-'}</td>
+                  <td>
+                    <span style={{
+                      ...styles.statusBadge,
+                      backgroundColor: getStatusColor(test.statut)
+                    }}>
+                      {test.statut}
+                    </span>
+                  </td>
+                  <td>{test.commentaires ? (test.commentaires.length > 30 ? test.commentaires.substring(0, 30) + '...' : test.commentaires) : '-'}</td>
+                  <td style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button 
+                      style={styles.editButton}
+                      onClick={() => handleEditTest(test)}
+                      title="Modifier"
+                    >
+                      <FontAwesomeIcon icon={faEdit} />
+                    </button>
+                    <button 
+                      style={styles.exportButton}
+                      onClick={() => handleGenerateTestWord(test)}
+                      title="Exporter en Word"
+                    >
+                      <FontAwesomeIcon icon={faFileWord} />
+                    </button>
+                    <button 
+                      style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b', border: '1px solid #ff6b6b'}} 
+                      onClick={() => handleDeleteTest(test.id)}
+                      title="Supprimer"
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   // Render Tests for selected session
   const renderTests = () => {
     const sessionTests = selectedSession ? getSessionTests(selectedSession) : tests;
@@ -1480,10 +1703,98 @@ const Tests: React.FC = () => {
                   : `${sessionTests.length} test${sessionTests.length > 1 ? 's' : ''} au total.`}
               </p>
             </div>
+            <div style={styles.headerActions}>
+              <button 
+                style={{
+                  ...styles.toggleViewButton,
+                  backgroundColor: displayMode === 'cards' ? 'var(--primary-color)' : 'var(--bg-card)',
+                  color: displayMode === 'cards' ? 'white' : 'var(--text-primary)'
+                }}
+                onClick={() => setDisplayMode('cards')}
+                title="Afficher en cartes"
+              >
+                <FontAwesomeIcon icon={faCompress} />
+              </button>
+              <button 
+                style={{
+                  ...styles.toggleViewButton,
+                  backgroundColor: displayMode === 'table' ? 'var(--primary-color)' : 'var(--bg-card)',
+                  color: displayMode === 'table' ? 'white' : 'var(--text-primary)'
+                }}
+                onClick={() => setDisplayMode('table')}
+                title="Afficher en tableau"
+              >
+                <FontAwesomeIcon icon={faExpand} />
+              </button>
+            </div>
           </div>
           
-          {/* Affichage en liste verticale pour mobile comme les todos */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {/* Affichage en fonction du mode sélectionné */}
+          {displayMode === 'table' ? (
+            <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fonction</th>
+                    <th>Précondition</th>
+                    <th>Étapes</th>
+                    <th>Résultat Attendu</th>
+                    <th>Résultat Obtenu</th>
+                    <th>Statut</th>
+                    <th>Commentaires</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessionTests.map((test: Test) => (
+                    <tr key={test.id}>
+                      <td>{test.id}</td>
+                      <td>{test.fonction || '-'}</td>
+                      <td>{test.precondition ? (test.precondition.length > 50 ? test.precondition.substring(0, 50) + '...' : test.precondition) : '-'}</td>
+                      <td>{test.etapes ? (test.etapes.length > 50 ? test.etapes.substring(0, 50) + '...' : test.etapes) : '-'}</td>
+                      <td>{test.resultatAttendu ? (test.resultatAttendu.length > 50 ? test.resultatAttendu.substring(0, 50) + '...' : test.resultatAttendu) : '-'}</td>
+                      <td>{test.resultatObtenu ? (test.resultatObtenu.length > 50 ? test.resultatObtenu.substring(0, 50) + '...' : test.resultatObtenu) : '-'}</td>
+                      <td>
+                        <span style={{
+                          ...styles.statusBadge,
+                          backgroundColor: getStatusColor(test.statut)
+                        }}>
+                          {test.statut}
+                        </span>
+                      </td>
+                      <td>{test.commentaires ? (test.commentaires.length > 30 ? test.commentaires.substring(0, 30) + '...' : test.commentaires) : '-'}</td>
+                      <td style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button 
+                          style={styles.editButton}
+                          onClick={() => handleEditTest(test)}
+                          title="Modifier"
+                        >
+                          <FontAwesomeIcon icon={faEdit} />
+                        </button>
+                        <button 
+                          style={styles.exportButton}
+                          onClick={() => handleGenerateTestWord(test)}
+                          title="Exporter en Word"
+                        >
+                          <FontAwesomeIcon icon={faFileWord} />
+                        </button>
+                        <button 
+                          style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b', border: '1px solid #ff6b6b'}} 
+                          onClick={() => handleDeleteTest(test.id)}
+                          title="Supprimer"
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* Affichage en cartes */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {sessionTests.map((test: Test) => (
               <div key={test.id} style={{
                 ...styles.sessionCard,
@@ -1977,7 +2288,9 @@ input: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadi
   sessionActions: { display: 'flex', gap: '8px', marginTop: 'auto' },
   viewButton: { padding: '10px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', flex: 1, fontWeight: '600', fontSize: '13px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)' },
   exportButton: { padding: '10px 16px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)' },
-  backButton: { padding: '10px 16px', backgroundColor: 'var(--text-muted)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', marginBottom: '12px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', transition: 'opacity 0.2s' },
+  headerActions: { display: 'flex', gap: '8px', alignItems: 'center' },
+  toggleViewButton: { padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s' },
+  editButton: { padding: '8px 12px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 },
   currentSessionInfo: { backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '10px', marginBottom: '14px', boxShadow: '0 2px 8px var(--shadow-color)', border: '1px solid var(--border-light)' },
   statutTermine: { padding: '6px 12px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' }
 };
