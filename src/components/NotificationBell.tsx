@@ -5,6 +5,23 @@ import { faBell, faTimes, faCheck, faExclamationTriangle, faInfoCircle, faCheckC
 import { messagesAPI, todosAPI, testsAPI, systemNotificationsAPI } from '../services/api';
 import './NotificationBell.css';
 
+// Hook pour détecter la taille d'écran
+const useResponsive = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
 interface Notification {
   id: string;
   title: string;
@@ -23,6 +40,7 @@ const NotificationBell: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const isMobile = useResponsive();
 
   // Charger les notifications depuis le backend
   useEffect(() => {
@@ -235,18 +253,62 @@ const NotificationBell: React.FC = () => {
   return (
     <div style={styles.container} ref={dropdownRef}>
       <button
-        style={styles.bellButton}
+        style={{
+          ...styles.bellButton,
+          ...(isMobile ? {
+            width: "36px",
+            height: "36px",
+            backgroundColor: "rgba(52, 152, 219, 0.1)",
+            border: "2px solid rgba(52, 152, 219, 0.3)",
+            boxShadow: "0 2px 8px rgba(52, 152, 219, 0.2)",
+            fontSize: "14px"
+          } : {})
+        }}
         onClick={() => setIsOpen(!isOpen)}
         title="Notifications"
       >
-        <FontAwesomeIcon icon={faBell} className="notification-bell-icon" />
+        <FontAwesomeIcon 
+          icon={faBell} 
+          className="notification-bell-icon"
+          style={{
+            ...(isMobile ? {
+              color: "var(--info-color)",
+              fontSize: "14px"
+            } : {})
+          }}
+        />
         {unreadCount > 0 && (
-          <span style={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>
+          <span style={{
+            ...styles.badge,
+            ...(isMobile ? {
+              width: "18px",
+              height: "18px",
+              fontSize: "10px",
+              right: "-4px",
+              top: "-4px",
+              backgroundColor: "var(--danger-color)",
+              border: "2px solid white"
+            } : {})
+          }}>
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
         )}
       </button>
 
       {isOpen && (
-        <div style={styles.dropdown}>
+        <div style={{
+          ...styles.dropdown,
+          ...(isMobile ? {
+            right: "-10px",
+            top: "45px",
+            width: "320px",
+            maxWidth: "90vw",
+            maxHeight: "70vh",
+            borderRadius: "12px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+            border: "1px solid var(--border-light)"
+          } : {})
+        }}>
           <div style={styles.dropdownHeader}>
             <h3 style={styles.dropdownTitle}>Notifications</h3>
             <div style={styles.headerActions}>

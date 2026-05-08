@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faCheck, faExclamationTriangle, faInfo, faCheckCircle, faBug } from '@fortawesome/free-solid-svg-icons';
 
 interface Notification {
-  id: number;
+  id: string | number;
   type: 'success' | 'warning' | 'error' | 'info';
   title: string;
   message: string;
@@ -33,7 +33,7 @@ const Notifications: React.FC = () => {
 
       todos.filter((t: import('../services/api').Todo) => !t.completed).forEach((todo: import('../services/api').Todo) => {
         notifs.push({
-          id: todo.id + 1000,
+          id: `todo_${todo.id}`,
           type: 'info',
           title: 'Tâche en attente',
           message: todo.title,
@@ -45,7 +45,7 @@ const Notifications: React.FC = () => {
 
       tests.filter((t: import('../services/api').Test) => t.statut === 'BUG').forEach((test: any) => {
         notifs.push({
-          id: test.id + 2000,
+          id: `bug_${test.id}`,
           type: 'error',
           title: 'Nouveau BUG détecté',
           message: `Test "${test.fonction}" - Statut: BUG`,
@@ -57,7 +57,7 @@ const Notifications: React.FC = () => {
 
       tests.filter((t: import('../services/api').Test) => t.statut === 'EN COURS').forEach((test: any) => {
         notifs.push({
-          id: test.id + 3000,
+          id: `progress_${test.id}`,
           type: 'warning',
           title: 'Test en cours',
           message: `Test "${test.fonction}" - En cours de vérification`,
@@ -69,7 +69,7 @@ const Notifications: React.FC = () => {
 
       notifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      // Restaurer le statut "read" depuis localStorage
+      // Restaurer le statut "read" depuis localStorage avec gestion des préfixes
       const readNotifs = JSON.parse(localStorage.getItem('readNotifications') || '[]');
       const notifsWithReadStatus = notifs.map(n => ({
         ...n,
@@ -86,7 +86,7 @@ const Notifications: React.FC = () => {
     }
   };
 
-  const markAsRead = (id: number) => {
+  const markAsRead = (id: string | number) => {
     setNotifications(notifs =>
       notifs.map(n => n.id === id ? { ...n, read: true } : n)
     );
