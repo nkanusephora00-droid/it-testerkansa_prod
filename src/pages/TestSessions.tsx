@@ -3,6 +3,23 @@ import { testSessionsAPI, applicationsAPI, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faMinus } from '@fortawesome/free-solid-svg-icons';
 
+// Hook pour détecter la taille d'écran
+const useResponsive = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // 768px est la limite commune pour mobile
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
 interface TestSession {
   id: number;
   nom: string;
@@ -22,6 +39,7 @@ interface TestSession {
 }
 
 const TestSessions: React.FC = () => {
+  const isMobile = useResponsive(); // Utilisation du hook responsive
   const [sessions, setSessions] = useState<TestSession[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -369,56 +387,143 @@ const TestSessions: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div style={styles.sessionsList}>
+          /* Affichage en fonction de la taille d'écran */
+          isMobile ? (
+            /* Affichage en cartes pour mobile */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {sessions.map((session) => (
-              <div key={session.id} style={styles.sessionItem}>
-                <div style={styles.sessionMain}>
-                  <div style={styles.sessionLeft}>
-                    <div style={styles.sessionHeader}>
-                      <h3 style={styles.sessionTitle}>{session.nom}</h3>
-                      <span style={getStatusBadge(session.statut)}>{session.statut}</span>
-                    </div>
-                    <div style={styles.sessionMeta}>
-                      <span><FontAwesomeIcon icon={faMinus} /> {getAppName(session.applicationId)}</span>
-                      {session.environnement && <span><FontAwesomeIcon icon={faMinus} /> {session.environnement}</span>}
-                      {session.version && <span><FontAwesomeIcon icon={faMinus} /> v{session.version}</span>}
-                    </div>
-                    {session.description && (
-                      <p style={styles.sessionDescription}>{session.description}</p>
-                    )}
-                    <div style={styles.sessionStats}>
-                      <span>Total: <strong>{session.total_tests || 0}</strong></span>
-                      <span style={{ color: '#27ae60' }}>OK: <strong>{session.tests_ok || 0}</strong></span>
-                      <span style={{ color: '#dc3545' }}>BUG: <strong>{session.tests_bug || 0}</strong></span>
+              <div key={session.id} style={{
+                ...styles.sessionItem,
+                border: `2px solid ${getStatusColor(session.statut)}`,
+                backgroundColor: '#fff',
+                padding: '15px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}>
+                <div style={styles.sessionHeader}>
+                  <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#2c3e50' }}>
+                    {session.nom}
+                  </h3>
+                  <span style={getStatusBadge(session.statut)}>{session.statut}</span>
+                </div>
+                
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>Application:</strong> {getAppName(session.applicationId)}
+                </div>
+                
+                {session.environnement && (
+                  <div style={{ marginBottom: '10px' }}>
+                    <strong>Environnement:</strong> {session.environnement}
+                  </div>
+                )}
+                
+                {session.version && (
+                  <div style={{ marginBottom: '10px' }}>
+                    <strong>Version:</strong> v{session.version}
+                  </div>
+                )}
+                
+                {session.description && (
+                  <div style={{ marginBottom: '10px' }}>
+                    <strong>Description:</strong>
+                    <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
+                      {session.description}
                     </div>
                   </div>
-                  <div style={styles.sessionActions}>
-                    <button 
-                      style={styles.viewButton}
-                      onClick={() => setSelectedSession(session)}
-                      title="Voir détails"
-                    >
-                      <FontAwesomeIcon icon={faEye} />
-                    </button>
-                    <button 
-                      style={styles.editButton}
-                      onClick={() => openEditModal(session)}
-                      title="Modifier"
-                    >
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                    <button 
-                      style={styles.deleteButton}
-                      onClick={() => handleDelete(session.id)}
-                      title="Supprimer"
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
+                )}
+                
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>Statistiques:</strong>
+                  <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
+                    <span>Total: <strong>{session.total_tests || 0}</strong></span>
+                    <span style={{ color: '#27ae60', marginLeft: '15px' }}>OK: <strong>{session.tests_ok || 0}</strong></span>
+                    <span style={{ color: '#dc3545', marginLeft: '15px' }}>BUG: <strong>{session.tests_bug || 0}</strong></span>
                   </div>
+                </div>
+                
+                <div style={{ marginBottom: '10px' }}>
+                  <strong>Date de création:</strong> {new Date(session.date_creation).toLocaleDateString('fr-FR')}
+                </div>
+                
+                <div style={styles.sessionActions}>
+                  <button 
+                    style={{...styles.viewButton, padding: '8px 12px', marginRight: '8px'}}
+                    onClick={() => setSelectedSession(session)}
+                    title="Voir détails"
+                  >
+                    <FontAwesomeIcon icon={faEye} />
+                  </button>
+                  <button 
+                    style={{...styles.editButton, padding: '8px 12px', marginRight: '8px'}}
+                    onClick={() => openEditModal(session)}
+                    title="Modifier"
+                  >
+                    <FontAwesomeIcon icon={faEdit} />
+                  </button>
+                  <button 
+                    style={{...styles.deleteButton, padding: '8px 12px'}}
+                    onClick={() => handleDelete(session.id)}
+                    title="Supprimer"
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
+                  </button>
                 </div>
               </div>
             ))}
           </div>
+          ) : (
+            /* Affichage normal pour desktop */
+            <div style={styles.sessionsList}>
+              {sessions.map((session) => (
+                <div key={session.id} style={styles.sessionItem}>
+                  <div style={styles.sessionMain}>
+                    <div style={styles.sessionLeft}>
+                      <div style={styles.sessionHeader}>
+                        <h3 style={styles.sessionTitle}>{session.nom}</h3>
+                        <span style={getStatusBadge(session.statut)}>{session.statut}</span>
+                      </div>
+                      <div style={styles.sessionMeta}>
+                        <span><FontAwesomeIcon icon={faMinus} /> {getAppName(session.applicationId)}</span>
+                        {session.environnement && <span><FontAwesomeIcon icon={faMinus} /> {session.environnement}</span>}
+                        {session.version && <span><FontAwesomeIcon icon={faMinus} /> v{session.version}</span>}
+                      </div>
+                      {session.description && (
+                        <p style={styles.sessionDescription}>{session.description}</p>
+                      )}
+                      <div style={styles.sessionStats}>
+                        <span>Total: <strong>{session.total_tests || 0}</strong></span>
+                        <span style={{ color: '#27ae60' }}>OK: <strong>{session.tests_ok || 0}</strong></span>
+                        <span style={{ color: '#dc3545' }}>BUG: <strong>{session.tests_bug || 0}</strong></span>
+                      </div>
+                    </div>
+                    <div style={styles.sessionActions}>
+                      <button 
+                        style={styles.viewButton}
+                        onClick={() => setSelectedSession(session)}
+                        title="Voir détails"
+                      >
+                        <FontAwesomeIcon icon={faEye} />
+                      </button>
+                      <button 
+                        style={styles.editButton}
+                        onClick={() => openEditModal(session)}
+                        title="Modifier"
+                      >
+                        <FontAwesomeIcon icon={faEdit} />
+                      </button>
+                      <button 
+                        style={styles.deleteButton}
+                        onClick={() => handleDelete(session.id)}
+                        title="Supprimer"
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         )}
       </main>
 
