@@ -293,8 +293,37 @@ const TestSessions: React.FC = () => {
               {sessions.length} session{sessions.length !== 1 ? 's' : ''} · {sessions.reduce((acc, s) => acc + (s.total_tests || 0), 0)} tests au total
             </p>
           </div>
-          <button style={styles.addButton} onClick={() => setShowCreateModal(true)}>
-            <FontAwesomeIcon icon={faPlus} /> Nouvelle session
+          <button 
+            style={{
+              padding: '12px 20px',
+              backgroundColor: 'var(--success-color)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s',
+              ...(isMobile ? {
+                position: 'fixed',
+                bottom: '80px',
+                right: '20px',
+                borderRadius: '50%',
+                width: '56px',
+                height: '56px',
+                zIndex: 999,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                justifyContent: 'center',
+                padding: '0'
+              } : {})
+            }} 
+            onClick={() => setShowCreateModal(true)}
+            title={isMobile ? "Nouvelle session" : "Créer une nouvelle session de test"}
+          >
+            <FontAwesomeIcon icon={faPlus} />
+            {!isMobile && " Nouvelle session"}
           </button>
         </div>
 
@@ -389,29 +418,29 @@ const TestSessions: React.FC = () => {
         ) : (
           /* Affichage en fonction de la taille d'écran */
           isMobile ? (
-            /* Affichage en cartes pour mobile - EXACTEMENT COMME LES TESTS */
+            /* Affichage en cartes pour mobile - COMME DASHBOARD */
             <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '15px',
+              display: 'block', 
               width: '100%',
-              flexWrap: 'nowrap' // Éviter tout wrapping
+              margin: '0',
+              padding: '0'
             }}>
             {sessions.map((session) => (
               <div key={session.id} style={{
-                // Style exactement comme les tests mobile
+                // Style COMME LES CARDS DU DASHBOARD
                 border: `2px solid ${getStatusColor(session.statut)}`,
                 backgroundColor: '#fff',
                 padding: '15px',
                 borderRadius: '8px',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 width: '100%',
-                maxWidth: '100%',
-                flex: '0 0 auto', // Ne pas étirer, prendre la taille naturelle
+                marginBottom: '15px',
                 boxSizing: 'border-box',
-                marginBottom: '0', // Pas de marge inférieure, géré par gap
-                display: 'block', // Force l'affichage en bloc
-                clear: 'both' // Nouvelle ligne garantie
+                display: 'block',
+                clear: 'both',
+                float: 'none',
+                position: 'relative',
+                overflow: 'hidden'
               }}>
                 <div style={styles.sessionHeader}>
                   <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#2c3e50' }}>
@@ -467,9 +496,21 @@ const TestSessions: React.FC = () => {
                     <FontAwesomeIcon icon={faEye} />
                   </button>
                   <button 
-                    style={{...styles.editButton, padding: '8px 12px', marginRight: '8px'}}
-                    onClick={() => openEditModal(session)}
-                    title="Modifier"
+                    style={{
+                      ...styles.editButton, 
+                      padding: '8px 12px', 
+                      marginRight: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      visibility: 'visible',
+                      opacity: 1
+                    }}
+                    onClick={() => {
+                      console.log('Bouton modifier cliqué pour session:', session.id);
+                      openEditModal(session);
+                    }}
+                    title="Modifier cette session"
                   >
                     <FontAwesomeIcon icon={faEdit} />
                   </button>
@@ -518,9 +559,19 @@ const TestSessions: React.FC = () => {
                         <FontAwesomeIcon icon={faEye} />
                       </button>
                       <button 
-                        style={styles.editButton}
-                        onClick={() => openEditModal(session)}
-                        title="Modifier"
+                        style={{
+                          ...styles.editButton,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          visibility: 'visible',
+                          opacity: 1
+                        }}
+                        onClick={() => {
+                          console.log('Bouton modifier cliqué pour session (desktop):', session.id);
+                          openEditModal(session);
+                        }}
+                        title="Modifier cette session"
                       >
                         <FontAwesomeIcon icon={faEdit} />
                       </button>
