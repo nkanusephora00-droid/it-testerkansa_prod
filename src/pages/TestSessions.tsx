@@ -390,7 +390,12 @@ const TestSessions: React.FC = () => {
           /* Affichage en fonction de la taille d'écran */
           isMobile ? (
             /* Affichage en cartes pour mobile */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '15px',
+              width: '100%'
+            }}>
             {sessions.map((session) => (
               <div key={session.id} style={{
                 ...styles.sessionItem,
@@ -398,7 +403,11 @@ const TestSessions: React.FC = () => {
                 backgroundColor: '#fff',
                 padding: '15px',
                 borderRadius: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                width: '100%',
+                maxWidth: '100%',
+                flex: '1 1 100%',
+                boxSizing: 'border-box'
               }}>
                 <div style={styles.sessionHeader}>
                   <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#2c3e50' }}>

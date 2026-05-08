@@ -209,17 +209,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
          <div style={{
            ...styles.headerActions,
            ...(isMobile ? { 
-             gap: "8px",
+             gap: "10px",
              position: "relative",
-             zIndex: 1000
+             zIndex: 1000,
+             display: "flex",
+             alignItems: "center",
+             justifyContent: "flex-end"
            } : {})
          }}>
            <div style={{
              ...(isMobile ? {
-               position: "relative",
                display: "flex",
                alignItems: "center",
-               justifyContent: "center"
+               justifyContent: "center",
+               marginRight: "5px"
              } : {})
            }}>
              <NotificationBell />
@@ -235,7 +238,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 backgroundColor: "rgba(220, 53, 69, 0.9)",
                 border: "2px solid rgba(255, 255, 255, 0.2)",
                 boxShadow: "0 2px 8px rgba(220, 53, 69, 0.3)",
-                fontSize: "14px"
+                fontSize: "14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
               } : {})
             }}
             title="Se déconnecter"
@@ -409,6 +415,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "12px",
+    justifyContent: "flex-end",
+    flexShrink: 0
   },
   notifBellButton: {
     width: "40px",

@@ -132,8 +132,15 @@ const NotificationBell: React.FC = () => {
       // Trier par date (plus récent en premier)
       allNotifications.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-      setNotifications(allNotifications);
-      setUnreadCount(allNotifications.filter(n => !n.read).length);
+      // Restaurer le statut "read" depuis localStorage
+      const readNotifs = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+      const notifsWithReadStatus = allNotifications.map(n => ({
+        ...n,
+        read: readNotifs.includes(n.id)
+      }));
+
+      setNotifications(notifsWithReadStatus);
+      setUnreadCount(notifsWithReadStatus.filter(n => !n.read).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
