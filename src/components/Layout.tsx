@@ -209,12 +209,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
          <div style={{
            ...styles.headerActions,
            ...(isMobile ? { 
-             gap: "10px",
+             gap: "8px",
              position: "relative",
              zIndex: 1000,
              display: "flex",
-             alignItems: "center",
-             justifyContent: "flex-end"
+             flexDirection: "column",
+             alignItems: "flex-end",
+             justifyContent: "center"
            } : {})
          }}>
            <div style={{
@@ -222,7 +223,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                display: "flex",
                alignItems: "center",
                justifyContent: "center",
-               marginRight: "5px"
+               marginBottom: "4px"
              } : {})
            }}>
              <NotificationBell />
@@ -416,7 +417,8 @@ const styles = {
     alignItems: "center",
     gap: "12px",
     justifyContent: "flex-end",
-    flexShrink: 0
+    flexShrink: 0,
+    flexDirection: "row" as const
   },
   notifBellButton: {
     width: "40px",

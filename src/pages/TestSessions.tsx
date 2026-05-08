@@ -389,16 +389,17 @@ const TestSessions: React.FC = () => {
         ) : (
           /* Affichage en fonction de la taille d'écran */
           isMobile ? (
-            /* Affichage en cartes pour mobile */
+            /* Affichage en cartes pour mobile - EXACTEMENT COMME LES TESTS */
             <div style={{ 
               display: 'flex', 
               flexDirection: 'column', 
               gap: '15px',
-              width: '100%'
+              width: '100%',
+              flexWrap: 'nowrap' // Éviter tout wrapping
             }}>
             {sessions.map((session) => (
               <div key={session.id} style={{
-                ...styles.sessionItem,
+                // Style exactement comme les tests mobile
                 border: `2px solid ${getStatusColor(session.statut)}`,
                 backgroundColor: '#fff',
                 padding: '15px',
@@ -406,8 +407,11 @@ const TestSessions: React.FC = () => {
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 width: '100%',
                 maxWidth: '100%',
-                flex: '1 1 100%',
-                boxSizing: 'border-box'
+                flex: '0 0 auto', // Ne pas étirer, prendre la taille naturelle
+                boxSizing: 'border-box',
+                marginBottom: '0', // Pas de marge inférieure, géré par gap
+                display: 'block', // Force l'affichage en bloc
+                clear: 'both' // Nouvelle ligne garantie
               }}>
                 <div style={styles.sessionHeader}>
                   <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#2c3e50' }}>
