@@ -5,7 +5,25 @@ import { faTrash, faEye, faFilePdf, faFileWord, faCheck, faTimes, faPlus, faEdit
 import { consolidateSessionsByUser, consolidateAllSessions, ConsolidatedSession } from '../utils/sessionConsolidation';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType } from 'docx';
 
+// Hook pour détecter la taille d'écran
+const useResponsive = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // 768px est la limite commune pour mobile
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
 const Tests: React.FC = () => {
+  const isMobile = useResponsive(); // Utilisation du hook responsive
   const [tests, setTests] = useState<Test[]>([]);
   const [sessions, setSessions] = useState<TestSession[]>([]);
   const [allSessions, setAllSessions] = useState<TestSession[]>([]);
@@ -19,7 +37,6 @@ const Tests: React.FC = () => {
   const [consolidatedSessions, setConsolidatedSessions] = useState<ConsolidatedSession[]>([]);
   const [selectedSessions, setSelectedSessions] = useState<number[]>([]);
   const [selectionMode, setSelectionMode] = useState<boolean>(false);
-  const [displayMode, setDisplayMode] = useState<'cards' | 'table'>('cards');
   
   // Récupérer le rôle de l'utilisateur
   const userRole = localStorage.getItem('user_role');
@@ -1703,97 +1720,11 @@ const Tests: React.FC = () => {
                   : `${sessionTests.length} test${sessionTests.length > 1 ? 's' : ''} au total.`}
               </p>
             </div>
-            <div style={styles.headerActions}>
-              <button 
-                style={{
-                  ...styles.toggleViewButton,
-                  backgroundColor: displayMode === 'cards' ? 'var(--primary-color)' : 'var(--bg-card)',
-                  color: displayMode === 'cards' ? 'white' : 'var(--text-primary)'
-                }}
-                onClick={() => setDisplayMode('cards')}
-                title="Afficher en cartes"
-              >
-                <FontAwesomeIcon icon={faCompress} />
-              </button>
-              <button 
-                style={{
-                  ...styles.toggleViewButton,
-                  backgroundColor: displayMode === 'table' ? 'var(--primary-color)' : 'var(--bg-card)',
-                  color: displayMode === 'table' ? 'white' : 'var(--text-primary)'
-                }}
-                onClick={() => setDisplayMode('table')}
-                title="Afficher en tableau"
-              >
-                <FontAwesomeIcon icon={faExpand} />
-              </button>
-            </div>
           </div>
           
-          {/* Affichage en fonction du mode sélectionné */}
-          {displayMode === 'table' ? (
-            <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Fonction</th>
-                    <th>Précondition</th>
-                    <th>Étapes</th>
-                    <th>Résultat Attendu</th>
-                    <th>Résultat Obtenu</th>
-                    <th>Statut</th>
-                    <th>Commentaires</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessionTests.map((test: Test) => (
-                    <tr key={test.id}>
-                      <td>{test.id}</td>
-                      <td>{test.fonction || '-'}</td>
-                      <td>{test.precondition ? (test.precondition.length > 50 ? test.precondition.substring(0, 50) + '...' : test.precondition) : '-'}</td>
-                      <td>{test.etapes ? (test.etapes.length > 50 ? test.etapes.substring(0, 50) + '...' : test.etapes) : '-'}</td>
-                      <td>{test.resultatAttendu ? (test.resultatAttendu.length > 50 ? test.resultatAttendu.substring(0, 50) + '...' : test.resultatAttendu) : '-'}</td>
-                      <td>{test.resultatObtenu ? (test.resultatObtenu.length > 50 ? test.resultatObtenu.substring(0, 50) + '...' : test.resultatObtenu) : '-'}</td>
-                      <td>
-                        <span style={{
-                          ...styles.statusBadge,
-                          backgroundColor: getStatusColor(test.statut)
-                        }}>
-                          {test.statut}
-                        </span>
-                      </td>
-                      <td>{test.commentaires ? (test.commentaires.length > 30 ? test.commentaires.substring(0, 30) + '...' : test.commentaires) : '-'}</td>
-                      <td style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button 
-                          style={styles.editButton}
-                          onClick={() => handleEditTest(test)}
-                          title="Modifier"
-                        >
-                          <FontAwesomeIcon icon={faEdit} />
-                        </button>
-                        <button 
-                          style={styles.exportButton}
-                          onClick={() => handleGenerateTestWord(test)}
-                          title="Exporter en Word"
-                        >
-                          <FontAwesomeIcon icon={faFileWord} />
-                        </button>
-                        <button 
-                          style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b', border: '1px solid #ff6b6b'}} 
-                          onClick={() => handleDeleteTest(test.id)}
-                          title="Supprimer"
-                        >
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            /* Affichage en cartes */
+          {/* Affichage en fonction de la taille d'écran */}
+          {isMobile ? (
+            /* Affichage en cartes pour mobile */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {sessionTests.map((test: Test) => (
               <div key={test.id} style={{
@@ -1861,6 +1792,70 @@ const Tests: React.FC = () => {
               </div>
             ))}
           </div>
+          ) : (
+            /* Affichage en tableau pour web/desktop */
+            <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fonction</th>
+                    <th>Précondition</th>
+                    <th>Étapes</th>
+                    <th>Résultat Attendu</th>
+                    <th>Résultat Obtenu</th>
+                    <th>Statut</th>
+                    <th>Commentaires</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessionTests.map((test: Test) => (
+                    <tr key={test.id}>
+                      <td>{test.id}</td>
+                      <td>{test.fonction || '-'}</td>
+                      <td>{test.precondition ? (test.precondition.length > 50 ? test.precondition.substring(0, 50) + '...' : test.precondition) : '-'}</td>
+                      <td>{test.etapes ? (test.etapes.length > 50 ? test.etapes.substring(0, 50) + '...' : test.etapes) : '-'}</td>
+                      <td>{test.resultatAttendu ? (test.resultatAttendu.length > 50 ? test.resultatAttendu.substring(0, 50) + '...' : test.resultatAttendu) : '-'}</td>
+                      <td>{test.resultatObtenu ? (test.resultatObtenu.length > 50 ? test.resultatObtenu.substring(0, 50) + '...' : test.resultatObtenu) : '-'}</td>
+                      <td>
+                        <span style={{
+                          ...styles.statusBadge,
+                          backgroundColor: getStatusColor(test.statut)
+                        }}>
+                          {test.statut}
+                        </span>
+                      </td>
+                      <td>{test.commentaires ? (test.commentaires.length > 30 ? test.commentaires.substring(0, 30) + '...' : test.commentaires) : '-'}</td>
+                      <td style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button 
+                          style={styles.editButton}
+                          onClick={() => handleEditTest(test)}
+                          title="Modifier"
+                        >
+                          <FontAwesomeIcon icon={faEdit} />
+                        </button>
+                        <button 
+                          style={styles.exportButton}
+                          onClick={() => handleGenerateTestWord(test)}
+                          title="Exporter en Word"
+                        >
+                          <FontAwesomeIcon icon={faFileWord} />
+                        </button>
+                        <button 
+                          style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b', border: '1px solid #ff6b6b'}} 
+                          onClick={() => handleDeleteTest(test.id)}
+                          title="Supprimer"
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     );
