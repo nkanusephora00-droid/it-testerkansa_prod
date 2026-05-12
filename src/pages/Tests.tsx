@@ -1200,100 +1200,110 @@ const Tests: React.FC = () => {
     }
   };
 
-  // Render Sessions List
-  const renderSessions = () => (
-    <div>
-      <div style={styles.sessionsHeader}>
-        <div style={styles.headerLeft}>
-          {isAdmin && (
-            <div style={styles.userFilter}>
-              <label style={styles.filterLabel}>Filtrer par utilisateur:</label>
-              <select 
-                value={selectedUser || ''} 
-                onChange={(e) => setSelectedUser(e.target.value ? Number(e.target.value) : null)}
-                style={styles.filterSelect}
-              >
-                <option value="">Tous les utilisateurs</option>
-                {(() => {
-                  console.log('Rendering users filter, users:', users);
-                  console.log('Users length:', users?.length);
-                  console.log('Is users array?', Array.isArray(users));
-                  
-                  // Test avec des données factices si le tableau est vide
-                  const usersToRender = Array.isArray(users) && users.length > 0 ? users : [
-                    { id: 1, username: 'Test User 1' },
-                    { id: 2, username: 'Test User 2' }
-                  ];
-                  
-                  return usersToRender.map(user => (
-                    <option key={user.id} value={user.id}>{user.username}</option>
-                  ));
-                })()}
-              </select>
-            </div>
-          )}
-          {isAdmin && (
-            <div style={styles.consolidationButtons}>
-              {consolidationMode === 'none' ? (
-                <>
-                  <button 
-                    style={{...styles.consolidationButton, backgroundColor: selectionMode ? '#dc3545' : '#6c757d'}} 
-                    onClick={handleToggleSelectionMode}
-                    title={selectionMode ? "Arrêter la sélection" : "Sélectionner des sessions"}
-                  >
-                    <FontAwesomeIcon icon={faCompress} />
-                  </button>
-                  {selectionMode && (
-                    <>
-                      <button 
-                        style={styles.consolidationButton} 
-                        onClick={handleSelectAllSessions}
-                        title="Tout sélectionner"
-                      >
-                        Tout
-                      </button>
-                      <button 
-                        style={styles.consolidationButton} 
-                        onClick={handleClearSelection}
-                        title="Effacer la sélection"
-                      >
-                        Effacer
-                      </button>
-                      <span style={styles.selectionInfo}>
-                        {selectedSessions.length} session(s) sélectionnée(s)
-                      </span>
-                    </>
-                  )}
-                  <button 
-                    style={styles.consolidationButton} 
-                    onClick={handleConsolidateByUser}
-                    title="Consolider par utilisateur"
-                    disabled={selectionMode && selectedSessions.length === 0}
-                  >
-                    <FontAwesomeIcon icon={faCompress} />
-                  </button>
-                  <button 
-                    style={styles.consolidationButton} 
-                    onClick={handleConsolidateGlobal}
-                    title="Consolider globalement"
-                    disabled={selectionMode && selectedSessions.length === 0}
-                  >
-                    <FontAwesomeIcon icon={faCompress} />
-                  </button>
-                </>
-              ) : (
-                <button 
-                  style={styles.resetButton} 
-                  onClick={handleResetConsolidation}
-                  title="Réinitialiser la consolidation"
-                >
-                  <FontAwesomeIcon icon={faExpand} />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+   // Render Sessions List
+   const renderSessions = () => (
+     <div>
+       <div style={styles.sessionsHeader}>
+         <div style={styles.headerLeft}>
+           {isAdmin && (
+             <div style={styles.userFilter}>
+               <label style={styles.filterLabel}>Filtrer par utilisateur:</label>
+               <select 
+                 value={selectedUser || ''} 
+                 onChange={(e) => setSelectedUser(e.target.value ? Number(e.target.value) : null)}
+                 style={styles.filterSelect}
+               >
+                 <option value="">Tous les utilisateurs</option>
+                 {(() => {
+                   console.log('Rendering users filter, users:', users);
+                   console.log('Users length:', users?.length);
+                   console.log('Is users array?', Array.isArray(users));
+                   
+                   // Test avec des données factices si le tableau est vide
+                   const usersToRender = Array.isArray(users) && users.length > 0 ? users : [
+                     { id: 1, username: 'Test User 1' },
+                     { id: 2, username: 'Test User 2' }
+                   ];
+                   
+                   return usersToRender.map(user => (
+                     <option key={user.id} value={user.id}>{user.username}</option>
+                   ));
+                 })()}
+               </select>
+             </div>
+           )}
+         </div>
+         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+           {isAdmin && (
+             <div style={styles.consolidationButtons}>
+               {consolidationMode === 'none' ? (
+                 <>
+                   <button 
+                     style={{...styles.consolidationButton, backgroundColor: selectionMode ? '#dc3545' : '#6c757d'}} 
+                     onClick={handleToggleSelectionMode}
+                     title={selectionMode ? "Arrêter la sélection" : "Sélectionner des sessions"}
+                   >
+                     <FontAwesomeIcon icon={faCompress} />
+                   </button>
+                   {selectionMode && (
+                     <>
+                       <button 
+                         style={styles.consolidationButton} 
+                         onClick={handleSelectAllSessions}
+                         title="Tout sélectionner"
+                       >
+                         Tout
+                       </button>
+                       <button 
+                         style={styles.consolidationButton} 
+                         onClick={handleClearSelection}
+                         title="Effacer la sélection"
+                       >
+                         Effacer
+                       </button>
+                       <span style={styles.selectionInfo}>
+                         {selectedSessions.length} session(s) sélectionnée(s)
+                       </span>
+                     </>
+                   )}
+                   <button 
+                     style={styles.consolidationButton} 
+                     onClick={handleConsolidateByUser}
+                     title="Consolider par utilisateur"
+                     disabled={selectionMode && selectedSessions.length === 0}
+                   >
+                     <FontAwesomeIcon icon={faCompress} />
+                   </button>
+                   <button 
+                     style={styles.consolidationButton} 
+                     onClick={handleConsolidateGlobal}
+                     title="Consolider globalement"
+                     disabled={selectionMode && selectedSessions.length === 0}
+                   >
+                     <FontAwesomeIcon icon={faCompress} />
+                   </button>
+                 </>
+               ) : (
+                 <button 
+                   style={styles.resetButton} 
+                   onClick={handleResetConsolidation}
+                   title="Réinitialiser la consolidation"
+                 >
+                   <FontAwesomeIcon icon={faExpand} />
+                 </button>
+               )}
+             </div>
+           )}
+           <button
+             style={styles.newSessionButton}
+             onClick={() => setShowSessionModal(true)}
+             title="Créer une nouvelle session"
+           >
+             <FontAwesomeIcon icon={faPlus} />
+             Nouvelle session
+           </button>
+         </div>
+       </div>
       <div style={styles.sessionsGrid}>
         {consolidationMode !== 'none' ? (
           consolidatedSessions.map(consolidated => (
@@ -1638,15 +1648,23 @@ const Tests: React.FC = () => {
     );
   };
 
-  return (
-    <div style={styles.container}>
-      <main style={styles.main}>
-        <div style={styles.sessionsHeader}>
-          <div>
-            <h2 style={styles.pageTitle}><i className="fas fa-vial"></i> {isAdmin ? 'Gestion des Tests' : 'Mes Sessions de Test'}</h2>
-            <p style={styles.pageSubtitle}>{isAdmin ? 'Documents de Test - Planification et suivi des tests' : 'Vos sessions de test personnelles'}</p>
-          </div>
-        </div>
+   return (
+     <div style={styles.container}>
+       <main style={styles.main}>
+         <div style={styles.sessionsHeader}>
+           <div>
+             <h2 style={styles.pageTitle}><i className="fas fa-vial"></i> {isAdmin ? 'Gestion des Tests' : 'Mes Sessions de Test'}</h2>
+             <p style={styles.pageSubtitle}>{isAdmin ? 'Documents de Test - Planification et suivi des tests' : 'Vos sessions de test personnelles'}</p>
+           </div>
+           <button
+             style={styles.newSessionButton}
+             onClick={() => setShowSessionModal(true)}
+             title="Créer une nouvelle session"
+           >
+             <FontAwesomeIcon icon={faPlus} />
+             Nouvelle session
+           </button>
+         </div>
         
         {message.text && (
           <div style={message.type === 'success' ? styles.success : styles.error}>
@@ -2030,7 +2048,7 @@ input: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadi
   userFilter: { display: 'flex', alignItems: 'center', gap: '8px' },
   filterLabel: { fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' },
   filterSelect: { padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '13px', minWidth: '200px' },
-  newSessionButton: { padding: '10px 18px', backgroundColor: 'var(--info-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', transition: 'background-color 0.2s, transform 0.1s' },
+   newSessionButton: { padding: '10px 18px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' },
   consolidationButtons: { display: 'flex', gap: '8px', alignItems: 'center' },
   consolidationButton: { padding: '8px 12px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', transition: 'background-color 0.2s' },
   resetButton: { padding: '8px 12px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', transition: 'background-color 0.2s' },
