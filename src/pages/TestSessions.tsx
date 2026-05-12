@@ -14,6 +14,7 @@ interface TestSession {
   nom_document?: string;
   date_creation: string;
   statut: string;
+  role?: string;
   created_by?: number;
   createdByUsername?: string;
   total_tests?: number;
@@ -38,7 +39,8 @@ const TestSessions: React.FC = () => {
     environnement: '',
     version: '',
     nom_document: '',
-    statut: 'En cours' 
+    statut: 'En cours',
+    role: ''
   });
 
   const [editFormData, setEditFormData] = useState({ 
@@ -48,7 +50,8 @@ const TestSessions: React.FC = () => {
     environnement: '', 
     version: '',
     nom_document: '',
-    statut: 'En cours'
+    statut: 'En cours',
+    role: ''
   });
 
   const getStatusColor = (statut: string) => {
@@ -106,12 +109,13 @@ const TestSessions: React.FC = () => {
         environnement: sessionForm.environnement || undefined,
         version: sessionForm.version || undefined,
         nom_document: sessionForm.nom_document || undefined,
-        statut: sessionForm.statut
+        statut: sessionForm.statut,
+        role: sessionForm.role || undefined
       };
       await testSessionsAPI.create(sessionData);
       setMessage({ type: 'success', text: 'Session créée avec succès!' });
       setShowCreateModal(false);
-      setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nom_document: '', statut: 'En cours' });
+      setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nom_document: '', statut: 'En cours', role: '' });
       fetchData();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
@@ -142,7 +146,8 @@ const TestSessions: React.FC = () => {
       environnement: session.environnement || '',
       version: session.version || '',
       nom_document: session.nom_document || '',
-      statut: session.statut || 'En cours'
+      statut: session.statut || 'En cours',
+      role: session.role || ''
     };
     
     console.log('Données du formulaire d\'édition:', formData);
@@ -331,13 +336,19 @@ const TestSessions: React.FC = () => {
                   <span>{selectedSession.environnement}</span>
                 </div>
               )}
-              {selectedSession.version && (
-                <div style={styles.detailRow}>
-                  <span style={styles.detailLabel}>Version:</span>
-                  <span>{selectedSession.version}</span>
-                </div>
-              )}
-              {selectedSession.nom_document && (
+               {selectedSession.version && (
+                 <div style={styles.detailRow}>
+                   <span style={styles.detailLabel}>Version:</span>
+                   <span>{selectedSession.version}</span>
+                 </div>
+               )}
+               {selectedSession.role && (
+                 <div style={styles.detailRow}>
+                   <span style={styles.detailLabel}>Rôle:</span>
+                   <span>{selectedSession.role}</span>
+                 </div>
+               )}
+               {selectedSession.nom_document && (
                 <div style={styles.detailRow}>
                   <span style={styles.detailLabel}>Document:</span>
                   <span>{selectedSession.nom_document}</span>
@@ -408,12 +419,17 @@ const TestSessions: React.FC = () => {
                     {session.statut}
                   </span>
                 </div>
-                {session.createdByUsername && (
-                  <p style={styles.sessionOwner}>
-                    <FontAwesomeIcon icon={faUser} /> Créé par: {session.createdByUsername}
-                  </p>
-                )}
-                {session.description && (
+                 {session.createdByUsername && (
+                   <p style={styles.sessionOwner}>
+                     <FontAwesomeIcon icon={faUser} /> Créé par: {session.createdByUsername}
+                   </p>
+                 )}
+                 {session.role && (
+                   <p style={{ ...styles.sessionMeta, marginBottom: '8px' }}>
+                     <strong>Rôle:</strong> {session.role}
+                   </p>
+                 )}
+                 {session.description && (
                   <p style={{ ...styles.sessionMeta, marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.5' }}>{session.description}</p>
                 )}
                 <div style={styles.sessionMeta}>
@@ -507,38 +523,48 @@ const TestSessions: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Environnement</label>
-                  <input
-                    type="text"
-                    value={sessionForm.environnement}
-                    onChange={(e) => setSessionForm({ ...sessionForm, environnement: e.target.value })}
-                    style={styles.input}
-                    placeholder="Ex: Production"
-                  />
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Version</label>
-                  <input
-                    type="text"
-                    value={sessionForm.version}
-                    onChange={(e) => setSessionForm({ ...sessionForm, version: e.target.value })}
-                    style={styles.input}
-                    placeholder="Ex: 1.0.0"
-                  />
-                </div>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Nom du document</label>
-                <input
-                  type="text"
-                  value={sessionForm.nom_document}
-                  onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
-                  style={styles.input}
-                  placeholder="Ex: Plan de tests v1.0"
-                />
-              </div>
+               <div style={styles.formRow}>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Environnement</label>
+                   <input
+                     type="text"
+                     value={sessionForm.environnement}
+                     onChange={(e) => setSessionForm({ ...sessionForm, environnement: e.target.value })}
+                     style={styles.input}
+                     placeholder="Ex: Production"
+                   />
+                 </div>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Version</label>
+                   <input
+                     type="text"
+                     value={sessionForm.version}
+                     onChange={(e) => setSessionForm({ ...sessionForm, version: e.target.value })}
+                     style={styles.input}
+                     placeholder="Ex: 1.0.0"
+                   />
+                 </div>
+               </div>
+               <div style={styles.formGroup}>
+                 <label style={styles.label}>Rôle</label>
+                 <input
+                   type="text"
+                   value={sessionForm.role}
+                   onChange={(e) => setSessionForm({ ...sessionForm, role: e.target.value })}
+                   style={styles.input}
+                   placeholder="Ex: Admin, Testeur, etc."
+                 />
+               </div>
+               <div style={styles.formGroup}>
+                 <label style={styles.label}>Nom du document</label>
+                 <input
+                   type="text"
+                   value={sessionForm.nom_document}
+                   onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
+                   style={styles.input}
+                   placeholder="Ex: Plan de tests v1.0"
+                 />
+               </div>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Description</label>
                 <textarea
@@ -623,38 +649,18 @@ const TestSessions: React.FC = () => {
                     style={styles.input}
                   />
                 </div>
+                </div>
                </div>
-               <div style={styles.formRow}>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Environnement</label>
-                   <input
-                     type="text"
-                     value={editFormData.environnement}
-                     onChange={(e) => setEditFormData({ ...editFormData, environnement: e.target.value })}
-                     style={styles.input}
-                     placeholder="Ex: Production"
-                   />
-                 </div>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Version</label>
-                   <input
-                     type="text"
-                     value={editFormData.version}
-                     onChange={(e) => setEditFormData({ ...editFormData, version: e.target.value })}
-                     style={styles.input}
-                     placeholder="Ex: 1.0.0"
-                   />
-                 </div>
-               </div>
-               <div style={styles.formGroup}>
-                 <label style={styles.label}>Nom du document</label>
-                 <input
-                   type="text"
-                   value={editFormData.nom_document}
-                   onChange={(e) => setEditFormData({ ...editFormData, nom_document: e.target.value })}
-                   style={styles.input}
-                 />
-               </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Rôle</label>
+                  <input
+                    type="text"
+                    value={editFormData.role}
+                    onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                    style={styles.input}
+                    placeholder="Ex: Admin, Testeur, etc."
+                  />
+                </div>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Description</label>
                 <textarea

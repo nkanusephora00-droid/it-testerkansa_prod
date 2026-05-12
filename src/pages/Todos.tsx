@@ -61,22 +61,18 @@ const Todos: React.FC = () => {
 
   const fetchUsersWithTodos = async () => {
     try {
-      const data = await todosAPI.getUsersWithTodos();
+      const [usersData, todosData] = await Promise.all([
+        usersAPI.getAll(),
+        todosAPI.getAll(),
+      ]);
       
-      // Le backend devrait déjà retourner les bons todos, mais ajoutons une sécurité
-      // Si le backend retourne tous les todos pour chaque utilisateur, on filtre ici
-      const filteredData = data.map(user => {
-        // Pour l'instant, on suppose que le backend fait bien son travail
-        // Si problème persiste, il faudra vérifier l'API backend
-        // On laisse le backend gérer le filtrage pour éviter les erreurs de type
-        
-        return {
-          ...user,
-          todos: user.todos // On garde les todos comme retournés par le backend
-        };
-      });
+      // Filter todos by user manually (in case backend doesn't filter correctly)
+      const usersWithTodos = usersData.map((user: any) => ({
+        ...user,
+        todos: todosData.filter((todo:Todo) => todo.created_by === user.id)
+      }));
       
-      setUsersWithTodos(filteredData);
+      setUsersWithTodos(usersWithTodos);
     } catch (err: unknown) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Error fetching users with todos:', err);
