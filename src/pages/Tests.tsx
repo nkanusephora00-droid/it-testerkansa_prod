@@ -61,8 +61,10 @@ const Tests: React.FC = () => {
   const [sessionForm, setSessionForm] = useState({ 
     nom: '', 
     description: '', 
-    nom_document: '',
     applicationId: 0,
+    environnement: '',
+    version: '',
+    nom_document: '',
     statut: 'En cours' 
   });
   
@@ -86,6 +88,19 @@ const Tests: React.FC = () => {
   // Edit test states
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTest, setEditingTest] = useState<Test | null>(null);
+
+  // Edit session states
+  const [showEditSessionModal, setShowEditSessionModal] = useState(false);
+  const [editingSession, setEditingSession] = useState<TestSession | null>(null);
+  const [editSessionForm, setEditSessionForm] = useState({
+    nom: '',
+    description: '',
+    applicationId: 0,
+    environnement: '',
+    version: '',
+    nom_document: '',
+    statut: 'En cours'
+  });
 
   // Pré-remplir le formulaire avec les valeurs de la session sélectionnée
   useEffect(() => {
@@ -529,24 +544,26 @@ const Tests: React.FC = () => {
     }
   };
 
-  const handleCreateSession = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const sessionData = {
-        nom: sessionForm.nom,
-        description: sessionForm.description,
-        applicationId: sessionForm.applicationId || undefined,
-        nom_document: sessionForm.nom_document || undefined,
-        statut: sessionForm.statut
-      };
-      const newSession = await testSessionsAPI.create(sessionData);
-      setMessage({ type: 'success', text: 'Session créée avec succès!' });
-      setShowSessionModal(false);
-      setSessionForm({ nom: '', description: '', nom_document: '', applicationId: 0, statut: 'En cours' });
-      fetchSessions();
-      // Automatically select the newly created session
-      setSelectedSession(newSession.id);
-    } catch (err: unknown) {
+   const handleCreateSession = async (e: React.FormEvent) => {
+     e.preventDefault();
+     try {
+       const sessionData = {
+         nom: sessionForm.nom,
+         description: sessionForm.description,
+         applicationId: sessionForm.applicationId || undefined,
+         environnement: sessionForm.environnement || undefined,
+         version: sessionForm.version || undefined,
+         nom_document: sessionForm.nom_document || undefined,
+         statut: sessionForm.statut
+       };
+       const newSession = await testSessionsAPI.create(sessionData);
+       setMessage({ type: 'success', text: 'Session créée avec succès!' });
+       setShowSessionModal(false);
+       setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nom_document: '', statut: 'En cours' });
+       fetchSessions();
+       // Automatically select the newly created session
+       setSelectedSession(newSession.id);
+     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string | unknown[] } } };
       const detail = error.response?.data?.detail;
       let errorText = 'Erreur lors de la création';
@@ -674,6 +691,45 @@ const Tests: React.FC = () => {
     });
     setImagePreview(test.image || null);
     setShowEditModal(true);
+  };
+
+  const openEditSessionModal = (session: TestSession) => {
+    setEditingSession(session);
+    setEditSessionForm({
+      nom: session.nom,
+      description: session.description || '',
+      applicationId: session.applicationId || 0,
+      environnement: session.environnement || '',
+      version: session.version || '',
+      nom_document: session.nom_document || '',
+      statut: session.statut || 'En cours'
+    });
+    setShowEditSessionModal(true);
+  };
+
+  const handleUpdateSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSession) return;
+
+    try {
+      const sessionData = {
+        nom: editSessionForm.nom,
+        description: editSessionForm.description,
+        applicationId: editSessionForm.applicationId || undefined,
+        environnement: editSessionForm.environnement || undefined,
+        version: editSessionForm.version || undefined,
+        nom_document: editSessionForm.nom_document || undefined,
+        statut: editSessionForm.statut
+      };
+      await testSessionsAPI.update(editingSession.id, sessionData);
+      setMessage({ type: 'success', text: 'Session mise à jour!' });
+      setShowEditSessionModal(false);
+      setEditingSession(null);
+      fetchSessions();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erreur lors de la mise à jour' });
+    }
   };
 
   const handleGenerateTestWord = async (test: Test) => {
@@ -1395,33 +1451,41 @@ const Tests: React.FC = () => {
                 <span style={styles.statOk}><FontAwesomeIcon icon={faCheck} /> {getSessionTests(session.id).filter((t: Test) => t.statut === 'OK').length}</span>
                 <span style={styles.statBug}><FontAwesomeIcon icon={faTimes} /> {getSessionTests(session.id).filter((t: Test) => t.statut === 'BUG').length}</span>
               </div>
-              <div style={styles.sessionActions}>
-                <button 
-                  style={styles.viewButton} 
-                  onClick={() => {
-                    setSelectedSession(session.id);
-                    setView('tests');
-                  }}
-                >
-                  <FontAwesomeIcon icon={faEye} />
-                </button>
-                <button 
-                  style={styles.exportButton} 
-                  onClick={() => {
-                    handleExportSessionPDF(session);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faFilePdf} />
-                </button>
-                <button 
-                  style={styles.exportButton} 
-                  onClick={() => {
-                    handleExportSessionWord(session);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faFileWord} />
-                </button>
-                {session.statut !== 'Terminé' && (
+               <div style={styles.sessionActions}>
+                 <button 
+                   style={styles.viewButton} 
+                   onClick={() => {
+                     setSelectedSession(session.id);
+                     setView('tests');
+                   }}
+                 >
+                   <FontAwesomeIcon icon={faEye} />
+                 </button>
+                 <button 
+                   style={styles.editButton}
+                   onClick={() => openEditSessionModal(session)}
+                   title="Modifier la session"
+                   disabled={session.statut === 'Terminé'}
+                 >
+                   <FontAwesomeIcon icon={faEdit} />
+                 </button>
+                 <button 
+                   style={styles.exportButton} 
+                   onClick={() => {
+                     handleExportSessionPDF(session);
+                   }}
+                 >
+                   <FontAwesomeIcon icon={faFilePdf} />
+                 </button>
+                 <button 
+                   style={styles.exportButton} 
+                   onClick={() => {
+                     handleExportSessionWord(session);
+                   }}
+                 >
+                   <FontAwesomeIcon icon={faFileWord} />
+                 </button>
+                 {session.statut !== 'Terminé' && (
                   <button 
                     style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b', border: '1px solid #ff6b6b'}} 
                     onClick={() => {
@@ -1678,67 +1742,87 @@ const Tests: React.FC = () => {
                 Créez une session pour regrouper vos cas de test et générer un export PDF.
               </p>
             </div>
-            <form onSubmit={handleCreateSession} style={styles.sessionForm}>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Nom de la session *</label>
-                  <input
-                    type="text"
-                    value={sessionForm.nom}
-                    onChange={(e) => setSessionForm({ ...sessionForm, nom: e.target.value })}
-                    style={styles.input}
-                    required
-                    placeholder="Ex: Test Release v1.0"
-                  />
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Application</label>
-                  <select
-                    value={sessionForm.applicationId || ''}
-                    onChange={(e) => setSessionForm({ ...sessionForm, applicationId: Number(e.target.value) })}
-                    style={styles.select}
-                  >
-                    <option value="">Sélectionner une application</option>
-                    {applications.map((app) => (
-                      <option key={app.id} value={app.id}>{app.nom}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Nom du document de test</label>
-                  <input
-                    type="text"
-                    value={sessionForm.nom_document}
-                    onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
-                    style={styles.input}
-                    placeholder="Ex: Plan de tests v1.0"
-                  />
-                </div>
-              </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Statut</label>
-                  <select
-                    value={sessionForm.statut}
-                    onChange={(e) => setSessionForm({ ...sessionForm, statut: e.target.value })}
-                    style={styles.select}
-                  >
-                    <option value="En cours">En cours</option>
-                    <option value="Terminé">Terminé</option>
-                  </select>
-                </div>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Description</label>
-                <textarea
-                  value={sessionForm.description}
-                  onChange={(e) => setSessionForm({ ...sessionForm, description: e.target.value })}
-                  style={{ ...styles.textarea, minHeight: '80px' }}
-                  placeholder="Description de la session de test..."
-                />
-              </div>
+             <form onSubmit={handleCreateSession} style={styles.sessionForm}>
+               <div style={styles.formRow}>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Nom de la session *</label>
+                   <input
+                     type="text"
+                     value={sessionForm.nom}
+                     onChange={(e) => setSessionForm({ ...sessionForm, nom: e.target.value })}
+                     style={styles.sessionModalInput}
+                     required
+                     placeholder="Ex: Test Release v1.0"
+                   />
+                 </div>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Application</label>
+                   <select
+                     value={sessionForm.applicationId || ''}
+                     onChange={(e) => setSessionForm({ ...sessionForm, applicationId: Number(e.target.value) })}
+                     style={styles.sessionModalSelect}
+                   >
+                     <option value="">Sélectionner une application</option>
+                     {applications.map((app) => (
+                       <option key={app.id} value={app.id}>{app.nom}</option>
+                     ))}
+                   </select>
+                 </div>
+               </div>
+               <div style={styles.formRow}>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Nom du document de test</label>
+                   <input
+                     type="text"
+                     value={sessionForm.nom_document}
+                     onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
+                     style={styles.sessionModalInput}
+                     placeholder="Ex: Plan de tests v1.0"
+                   />
+                 </div>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Statut</label>
+                   <select
+                     value={sessionForm.statut}
+                     onChange={(e) => setSessionForm({ ...sessionForm, statut: e.target.value })}
+                     style={styles.sessionModalSelect}
+                   >
+                     <option value="En cours">En cours</option>
+                     <option value="Terminé">Terminé</option>
+                   </select>
+                 </div>
+               </div>
+               <div style={styles.formRow}>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Environnement</label>
+                   <input
+                     type="text"
+                     value={sessionForm.environnement}
+                     onChange={(e) => setSessionForm({ ...sessionForm, environnement: e.target.value })}
+                     style={styles.sessionModalInput}
+                     placeholder="Ex: Production"
+                   />
+                 </div>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Version</label>
+                   <input
+                     type="text"
+                     value={sessionForm.version}
+                     onChange={(e) => setSessionForm({ ...sessionForm, version: e.target.value })}
+                     style={styles.sessionModalInput}
+                     placeholder="Ex: 1.0.0"
+                   />
+                 </div>
+               </div>
+               <div style={styles.formGroup}>
+                 <label style={styles.label}>Description</label>
+                 <textarea
+                   value={sessionForm.description}
+                   onChange={(e) => setSessionForm({ ...sessionForm, description: e.target.value })}
+                   style={styles.sessionModalTextarea}
+                   placeholder="Description de la session de test..."
+                 />
+               </div>
               <div style={styles.formActions}>
                 <button
                   type="button"
@@ -1754,9 +1838,118 @@ const Tests: React.FC = () => {
             </form>
           </div>
         </div>
-      )}
+       )}
 
-      {showTestForm && (
+       {showEditSessionModal && (
+         <div style={styles.modal}>
+           <div style={{ ...styles.modalContent, ...styles.sessionModalContent }}>
+             <span style={styles.close} onClick={() => setShowEditSessionModal(false)}>&times;</span>
+             <div style={styles.modalHeader}>
+               <h3 style={styles.sectionTitle}>Modifier la session</h3>
+               <p style={styles.modalSubtitle}>
+                 Modifiez les informations de la session.
+               </p>
+             </div>
+             <form onSubmit={handleUpdateSession} style={styles.sessionForm}>
+               <div style={styles.formRow}>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Nom de la session *</label>
+                   <input
+                     type="text"
+                     value={editSessionForm.nom}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, nom: e.target.value })}
+                     style={styles.sessionModalInput}
+                     required
+                     placeholder="Ex: Test Release v1.0"
+                   />
+                 </div>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Application</label>
+                   <select
+                     value={editSessionForm.applicationId || ''}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, applicationId: Number(e.target.value) })}
+                     style={styles.sessionModalSelect}
+                   >
+                     <option value="">Sélectionner une application</option>
+                     {applications.map((app) => (
+                       <option key={app.id} value={app.id}>{app.nom}</option>
+                     ))}
+                   </select>
+                 </div>
+               </div>
+               <div style={styles.formRow}>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Nom du document de test</label>
+                   <input
+                     type="text"
+                     value={editSessionForm.nom_document}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, nom_document: e.target.value })}
+                     style={styles.sessionModalInput}
+                     placeholder="Ex: Plan de tests v1.0"
+                   />
+                 </div>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Statut</label>
+                   <select
+                     value={editSessionForm.statut}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, statut: e.target.value })}
+                     style={styles.sessionModalSelect}
+                   >
+                     <option value="En cours">En cours</option>
+                     <option value="Terminé">Terminé</option>
+                     <option value="Bloquée">Bloquée</option>
+                   </select>
+                 </div>
+               </div>
+               <div style={styles.formRow}>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Environnement</label>
+                   <input
+                     type="text"
+                     value={editSessionForm.environnement}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, environnement: e.target.value })}
+                     style={styles.sessionModalInput}
+                     placeholder="Ex: Production"
+                   />
+                 </div>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Version</label>
+                   <input
+                     type="text"
+                     value={editSessionForm.version}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, version: e.target.value })}
+                     style={styles.sessionModalInput}
+                     placeholder="Ex: 1.0.0"
+                   />
+                 </div>
+               </div>
+               <div style={styles.formGroup}>
+                 <label style={styles.label}>Description</label>
+                 <textarea
+                   value={editSessionForm.description}
+                   onChange={(e) => setEditSessionForm({ ...editSessionForm, description: e.target.value })}
+                   style={styles.sessionModalTextarea}
+                   placeholder="Description de la session de test..."
+                 />
+               </div>
+               <div style={styles.formActions}>
+                 <button
+                   type="button"
+                   onClick={() => setShowEditSessionModal(false)}
+                   style={styles.secondaryButton}
+                 >
+                   Annuler
+                 </button>
+                 <button type="submit" style={styles.primaryButton}>
+                   Enregistrer
+                 </button>
+               </div>
+             </form>
+           </div>
+         </div>
+       )}
+
+       {showTestForm && (
         <div style={styles.modal}>
           <div style={{ ...styles.modalContent, ...styles.testModalContent }}>
             <span style={styles.close} onClick={() => setShowTestForm(false)}>&times;</span>
@@ -2005,11 +2198,17 @@ const styles: Record<string, React.CSSProperties> = {
   tableSection: { backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '10px', boxShadow: '0 2px 8px var(--shadow-color)', border: '1px solid var(--border-light)' },
   sectionTitle: { fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '12px', paddingBottom: '8px', borderBottom: '2px solid var(--border-light)' },
   form: { display: 'flex', gap: '12px', flexWrap: 'wrap' as const },
-input: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', maxWidth: '100%', transition: 'border-color 0.2s, box-shadow 0.2s' },
-  textarea: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', minHeight: '35px', maxHeight: '50px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', resize: 'vertical' as const, width: '100%', overflow: 'auto', transition: 'border-color 0.2s, box-shadow 0.2s' },
-  select: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', cursor: 'pointer', transition: 'border-color 0.2s' },
-  label: { display: 'block', marginBottom: '2px', fontSize: '10px', fontWeight: '600', color: 'var(--text-secondary)' },
-  fileInput: { padding: '4px', border: '1px solid var(--border-color)', borderRadius: '3px', width: '100%', fontSize: '11px', backgroundColor: 'var(--bg-card)' },
+   input: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', maxWidth: '100%', transition: 'border-color 0.2s, box-shadow 0.2s' },
+   textarea: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', minHeight: '35px', maxHeight: '50px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', resize: 'vertical' as const, width: '100%', overflow: 'auto', transition: 'border-color 0.2s, box-shadow 0.2s' },
+   select: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', cursor: 'pointer', transition: 'border-color 0.2s' },
+   label: { display: 'block', marginBottom: '2px', fontSize: '10px', fontWeight: '600', color: 'var(--text-secondary)' },
+
+   // Styles spécifiques pour le modal de session (plus grands)
+   sessionModalInput: { padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', transition: 'border-color 0.2s, box-shadow 0.2s', minHeight: '44px', width: '100%' },
+   sessionModalSelect: { padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', cursor: 'pointer', transition: 'border-color 0.2s', minHeight: '44px', width: '100%' },
+   sessionModalTextarea: { padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', resize: 'vertical' as const, minHeight: '100px', width: '100%', transition: 'border-color 0.2s, box-shadow 0.2s' },
+
+   fileInput: { padding: '4px', border: '1px solid var(--border-color)', borderRadius: '3px', width: '100%', fontSize: '11px', backgroundColor: 'var(--bg-card)' },
   imagePreview: { position: 'relative', marginTop: '10px', display: 'inline-block' },
   previewImg: { maxWidth: '150px', maxHeight: '100px', borderRadius: '6px', border: '2px solid var(--info-color)' },
   removeImageBtn: { position: 'absolute', top: '-8px', right: '-8px', backgroundColor: 'var(--danger-color)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '14px', lineHeight: '1' },
@@ -2023,17 +2222,16 @@ input: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadi
     testsHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '12px' },
   testsSubtitle: { fontSize: '13px', color: 'var(--text-secondary)' },
   sessionInfo: { fontSize: '13px', color: 'var(--text-secondary)', margin: '5px 0' },
-  modal: { position: 'fixed' as const, top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, overflowY: 'auto' as const, backdropFilter: 'blur(8px)' },
-  modalContent: { backgroundColor: 'var(--bg-card)', padding: '30px', borderRadius: '16px', width: '95%', maxWidth: '600px', position: 'relative' as const, boxShadow: '0 20px 60px rgba(0,0,0,0.5)', border: '2px solid var(--primary-color)', transform: 'translateY(0)' },
-  sessionModalContent: { maxWidth: '500px', padding: '16px' },
-  testModalContent: { maxWidth: '420px', padding: '10px' },
+   modal: { position: 'fixed' as const, top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, overflowY: 'auto' as const, backdropFilter: 'blur(8px)' },
+   modalContent: { backgroundColor: 'var(--bg-card)', padding: '30px', borderRadius: '16px', width: '95%', maxWidth: '600px', position: 'relative' as const, boxShadow: '0 20px 60px rgba(0,0,0,0.5)', border: '2px solid var(--primary-color)', transform: 'translateY(0)' },
+   sessionModalContent: { maxWidth: '700px', padding: '30px', width: '100%' },
+   testModalContent: { maxWidth: '420px', padding: '10px' },
   close: { position: 'absolute' as const, top: '6px', right: '10px', fontSize: '20px', cursor: 'pointer', color: 'var(--text-muted)', transition: 'color 0.2s', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' },
   modalHeader: { marginBottom: '6px' },
   modalSubtitle: { fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' },
-  formGroup: { marginBottom: '6px', flex: '1 1 100%' as const, minWidth: '100%' },
-  formGroupHalf: { marginBottom: '6px', flex: '1 1 160px' as const, minWidth: '140px' },
-  formRow: { display: 'flex', gap: '6px', flexWrap: 'wrap' as const, width: '100%' },
-  sessionForm: { display: 'flex', flexDirection: 'column' as const, gap: '6px', width: '100%', maxWidth: '400px', margin: '0 auto' },
+   formGroup: { marginBottom: '6px', flex: '1 1 200px' as const, minWidth: '200px' },
+   formRow: { display: 'flex', gap: '12px', flexWrap: 'wrap' as const, width: '100%' },
+   sessionForm: { display: 'flex', flexDirection: 'column' as const, gap: '16px', width: '100%' },
   testForm: { display: 'flex', flexDirection: 'column' as const, gap: '6px', width: '100%', maxWidth: '400px', margin: '0 auto' },
     sessionsHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' as const, gap: '12px' },
   headerLeft: { display: 'flex', alignItems: 'center', gap: '12px', flex: 1 },
