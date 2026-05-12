@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { testSessionsAPI, applicationsAPI, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faMinus, faBars } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faMinus, faUser } from '@fortawesome/free-solid-svg-icons';
 
 // Hook pour détecter la taille d'écran
 const useResponsive = () => {
@@ -301,21 +301,8 @@ const TestSessions: React.FC = () => {
   return (
     <div style={styles.container}>
       <main style={styles.main}>
-        <div style={styles.pageHeader}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-            {isMobile && (
-              <button
-                className="mobile-menu-button"
-                style={styles.mobileMenuButton}
-                onClick={() => {
-                  const event = new CustomEvent('toggleMobileMenu');
-                  window.dispatchEvent(event);
-                }}
-                title="Menu"
-              >
-                <FontAwesomeIcon icon={faBars} />
-              </button>
-            )}
+        <div style={styles.sessionsHeader}>
+          <div style={styles.headerLeft}>
             <div>
               <h2 style={styles.pageTitle}>Gestion des Sessions</h2>
               <p style={styles.pageSubtitle}>
@@ -323,39 +310,13 @@ const TestSessions: React.FC = () => {
               </p>
             </div>
           </div>
-          <button 
-            style={{
-              padding: '12px 20px',
-              backgroundColor: 'var(--success-color)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.2s',
-              position: 'relative',
-              zIndex: 10,
-              ...(isMobile ? {
-                position: 'fixed',
-                bottom: '80px',
-                right: '20px',
-                borderRadius: '50%',
-                width: '56px',
-                height: '56px',
-                zIndex: 1001,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                justifyContent: 'center',
-                padding: '0'
-              } : {})
-            }} 
+          <button
+            style={styles.newSessionButton}
             onClick={() => setShowCreateModal(true)}
-            title={isMobile ? "Nouvelle session" : "Créer une nouvelle session de test"}
+            title="Créer une nouvelle session"
           >
             <FontAwesomeIcon icon={faPlus} />
-            {!isMobile && " Nouvelle session"}
+            Nouvelle session
           </button>
         </div>
 
@@ -448,182 +409,73 @@ const TestSessions: React.FC = () => {
             </button>
           </div>
         ) : (
-          /* Affichage en fonction de la taille d'écran */
-          isMobile ? (
-            /* Affichage en liste simple pour mobile - SOLUTION DÉFINITIVE */
-            <>
+          <div className="sessions-grid" style={styles.sessionsGrid}>
             {sessions.map((session) => (
-              <div key={session.id} style={{
-                border: `2px solid ${getStatusColor(session.statut)}`,
-                backgroundColor: '#fff',
-                padding: '15px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                width: 'calc(100% - 30px)',
-                marginLeft: '15px',
-                marginRight: '15px',
-                marginBottom: '15px',
-                boxSizing: 'border-box',
-                display: 'block'
-              }}>
+              <div 
+                key={session.id} 
+                style={{
+                  ...styles.sessionCard,
+                  borderColor: getStatusColor(session.statut),
+                  borderWidth: '2px',
+                  borderStyle: 'solid'
+                }}
+              >
                 <div style={styles.sessionHeader}>
-                  <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#2c3e50' }}>
-                    {session.nom}
-                  </h3>
-                  <span style={getStatusBadge(session.statut)}>{session.statut}</span>
+                  <h3 style={styles.sessionTitle}>{session.nom}</h3>
+                  <span style={{...styles.statusBadge, backgroundColor: getStatusColor(session.statut)}}>
+                    {session.statut}
+                  </span>
                 </div>
-                
-                <div style={{ marginBottom: '10px' }}>
-                  <strong>Application:</strong> {getAppName(session.applicationId)}
-                </div>
-                
-                {session.environnement && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <strong>Environnement:</strong> {session.environnement}
-                  </div>
+                {session.createdByUsername && (
+                  <p style={styles.sessionOwner}>
+                    <FontAwesomeIcon icon={faUser} /> Créé par: {session.createdByUsername}
+                  </p>
                 )}
-                
-                {session.version && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <strong>Version:</strong> v{session.version}
-                  </div>
-                )}
-                
                 {session.description && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <strong>Description:</strong>
-                    <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
-                      {session.description}
-                    </div>
-                  </div>
+                  <p style={{ ...styles.sessionMeta, marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.5' }}>{session.description}</p>
                 )}
-                
-                <div style={{ marginBottom: '10px' }}>
-                  <strong>Statistiques:</strong>
-                  <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
-                    <span>Total: <strong>{session.total_tests || 0}</strong></span>
-                    <span style={{ color: '#27ae60', marginLeft: '15px' }}>OK: <strong>{session.tests_ok || 0}</strong></span>
-                    <span style={{ color: '#dc3545', marginLeft: '15px' }}>BUG: <strong>{session.tests_bug || 0}</strong></span>
-                  </div>
+                <div style={styles.sessionMeta}>
+                  <span><i className="fas fa-mobile-alt"></i> {getAppName(session.applicationId)}</span>
+                  {session.environnement && <span><i className="fas fa-server"></i> {session.environnement}</span>}
+                  {session.version && <span><i className="fas fa-code-branch"></i> v{session.version}</span>}
                 </div>
-                
-                <div style={{ marginBottom: '10px' }}>
-                  <strong>Date de création:</strong> {new Date(session.date_creation).toLocaleDateString('fr-FR')}
+                <div style={styles.sessionStats}>
+                  <span>Total: <strong>{session.total_tests || 0}</strong></span>
+                  <span style={{ color: '#27ae60' }}>OK: <strong>{session.tests_ok || 0}</strong></span>
+                  <span style={{ color: '#dc3545' }}>BUG: <strong>{session.tests_bug || 0}</strong></span>
                 </div>
-                
                 <div style={styles.sessionActions}>
                   <button 
-                    style={{...styles.viewButton, padding: '8px 12px', marginRight: '8px'}}
+                    style={styles.viewButton}
                     onClick={() => setSelectedSession(session)}
                     title="Voir détails"
                   >
-                    <FontAwesomeIcon icon={faEye} />
+                    <FontAwesomeIcon icon={faEye} /> Détails
                   </button>
                   <button 
-                    style={{
-                      ...styles.editButton, 
-                      padding: '8px 12px', 
-                      marginRight: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      visibility: 'visible',
-                      opacity: 1,
-                      position: 'relative',
-                      zIndex: 10,
-                      pointerEvents: 'auto',
-                      cursor: 'pointer'
-                    }}
+                    style={styles.editButton}
                     onClick={(e) => {
-                      e.preventDefault();
                       e.stopPropagation();
-                      console.log('Bouton modifier cliqué pour session:', session.id);
                       openEditModal(session);
                     }}
-                    title="Modifier cette session"
+                    title="Modifier"
                   >
-                    <FontAwesomeIcon icon={faEdit} />
+                    <FontAwesomeIcon icon={faEdit} /> Modifier
                   </button>
                   <button 
-                    style={{...styles.deleteButton, padding: '8px 12px'}}
-                    onClick={() => handleDelete(session.id)}
+                    style={styles.deleteButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(session.id);
+                    }}
                     title="Supprimer"
                   >
-                    <FontAwesomeIcon icon={faTrash} />
+                    <FontAwesomeIcon icon={faTrash} /> Supprimer
                   </button>
                 </div>
               </div>
             ))}
-            </>
-          ) : (
-            /* Affichage normal pour desktop */
-            <div style={styles.sessionsList}>
-              {sessions.map((session) => (
-                <div key={session.id} style={styles.sessionItem}>
-                  <div style={styles.sessionMain}>
-                    <div style={styles.sessionLeft}>
-                      <div style={styles.sessionHeader}>
-                        <h3 style={styles.sessionTitle}>{session.nom}</h3>
-                        <span style={getStatusBadge(session.statut)}>{session.statut}</span>
-                      </div>
-                      <div style={styles.sessionMeta}>
-                        <span><FontAwesomeIcon icon={faMinus} /> {getAppName(session.applicationId)}</span>
-                        {session.environnement && <span><FontAwesomeIcon icon={faMinus} /> {session.environnement}</span>}
-                        {session.version && <span><FontAwesomeIcon icon={faMinus} /> v{session.version}</span>}
-                      </div>
-                      {session.description && (
-                        <p style={styles.sessionDescription}>{session.description}</p>
-                      )}
-                      <div style={styles.sessionStats}>
-                        <span>Total: <strong>{session.total_tests || 0}</strong></span>
-                        <span style={{ color: '#27ae60' }}>OK: <strong>{session.tests_ok || 0}</strong></span>
-                        <span style={{ color: '#dc3545' }}>BUG: <strong>{session.tests_bug || 0}</strong></span>
-                      </div>
-                    </div>
-                    <div style={styles.sessionActions}>
-                      <button 
-                        style={styles.viewButton}
-                        onClick={() => setSelectedSession(session)}
-                        title="Voir détails"
-                      >
-                        <FontAwesomeIcon icon={faEye} />
-                      </button>
-                      <button 
-                        style={{
-                          ...styles.editButton,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          visibility: 'visible',
-                          opacity: 1,
-                          position: 'relative',
-                          zIndex: 10,
-                          pointerEvents: 'auto',
-                          cursor: 'pointer'
-                        }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          console.log('Bouton modifier cliqué pour session (desktop):', session.id);
-                          openEditModal(session);
-                        }}
-                        title="Modifier cette session"
-                      >
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button 
-                        style={styles.deleteButton}
-                        onClick={() => handleDelete(session.id)}
-                        title="Supprimer"
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
+          </div>
         )}
       </main>
 
@@ -789,16 +641,38 @@ const TestSessions: React.FC = () => {
                     style={styles.input}
                   />
                 </div>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Nom du document</label>
-                <input
-                  type="text"
-                  value={editFormData.nom_document}
-                  onChange={(e) => setEditFormData({ ...editFormData, nom_document: e.target.value })}
-                  style={styles.input}
-                />
-              </div>
+               </div>
+               <div style={styles.formRow}>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Environnement</label>
+                   <input
+                     type="text"
+                     value={editFormData.environnement}
+                     onChange={(e) => setEditFormData({ ...editFormData, environnement: e.target.value })}
+                     style={styles.input}
+                     placeholder="Ex: Production"
+                   />
+                 </div>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Version</label>
+                   <input
+                     type="text"
+                     value={editFormData.version}
+                     onChange={(e) => setEditFormData({ ...editFormData, version: e.target.value })}
+                     style={styles.input}
+                     placeholder="Ex: 1.0.0"
+                   />
+                 </div>
+               </div>
+               <div style={styles.formGroup}>
+                 <label style={styles.label}>Nom du document</label>
+                 <input
+                   type="text"
+                   value={editFormData.nom_document}
+                   onChange={(e) => setEditFormData({ ...editFormData, nom_document: e.target.value })}
+                   style={styles.input}
+                 />
+               </div>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Description</label>
                 <textarea
@@ -822,64 +696,37 @@ const TestSessions: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
-  main: { padding: '120px 30px 30px 30px', maxWidth: '900px', margin: '0 auto', width: '100%' },
-  
-  pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', position: 'relative', zIndex: 200 },
-  mobileMenuButton: {
-    display: 'none',
-    position: 'fixed' as const,
-    top: '8px',
-    left: '8px',
-    zIndex: 1001,
-    width: '48px',
-    height: '48px',
-    borderRadius: '12px',
-    border: '2px solid var(--border-color)',
-    backgroundColor: 'var(--bg-card)',
-    color: 'var(--text-primary)',
-    fontSize: '20px',
-    cursor: 'pointer',
-    boxShadow: '0 4px 12px var(--shadow-strong)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0
-  },
+  main: { padding: '20px', maxWidth: '1200px', margin: '0 auto', width: '100%' },
+
+  // Styles uniformisés avec Tests.tsx
+  sessionsHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' as const, gap: '12px' },
+  headerLeft: { display: 'flex', alignItems: 'center', gap: '12px', flex: 1 },
   pageTitle: { margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' },
   pageSubtitle: { margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '14px' },
 
-  addButton: { padding: '12px 20px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' },
+  // Nouveau bouton (style identique à Tests.tsx)
+  newSessionButton: { padding: '10px 18px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' },
 
-  success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '8px', marginBottom: '20px' },
-  error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: '8px', marginBottom: '20px' },
+  // Grille de sessions (identique à Tests.tsx)
+  sessionsGrid: {
+    display: 'grid',
+    gap: '16px',
+    padding: '0 20px',
+    width: '100%'
+  },
 
-  loading: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--text-secondary)' },
-
-  emptyState: { textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' },
-  emptyIcon: { fontSize: '48px', marginBottom: '16px', opacity: 0.5, color: 'var(--text-secondary)' },
-  emptyButton: { marginTop: '16px', padding: '12px 24px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '8px' },
-
-  sessionsList: { display: 'flex', flexDirection: 'column', gap: '16px' },
-
-  sessionItem: {
+  sessionCard: {
     backgroundColor: 'var(--bg-card)',
     borderRadius: '12px',
     padding: '20px',
-    border: '1px solid var(--border-color)',
-    boxShadow: '0 2px 8px var(--shadow-color)',
-    transition: 'all 0.2s ease'
-  },
-
-  sessionMain: {
+    border: '2px solid var(--border-color)',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+    transition: 'all 0.3s ease',
+    position: 'relative' as const,
+    minHeight: '200px',
     display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: '16px',
-    flexWrap: 'wrap' as const
-  },
-
-  sessionLeft: {
-    flex: 1,
-    minWidth: '280px'
+    flexDirection: 'column' as const,
+    cursor: 'pointer'
   },
 
   sessionHeader: {
@@ -887,40 +734,55 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: '12px',
-    gap: '12px',
-    flexWrap: 'wrap' as const
+    gap: '8px'
   },
 
   sessionTitle: {
     margin: 0,
-    fontSize: '18px',
-    fontWeight: 600,
     color: 'var(--text-primary)',
+    fontSize: '18px',
+    fontWeight: '700',
+    flex: 1,
     lineHeight: '1.3'
+  },
+
+  statusBadge: {
+    padding: '6px 12px',
+    borderRadius: '20px',
+    fontSize: '10px',
+    fontWeight: '700',
+    color: 'white',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px'
+  },
+
+  sessionOwner: {
+    color: 'var(--text-secondary)',
+    fontSize: '13px',
+    marginBottom: '8px',
+    fontWeight: '500',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
   },
 
   sessionMeta: {
     display: 'flex',
-    gap: '16px',
-    flexWrap: 'wrap' as const,
+    flexDirection: 'column' as const,
+    gap: '6px',
     fontSize: '13px',
     color: 'var(--text-secondary)',
-    marginBottom: '12px'
-  },
-
-  sessionDescription: {
-    fontSize: '14px',
-    color: 'var(--text-secondary)',
     marginBottom: '12px',
-    lineHeight: '1.5'
+    flex: 1
   },
 
   sessionStats: {
     display: 'flex',
-    gap: '16px',
+    justifyContent: 'space-between',
+    gap: '8px',
+    marginBottom: '12px',
     fontSize: '13px',
-    color: 'var(--text-secondary)',
-    padding: '10px 14px',
+    padding: '10px',
     backgroundColor: 'var(--hover-bg)',
     borderRadius: '8px',
     border: '1px solid var(--border-color)'
@@ -929,14 +791,70 @@ const styles: Record<string, React.CSSProperties> = {
   sessionActions: {
     display: 'flex',
     gap: '8px',
-    flexShrink: 0
+    marginTop: 'auto',
+    flexWrap: 'wrap' as const
   },
 
-  viewButton: { padding: '8px 12px', backgroundColor: 'var(--info-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 },
-  editButton: { padding: '8px 12px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 },
-  deleteButton: { padding: '8px 12px', backgroundColor: 'var(--danger-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 },
+  viewButton: {
+    padding: '8px 14px',
+    backgroundColor: 'var(--info-color)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    flex: 1,
+    fontWeight: '600',
+    fontSize: '12px',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px'
+  },
 
-  // Session details panel (comme Todos)
+  editButton: {
+    padding: '8px 14px',
+    backgroundColor: 'var(--primary-color)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    flex: 1,
+    fontWeight: '600',
+    fontSize: '12px',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px'
+  },
+
+  deleteButton: {
+    padding: '8px 14px',
+    backgroundColor: 'var(--danger-color)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    flex: 1,
+    fontWeight: '600',
+    fontSize: '12px',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px'
+  },
+
+  emptyState: { textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' },
+  emptyIcon: { fontSize: '48px', marginBottom: '16px', opacity: 0.5, color: 'var(--text-secondary)' },
+  emptyButton: { marginTop: '16px', padding: '12px 24px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '8px' },
+
+  success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '8px', marginBottom: '20px' },
+  error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: '8px', marginBottom: '20px' },
+  loading: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--text-secondary)' },
+
+  // Session details panel
   sessionDetails: {
     backgroundColor: 'var(--bg-card)',
     borderRadius: '12px',
@@ -1055,19 +973,8 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border-light)'
   },
 
-  modalTitle: {
-    margin: '0 0 4px',
-    fontSize: '20px',
-    fontWeight: 600,
-    color: 'var(--text-primary)'
-  },
-
-  modalSubtitle: {
-    margin: '0 0 20px',
-    fontSize: '13px',
-    color: 'var(--text-secondary)'
-  },
-
+  modalTitle: { margin: '0 0 4px', fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' },
+  modalSubtitle: { margin: '0 0 20px', fontSize: '13px', color: 'var(--text-secondary)' },
   modalCloseButton: {
     position: 'absolute' as const,
     top: '12px',
@@ -1085,30 +992,11 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '50%'
   },
 
-  modalForm: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '16px'
-  },
+  modalForm: { display: 'flex', flexDirection: 'column' as const, gap: '16px' },
+  formRow: { display: 'flex', gap: '16px', flexWrap: 'wrap' as const },
+  formGroup: { flex: 1, minWidth: '200px' },
 
-  formRow: {
-    display: 'flex',
-    gap: '16px',
-    flexWrap: 'wrap' as const
-  },
-
-  formGroup: {
-    flex: 1,
-    minWidth: '200px'
-  },
-
-  label: {
-    display: 'block',
-    marginBottom: '6px',
-    fontWeight: 500,
-    color: 'var(--text-secondary)',
-    fontSize: '13px'
-  },
+  label: { display: 'block', marginBottom: '6px', fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' },
 
   input: {
     width: '100%',
@@ -1143,12 +1031,7 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '80px'
   },
 
-  formActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '12px',
-    marginTop: '8px'
-  },
+  formActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' },
 
   submitButton: {
     padding: '10px 20px',
