@@ -1,24 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { testSessionsAPI, applicationsAPI, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faMinus, faUser } from '@fortawesome/free-solid-svg-icons';
-
-// Hook pour détecter la taille d'écran
-const useResponsive = () => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768); // 768px est la limite commune pour mobile
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  return isMobile;
-};
+import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faUser } from '@fortawesome/free-solid-svg-icons';
 
 interface TestSession {
   id: number;
@@ -39,7 +22,6 @@ interface TestSession {
 }
 
 const TestSessions: React.FC = () => {
-  const isMobile = useResponsive(); // Utilisation du hook responsive
   const [sessions, setSessions] = useState<TestSession[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
