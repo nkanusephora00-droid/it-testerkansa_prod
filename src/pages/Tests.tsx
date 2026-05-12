@@ -1293,17 +1293,9 @@ const Tests: React.FC = () => {
                  </button>
                )}
              </div>
-           )}
-           <button
-             style={styles.newSessionButton}
-             onClick={() => setShowSessionModal(true)}
-             title="Créer une nouvelle session"
-           >
-             <FontAwesomeIcon icon={faPlus} />
-             Nouvelle session
-           </button>
-         </div>
-       </div>
+            )}
+          </div>
+        </div>
       <div style={styles.sessionsGrid}>
         {consolidationMode !== 'none' ? (
           consolidatedSessions.map(consolidated => (
