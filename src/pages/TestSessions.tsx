@@ -124,7 +124,7 @@ const TestSessions: React.FC = () => {
       };
       await testSessionsAPI.create(sessionData);
       setMessage({ type: 'success', text: 'Session créée avec succès!' });
-      setShowCreateModal(true);
+      setShowCreateModal(false);
       setSessionForm({ nom: '', description: '', nom_document: '', applicationId: 0, statut: 'En cours' });
       fetchData();
     } catch (err: unknown) {
@@ -317,18 +317,18 @@ const TestSessions: React.FC = () => {
               alignItems: 'center',
               gap: '8px',
               transition: 'all 0.2s',
-              ...(isMobile ? {
-                position: 'fixed',
-                bottom: '80px',
-                right: '20px',
-                borderRadius: '50%',
-                width: '56px',
-                height: '56px',
-                zIndex: 999,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                justifyContent: 'center',
-                padding: '0'
-              } : {})
+               ...(isMobile ? {
+                 position: 'fixed',
+                 bottom: '80px',
+                 right: '20px',
+                 borderRadius: '50%',
+                 width: '56px',
+                 height: '56px',
+                 zIndex: 1001,
+                 boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                 justifyContent: 'center',
+                 padding: '0'
+               } : {})
             }} 
             onClick={() => setShowCreateModal(true)}
             title={isMobile ? "Nouvelle session" : "Créer une nouvelle session de test"}
@@ -779,9 +779,9 @@ const TestSessions: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
-  main: { padding: '30px', maxWidth: '900px', margin: '0 auto', width: '100%', minHeight: 'calc(100vh - 70px)' },
+  main: { padding: '100px 30px 30px 30px', maxWidth: '900px', margin: '0 auto', width: '100%' },
   
-  pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' },
+  pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', position: 'relative', zIndex: 200 },
   pageTitle: { margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' },
   pageSubtitle: { margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '14px' },
 
