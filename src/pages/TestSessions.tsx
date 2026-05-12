@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { testSessionsAPI, applicationsAPI, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faMinus } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faMinus, faBars } from '@fortawesome/free-solid-svg-icons';
 
 // Hook pour détecter la taille d'écran
 const useResponsive = () => {
@@ -52,8 +52,10 @@ const TestSessions: React.FC = () => {
   const [sessionForm, setSessionForm] = useState({ 
     nom: '', 
     description: '', 
-    nom_document: '',
     applicationId: 0,
+    environnement: '',
+    version: '',
+    nom_document: '',
     statut: 'En cours' 
   });
 
@@ -119,13 +121,15 @@ const TestSessions: React.FC = () => {
         nom: sessionForm.nom,
         description: sessionForm.description,
         applicationId: sessionForm.applicationId || undefined,
+        environnement: sessionForm.environnement || undefined,
+        version: sessionForm.version || undefined,
         nom_document: sessionForm.nom_document || undefined,
         statut: sessionForm.statut
       };
       await testSessionsAPI.create(sessionData);
       setMessage({ type: 'success', text: 'Session créée avec succès!' });
       setShowCreateModal(false);
-      setSessionForm({ nom: '', description: '', nom_document: '', applicationId: 0, statut: 'En cours' });
+      setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nom_document: '', statut: 'En cours' });
       fetchData();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
@@ -298,11 +302,26 @@ const TestSessions: React.FC = () => {
     <div style={styles.container}>
       <main style={styles.main}>
         <div style={styles.pageHeader}>
-          <div>
-            <h2 style={styles.pageTitle}>Gestion des Sessions</h2>
-            <p style={styles.pageSubtitle}>
-              {sessions.length} session{sessions.length !== 1 ? 's' : ''} · {sessions.reduce((acc, s) => acc + (s.total_tests || 0), 0)} tests au total
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+            {isMobile && (
+              <button
+                className="mobile-menu-button"
+                style={styles.mobileMenuButton}
+                onClick={() => {
+                  const event = new CustomEvent('toggleMobileMenu');
+                  window.dispatchEvent(event);
+                }}
+                title="Menu"
+              >
+                <FontAwesomeIcon icon={faBars} />
+              </button>
+            )}
+            <div>
+              <h2 style={styles.pageTitle}>Gestion des Sessions</h2>
+              <p style={styles.pageSubtitle}>
+                {sessions.length} session{sessions.length !== 1 ? 's' : ''} · {sessions.reduce((acc, s) => acc + (s.total_tests || 0), 0)} tests au total
+              </p>
+            </div>
           </div>
           <button 
             style={{
@@ -317,18 +336,20 @@ const TestSessions: React.FC = () => {
               alignItems: 'center',
               gap: '8px',
               transition: 'all 0.2s',
-               ...(isMobile ? {
-                 position: 'fixed',
-                 bottom: '80px',
-                 right: '20px',
-                 borderRadius: '50%',
-                 width: '56px',
-                 height: '56px',
-                 zIndex: 1001,
-                 boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                 justifyContent: 'center',
-                 padding: '0'
-               } : {})
+              position: 'relative',
+              zIndex: 10,
+              ...(isMobile ? {
+                position: 'fixed',
+                bottom: '80px',
+                right: '20px',
+                borderRadius: '50%',
+                width: '56px',
+                height: '56px',
+                zIndex: 1001,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                justifyContent: 'center',
+                padding: '0'
+              } : {})
             }} 
             onClick={() => setShowCreateModal(true)}
             title={isMobile ? "Nouvelle session" : "Créer une nouvelle session de test"}
@@ -652,6 +673,28 @@ const TestSessions: React.FC = () => {
                   </select>
                 </div>
               </div>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Environnement</label>
+                  <input
+                    type="text"
+                    value={sessionForm.environnement}
+                    onChange={(e) => setSessionForm({ ...sessionForm, environnement: e.target.value })}
+                    style={styles.input}
+                    placeholder="Ex: Production"
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Version</label>
+                  <input
+                    type="text"
+                    value={sessionForm.version}
+                    onChange={(e) => setSessionForm({ ...sessionForm, version: e.target.value })}
+                    style={styles.input}
+                    placeholder="Ex: 1.0.0"
+                  />
+                </div>
+              </div>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Nom du document</label>
                 <input
@@ -779,9 +822,28 @@ const TestSessions: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
-  main: { padding: '100px 30px 30px 30px', maxWidth: '900px', margin: '0 auto', width: '100%' },
+  main: { padding: '120px 30px 30px 30px', maxWidth: '900px', margin: '0 auto', width: '100%' },
   
   pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', position: 'relative', zIndex: 200 },
+  mobileMenuButton: {
+    display: 'none',
+    position: 'fixed' as const,
+    top: '8px',
+    left: '8px',
+    zIndex: 1001,
+    width: '48px',
+    height: '48px',
+    borderRadius: '12px',
+    border: '2px solid var(--border-color)',
+    backgroundColor: 'var(--bg-card)',
+    color: 'var(--text-primary)',
+    fontSize: '20px',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px var(--shadow-strong)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0
+  },
   pageTitle: { margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' },
   pageSubtitle: { margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '14px' },
 
