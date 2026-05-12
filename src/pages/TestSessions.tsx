@@ -124,7 +124,7 @@ const TestSessions: React.FC = () => {
       };
       await testSessionsAPI.create(sessionData);
       setMessage({ type: 'success', text: 'Session créée avec succès!' });
-      setShowCreateModal(false);
+      setShowCreateModal(true);
       setSessionForm({ nom: '', description: '', nom_document: '', applicationId: 0, statut: 'En cours' });
       fetchData();
     } catch (err: unknown) {
@@ -429,36 +429,21 @@ const TestSessions: React.FC = () => {
         ) : (
           /* Affichage en fonction de la taille d'écran */
           isMobile ? (
-            /* Affichage en cartes pour mobile - FORCE UNE SESSION PAR LIGNE */
-            <div style={{ 
-              display: 'block', 
-              width: '100%',
-              margin: '0',
-              padding: '0',
-              flexDirection: 'column'
-            }}>
+            /* Affichage en liste simple pour mobile - SOLUTION DÉFINITIVE */
+            <>
             {sessions.map((session) => (
               <div key={session.id} style={{
-                // FORCE UNE SESSION PAR LIGNE - STYLES RADICAUX
                 border: `2px solid ${getStatusColor(session.statut)}`,
                 backgroundColor: '#fff',
                 padding: '15px',
                 borderRadius: '8px',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                width: '100%',
-                maxWidth: '100%',
-                minWidth: '100%',
+                width: 'calc(100% - 30px)',
+                marginLeft: '15px',
+                marginRight: '15px',
                 marginBottom: '15px',
                 boxSizing: 'border-box',
-                display: 'block',
-                clear: 'both',
-                float: 'none',
-                position: 'relative',
-                overflow: 'hidden',
-                flex: '0 0 100%',
-                flexBasis: '100%',
-                flexGrow: '0',
-                flexShrink: '0'
+                display: 'block'
               }}>
                 <div style={styles.sessionHeader}>
                   <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#2c3e50' }}>
@@ -548,7 +533,7 @@ const TestSessions: React.FC = () => {
                 </div>
               </div>
             ))}
-          </div>
+            </>
           ) : (
             /* Affichage normal pour desktop */
             <div style={styles.sessionsList}>
