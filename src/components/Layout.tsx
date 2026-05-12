@@ -98,7 +98,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: "/applications", label: "Applications", icon: "fa-mobile-alt" },
     { path: "/comptes", label: "Comptes", icon: "fa-user" },
     { path: "/tests", label: "Tests", icon: "fa-check-square" },
-    { path: "/test-sessions", label: "Sessions", icon: "fa-folder-open" },
     { path: "/todos", label: "Tâches", icon: "fa-tasks" },
     { path: "/messages", label: "Messages", icon: "fa-comments" },
     { path: "/reports", label: "Rapports", icon: "fa-chart-bar" },
