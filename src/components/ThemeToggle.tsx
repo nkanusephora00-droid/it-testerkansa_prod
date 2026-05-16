@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
+import '../styles/components/ThemeToggle.css';
 
 const ThemeToggle: React.FC = () => {
   const [theme, setTheme] = useState<string>('light');
@@ -20,27 +21,8 @@ const ThemeToggle: React.FC = () => {
   };
 
   return (
-    <button 
-      onClick={toggleTheme} 
-      style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        width: '50px',
-        height: '50px',
-        borderRadius: '50%',
-        background: 'var(--bg-card)',
-        boxShadow: '0 4px 12px var(--shadow-strong)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '20px',
-        cursor: 'pointer',
-        zIndex: 9999,
-        border: '2px solid var(--border-color)',
-        transition: 'all 0.3s ease',
-        color: 'var(--text-primary)',
-      }}
+    <button
+      className="theme-toggle"
       title={theme === 'light' ? 'Passer en mode sombre' : 'Passer en mode clair'}
     >
       <FontAwesomeIcon icon={theme === 'light' ? faMoon : faSun} />

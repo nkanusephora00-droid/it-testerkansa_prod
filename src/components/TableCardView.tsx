@@ -1,4 +1,7 @@
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEdit, faTrash, faEye } from '@fortawesome/free-solid-svg-icons';
+import '../styles/components/TableCardView.css';
 
 interface TableCardViewProps {
   data: any[];

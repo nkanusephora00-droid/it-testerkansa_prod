@@ -1,9 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { testsAPI, applicationsAPI, api, testSessionsAPI, Application, Test, TestSession } from '../services/api';
+import React, { useEffect, useState } from 'react';
+import { testsAPI, Test } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faEye, faFilePdf, faFileWord, faCheck, faTimes, faPlus, faEdit, faCompress, faExpand } from '@fortawesome/free-solid-svg-icons';
-import { consolidateSessionsByUser, consolidateAllSessions, ConsolidatedSession } from '../utils/sessionConsolidation';
-import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType } from 'docx';
+import { faPlus, faEdit, faTrash, faPlay, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
+import '../styles/pages/Tests.css';
 
 // Hook pour détecter la taille d'écran
 const useResponsive = () => {
@@ -1705,15 +1704,15 @@ const Tests: React.FC = () => {
   };
 
    return (
-     <div style={styles.container}>
-       <main style={styles.main}>
-         <div style={styles.sessionsHeader}>
+     <div className="tests-container">
+       <main className="tests-main">
+         <div className="tests-sessions-header">
            <div>
-             <h2 style={styles.pageTitle}><i className="fas fa-vial"></i> {isAdmin ? 'Gestion des Tests' : 'Mes Sessions de Test'}</h2>
-             <p style={styles.pageSubtitle}>{isAdmin ? 'Documents de Test - Planification et suivi des tests' : 'Vos sessions de test personnelles'}</p>
+             <h2 className="tests-page-title"><i className="fas fa-vial"></i> {isAdmin ? 'Gestion des Tests' : 'Mes Sessions de Test'}</h2>
+             <p className="tests-page-subtitle">{isAdmin ? 'Documents de Test - Planification et suivi des tests' : 'Vos sessions de test personnelles'}</p>
            </div>
            <button
-             style={styles.newSessionButton}
+             className="tests-new-session-button"
              onClick={() => setShowSessionModal(true)}
              title="Créer une nouvelle session"
            >
@@ -1723,7 +1722,7 @@ const Tests: React.FC = () => {
          </div>
         
         {message.text && (
-          <div style={message.type === 'success' ? styles.success : styles.error}>
+          <div className={message.type === 'success' ? 'tests-success' : 'tests-error'}>
             <i className={message.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'}></i>
             {message.text}
           </div>
@@ -1733,34 +1732,34 @@ const Tests: React.FC = () => {
       </main>
 
       {showSessionModal && (
-        <div style={styles.modal}>
-          <div style={{ ...styles.modalContent, ...styles.sessionModalContent }}>
-            <span style={styles.close} onClick={() => setShowSessionModal(false)}>&times;</span>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.sectionTitle}>Nouvelle session</h3>
-              <p style={styles.modalSubtitle}>
+        <div className="tests-modal">
+          <div className="tests-modal-content tests-session-modal-content">
+            <span className="tests-close" onClick={() => setShowSessionModal(false)}>&times;</span>
+            <div className="tests-modal-header">
+              <h3 className="tests-section-title">Nouvelle session</h3>
+              <p className="tests-modal-subtitle">
                 Créez une session pour regrouper vos cas de test et générer un export PDF.
               </p>
             </div>
-             <form onSubmit={handleCreateSession} style={styles.sessionForm}>
-               <div style={styles.formRow}>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Nom de la session *</label>
+             <form onSubmit={handleCreateSession} className="tests-session-form">
+               <div className="tests-form-row">
+                 <div className="tests-form-group">
+                   <label className="tests-label">Nom de la session *</label>
                    <input
                      type="text"
                      value={sessionForm.nom}
                      onChange={(e) => setSessionForm({ ...sessionForm, nom: e.target.value })}
-                     style={styles.sessionModalInput}
+                     className="tests-session-modal-input"
                      required
                      placeholder="Ex: Test Release v1.0"
                    />
                  </div>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Application</label>
+                 <div className="tests-form-group">
+                   <label className="tests-label">Application</label>
                    <select
                      value={sessionForm.applicationId || ''}
                      onChange={(e) => setSessionForm({ ...sessionForm, applicationId: Number(e.target.value) })}
-                     style={styles.sessionModalSelect}
+                     className="tests-session-modal-select"
                    >
                      <option value="">Sélectionner une application</option>
                      {applications.map((app) => (
@@ -1769,61 +1768,51 @@ const Tests: React.FC = () => {
                    </select>
                  </div>
                </div>
-               <div style={styles.formRow}>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Nom du document de test</label>
-                   <input
-                     type="text"
-                     value={sessionForm.nom_document}
-                     onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
-                     style={styles.sessionModalInput}
-                     placeholder="Ex: Plan de tests v1.0"
-                   />
-                 </div>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Statut</label>
-                   <select
-                     value={sessionForm.statut}
-                     onChange={(e) => setSessionForm({ ...sessionForm, statut: e.target.value })}
-                     style={styles.sessionModalSelect}
-                   >
-                     <option value="En cours">En cours</option>
-                     <option value="Terminé">Terminé</option>
-                   </select>
-                 </div>
-               </div>
-               <div style={styles.formRow}>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Environnement</label>
+               <div className="tests-form-row">
+                 <div className="tests-form-group">
+                   <label className="tests-label">Environnement</label>
                    <input
                      type="text"
                      value={sessionForm.environnement}
                      onChange={(e) => setSessionForm({ ...sessionForm, environnement: e.target.value })}
-                     style={styles.sessionModalInput}
-                     placeholder="Ex: Production"
+                     className="tests-session-modal-input"
+                     placeholder="Ex: Production, Recette..."
                    />
                  </div>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Version</label>
+                 <div className="tests-form-group">
+                   <label className="tests-label">Version</label>
                    <input
                      type="text"
                      value={sessionForm.version}
                      onChange={(e) => setSessionForm({ ...sessionForm, version: e.target.value })}
-                     style={styles.sessionModalInput}
-                     placeholder="Ex: 1.0.0"
+                     className="tests-session-modal-input"
+                     placeholder="Ex: v1.0.0"
                    />
                  </div>
                </div>
-               <div style={styles.formGroup}>
-                 <label style={styles.label}>Description</label>
+               <div className="tests-form-group">
+                 <label className="tests-label">Nom du document</label>
+                 <input
+                   type="text"
+                   value={sessionForm.nom_document}
+                   onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
+                   className="tests-session-modal-input"
+                   placeholder="Ex: Plan de Test - Application X"
+                 />
+               </div>
+               <div className="tests-form-group">
+                 <label className="tests-label">Description</label>
                  <textarea
                    value={sessionForm.description}
                    onChange={(e) => setSessionForm({ ...sessionForm, description: e.target.value })}
-                   style={styles.sessionModalTextarea}
-                   placeholder="Description de la session de test..."
+                   className="tests-session-modal-textarea"
+                   placeholder="Description de la session..."
+                   rows={3}
                  />
                </div>
-              <div style={styles.formActions}>
+              <div className="tests-form-actions">
+                <button type="button" className="tests-cancel-button" onClick={() => setShowSessionModal(false)}>Annuler</button>
+                <button type="submit" className="tests-submit-button">Créer</button>
                 <button
                   type="button"
                   onClick={() => setShowSessionModal(false)}

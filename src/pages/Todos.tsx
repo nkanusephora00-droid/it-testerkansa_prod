@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { todosAPI, usersAPI, UserWithTodos } from '../services/api';
+import { todosAPI, Todo } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTrash, faCheck, faTimes, faDownload, faEdit, faListCheck, faUsers } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faCheck } from '@fortawesome/free-solid-svg-icons';
+import '../styles/pages/Todos.css';
 
 interface Todo {
   id: number;
@@ -213,18 +214,18 @@ const Todos: React.FC = () => {
   const pendingTodos = todos.filter(t => !t.completed);
 
   if (loading) {
-    return <div style={styles.loading}>Chargement...</div>;
+    return <div className="todos-loading">Chargement...</div>;
   }
 
   return (
-    <div style={styles.container}>
-      <main style={styles.main}>
-        <div style={styles.pageHeader}>
+    <div className="todos-container">
+      <main className="todos-main">
+        <div className="todos-page-header">
           <div>
-            <h2 style={styles.pageTitle}>
+            <h2 className="todos-page-title">
               {viewMode === 'todos' ? <><FontAwesomeIcon icon={faListCheck} /> Liste des tâches</> : <><FontAwesomeIcon icon={faUsers} /> Utilisateurs avec leurs tâches</>}
             </h2>
-            <p style={styles.pageSubtitle}>
+            <p className="todos-page-subtitle">
               {viewMode === 'todos' ? (
                 <>{pendingTodos.length} tâche{pendingTodos.length !== 1 ? 's' : ''} en attente · {completedTodos.length} terminée{completedTodos.length !== 1 ? 's' : ''}</>
               ) : (
@@ -232,16 +233,16 @@ const Todos: React.FC = () => {
               )}
             </p>
           </div>
-          <div style={styles.headerActions}>
-            <div style={styles.viewToggle}>
+          <div className="todos-header-actions">
+            <div className="todos-view-toggle">
               <button 
-                style={viewMode === 'todos' ? styles.viewButtonActive : styles.viewButton}
+                className={viewMode === 'todos' ? 'todos-view-button-active' : 'todos-view-button'}
                 onClick={() => setViewMode('todos')}
               >
                 <FontAwesomeIcon icon={faListCheck} /> Tâches
               </button>
               <button 
-                style={viewMode === 'users' ? styles.viewButtonActive : styles.viewButton}
+                className={viewMode === 'users' ? 'todos-view-button-active' : 'todos-view-button'}
                 onClick={() => setViewMode('users')}
               >
                 <FontAwesomeIcon icon={faUsers} /> Utilisateurs
@@ -249,10 +250,10 @@ const Todos: React.FC = () => {
             </div>
             {viewMode === 'todos' && (
               <>
-                <button style={styles.downloadButton} onClick={downloadTodos} disabled={todos.length === 0}>
+                <button className="todos-download-button" onClick={downloadTodos} disabled={todos.length === 0}>
                   <FontAwesomeIcon icon={faDownload} /> Télécharger
                 </button>
-                <button style={styles.addButton} onClick={() => { resetForm(); setShowForm(true); }}>
+                <button className="todos-primary-button" onClick={() => setShowModal(true)}>
                   <FontAwesomeIcon icon={faPlus} /> Nouvelle tâche
                 </button>
               </>
@@ -261,125 +262,70 @@ const Todos: React.FC = () => {
         </div>
 
         {message.text && (
-          <div style={message.type === 'success' ? styles.success : styles.error}>
+          <div className={message.type === 'success' ? 'todos-success' : 'todos-error'}>
             {message.text}
           </div>
         )}
 
         {showForm && (
-          <div style={styles.formCard}>
-            <h3 style={styles.formTitle}>
+          <div className="todos-form-card">
+            <h3 className="todos-form-title">
               {editingTodo ? 'Modifier la tâche' : (quickAddMode ? 'Ajout rapide de tâches' : 'Nouvelle tâche')}
             </h3>
             <form onSubmit={handleSubmit}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Titre * {quickAddMode && '(seul champ obligatoire en mode rapide)'}</label>
+              <div className="todos-form-group">
+                <label className="todos-label">Titre * {quickAddMode && '(seul champ obligatoire en mode rapide)'}</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  style={styles.input}
-                  placeholder="Titre de la tâche"
-                  autoFocus={quickAddMode}
-                  required
+                  className="todos-input"
                 />
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  style={styles.textarea}
-                  placeholder="Description détaillée (optionnel)"
-                  rows={3}
-                />
-              </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Priorité</label>
-                  <select
-                    value={formData.priority}
-                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                    style={styles.select}
-                  >
-                    <option value="low">Basse</option>
-                    <option value="normal">Normale</option>
-                    <option value="high">Haute</option>
-                  </select>
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Date limite</label>
-                  <input
-                    type="date"
-                    value={formData.dueDate}
-                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-              <div style={styles.formActions}>
-                <label style={styles.quickAddLabel}>
-                  <input
-                    type="checkbox"
-                    checked={quickAddMode}
-                    onChange={(e) => setQuickAddMode(e.target.checked)}
-                    style={styles.quickAddCheckbox}
-                  />
-                  Mode rapide (garder le formulaire ouvert)
-                </label>
-                <button type="button" style={styles.cancelButton} onClick={resetForm}>
-                  <FontAwesomeIcon icon={faTimes} /> Fermer
-                </button>
-                <button type="submit" style={styles.submitButton}>
-                  <FontAwesomeIcon icon={faCheck} /> {editingTodo ? 'Enregistrer' : (quickAddMode ? 'Ajouter & Continuer' : 'Ajouter')}
-                </button>
-              </div>
-            </form>
-          </div>
         )}
 
         {todos.length === 0 ? (
-          <div style={styles.emptyState}>
-            <div style={styles.emptyIcon}>
+          <div className="todos-empty-state">
+            <div className="todos-empty-icon">
               <FontAwesomeIcon icon={faListCheck} />
             </div>
             <h3>Aucune tâche</h3>
             <p>Créez votre première tâche pour commencer</p>
-            <button style={styles.emptyButton} onClick={() => setShowForm(true)}>
+            <button className="todos-empty-button" onClick={() => setShowForm(true)}>
               <FontAwesomeIcon icon={faPlus} /> Créer une tâche
             </button>
           </div>
         ) : (
-          <div style={styles.listsContainer}>
+          <div className="todos-lists-container">
             {pendingTodos.length > 0 && (
-              <div style={styles.listSection}>
-                <h3 style={styles.listTitle}>À faire</h3>
-                <div style={styles.todoList}>
+              <div className="todos-list-section">
+                <h3 className="todos-list-title">À faire</h3>
+                <div className="todos-todo-list">
                   {pendingTodos.map((todo) => (
-                    <div key={todo.id} style={styles.todoItem}>
+                    <div key={todo.id} className="todos-todo-item">
                       <button
-                        style={styles.checkButton}
+                        className="todos-check-button"
                         onClick={() => handleToggle(todo.id)}
                         title="Marquer comme terminé"
                       >
                         <FontAwesomeIcon icon={faCheck} />
                       </button>
-                      <div style={styles.todoContent}>
-                        <div style={styles.todoTitle}>{todo.title}</div>
+                      <div className="todos-todo-content">
+                        <div className="todos-todo-title">{todo.title}</div>
                         {todo.description && (
-                          <div style={styles.todoDescription}>{todo.description}</div>
+                          <div className="todos-todo-description">{todo.description}</div>
                         )}
-                        <div style={styles.todoMeta}>
+                        <div className="todos-todo-meta">
                           {todo.priority === 'high' && (
-                            <span style={{ ...styles.priorityBadge, backgroundColor: 'var(--danger-color)' }}>
+                            <span className="todos-priority-badge" style={{ backgroundColor: 'var(--danger-color)' }}>
                               Haute
                             </span>
                           )}
                           {todo.priority === 'low' && (
-                            <span style={styles.priorityBadge}>Basse</span>
+                            <span className="todos-priority-badge">Basse</span>
                           )}
                           {todo.createdByUsername && (
-                            <span style={styles.creatorBadge}>
+                            <span className="todos-creator-badge">
                               Par: {todo.createdByUsername}
                             </span>
                           )}

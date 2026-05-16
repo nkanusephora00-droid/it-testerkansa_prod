@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { messagesAPI, Message, User } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import '../styles/components/Chat.css';
 
 interface ChatProps {
   currentUser: User;
@@ -75,19 +76,19 @@ const Chat: React.FC<ChatProps> = ({ currentUser, selectedUser }) => {
   const isOwnMessage = (message: Message) => message.senderId === currentUser.id;
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <div style={styles.headerInfo}>
-          <h3 style={styles.headerTitle}>{selectedUser.username}</h3>
-          <span style={styles.headerRole}>{selectedUser.role === 'admin' ? 'Administrateur' : 'Utilisateur'}</span>
+    <div className="chat-container">
+      <div className="chat-header">
+        <div className="chat-header-info">
+          <h3 className="chat-header-title">{selectedUser.username}</h3>
+          <span className="chat-header-role">{selectedUser.role === 'admin' ? 'Administrateur' : 'Utilisateur'}</span>
         </div>
       </div>
 
-      <div style={styles.messagesContainer}>
+      <div className="chat-messages-container">
         {loading ? (
-          <div style={styles.loading}>Chargement...</div>
+          <div className="chat-loading">Chargement...</div>
         ) : messages.length === 0 ? (
-          <div style={styles.emptyState}>
+          <div className="chat-empty-state">
             <p>Aucun message. Commencez la conversation!</p>
           </div>
         ) : (
@@ -95,17 +96,14 @@ const Chat: React.FC<ChatProps> = ({ currentUser, selectedUser }) => {
             {messages.map((message) => (
               <div
                 key={message.id}
-                style={{
-                  ...styles.message,
-                  ...(isOwnMessage(message) ? styles.ownMessage : styles.otherMessage)
-                }}
+                className={`chat-message ${isOwnMessage(message) ? 'chat-own-message' : 'chat-other-message'}`}
               >
-                <div style={styles.messageContent}>
-                  <span style={styles.messageSender}>
+                <div className="chat-message-content">
+                  <span className="chat-message-sender">
                     {isOwnMessage(message) ? 'Vous' : message.senderUsername}
                   </span>
-                  <p style={styles.messageText}>{message.content}</p>
-                  <span style={styles.messageTime}>{formatTime(message.timestamp)}</span>
+                  <p className="chat-message-text">{message.content}</p>
+                  <span className="chat-message-time">{formatTime(message.timestamp)}</span>
                 </div>
               </div>
             ))}
@@ -114,18 +112,18 @@ const Chat: React.FC<ChatProps> = ({ currentUser, selectedUser }) => {
         )}
       </div>
 
-      <form onSubmit={handleSendMessage} style={styles.inputContainer}>
+      <form onSubmit={handleSendMessage} className="chat-input-container">
         <input
           type="text"
           placeholder="Écrivez votre message..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          style={styles.input}
+          className="chat-input"
           disabled={sending}
         />
         <button
           type="submit"
-          style={styles.sendButton}
+          className="chat-send-button"
           disabled={!newMessage.trim() || sending}
         >
           <FontAwesomeIcon icon={faPaperPlane} />
@@ -133,128 +131,6 @@ const Chat: React.FC<ChatProps> = ({ currentUser, selectedUser }) => {
       </form>
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    height: '100%',
-    backgroundColor: 'var(--bg-card)',
-    borderRadius: '12px',
-    overflow: 'hidden',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '16px 24px',
-    borderBottom: '1px solid var(--border-color)',
-    backgroundColor: 'var(--bg-card)',
-  },
-  headerInfo: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-  },
-  headerTitle: {
-    margin: 0,
-    fontSize: '18px',
-    fontWeight: 600,
-    color: 'var(--text-primary)',
-  },
-  headerRole: {
-    fontSize: '13px',
-    color: 'var(--text-secondary)',
-  },
-  messagesContainer: {
-    flex: 1,
-    overflowY: 'auto' as const,
-    padding: '20px 24px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '16px',
-    backgroundColor: 'var(--bg-primary)',
-  },
-  loading: {
-    textAlign: 'center' as const,
-    color: 'var(--text-secondary)',
-    padding: '20px',
-  },
-  emptyState: {
-    textAlign: 'center' as const,
-    color: 'var(--text-secondary)',
-    padding: '40px 20px',
-  },
-  message: {
-    maxWidth: '65%',
-    padding: '12px 16px',
-    borderRadius: '18px',
-    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-  },
-  ownMessage: {
-    alignSelf: 'flex-start' as const,
-    backgroundColor: '#4CAF50',
-    color: 'white',
-    borderBottomLeftRadius: '4px',
-  },
-  otherMessage: {
-    alignSelf: 'flex-end' as const,
-    backgroundColor: '#2196F3',
-    color: 'white',
-    borderBottomRightRadius: '4px',
-  },
-  messageContent: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '4px',
-  },
-  messageSender: {
-    fontSize: '12px',
-    fontWeight: 600,
-    opacity: 0.9,
-    marginBottom: '2px',
-  },
-  messageText: {
-    margin: 0,
-    fontSize: '15px',
-    lineHeight: '1.4',
-    wordBreak: 'break-word' as const,
-  },
-  messageTime: {
-    fontSize: '11px',
-    opacity: 0.7,
-    alignSelf: 'flex-end' as const,
-    marginTop: '4px',
-  },
-  inputContainer: {
-    display: 'flex',
-    gap: '12px',
-    padding: '16px 24px',
-    borderTop: '1px solid var(--border-color)',
-    backgroundColor: 'var(--bg-card)',
-  },
-  input: {
-    flex: 1,
-    padding: '12px 20px',
-    border: '1px solid var(--border-color)',
-    borderRadius: '24px',
-    fontSize: '15px',
-    backgroundColor: 'var(--bg-primary)',
-    color: 'var(--text-primary)',
-  },
-  sendButton: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '50%',
-    border: 'none',
-    backgroundColor: '#007AFF',
-    color: 'white',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.2s',
-  },
 };
 
 export default Chat;

@@ -1,0 +1,527 @@
+.todos-container {
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+}
+
+.todos-main {
+  padding: 30px;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: calc(100vh - 70px);
+}
+
+.todos-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  color: var(--text-secondary);
+}
+
+.todos-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.todos-page-title {
+  margin: 0;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-primary);
+}
+
+.todos-page-subtitle {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.todos-header-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.todos-add-button {
+  padding: 12px 20px;
+  background-color: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.todos-add-button:hover {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+}
+
+.todos-download-button {
+  padding: 12px 20px;
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.todos-download-button:hover {
+  background-color: var(--bg-primary);
+}
+
+.todos-success {
+  padding: 14px;
+  background-color: var(--success-color);
+  color: white;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+}
+
+.todos-error {
+  padding: 14px;
+  background-color: var(--danger-color);
+  color: white;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+}
+
+.todos-form-card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.todos-form-title {
+  margin: 0 0 20px;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.todos-form-group {
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+.todos-form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.todos-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.todos-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.todos-input:focus {
+  outline: none;
+  border-color: var(--info-color);
+}
+
+.todos-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.todos-textarea:focus {
+  outline: none;
+  border-color: var(--info-color);
+}
+
+.todos-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.todos-form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.todos-quick-add-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.todos-quick-add-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.todos-cancel-button {
+  padding: 12px 20px;
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.todos-cancel-button:hover {
+  background-color: var(--bg-primary);
+}
+
+.todos-submit-button {
+  padding: 12px 20px;
+  background-color: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.todos-submit-button:hover {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+}
+
+.todos-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.todos-empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+  color: var(--text-secondary);
+  display: inline-block;
+}
+
+.todos-empty-button {
+  margin-top: 16px;
+  padding: 12px 24px;
+  background-color: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.todos-empty-button:hover {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+}
+
+.todos-lists-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.todos-list-title {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.todos-todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.todos-todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.todos-todo-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.todos-check-button {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--success-color);
+  background-color: var(--success-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.2s;
+}
+
+.todos-check-button:hover {
+  transform: scale(1.1);
+}
+
+.todos-todo-content {
+  flex: 1;
+}
+
+.todos-todo-title {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.todos-todo-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.todos-todo-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.todos-priority-badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--text-muted);
+  color: white;
+  font-size: 11px;
+}
+
+.todos-creator-badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--info-color);
+  color: white;
+  font-size: 11px;
+}
+
+.todos-due-date {
+  color: var(--text-muted);
+}
+
+.todos-todo-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.todos-edit-button {
+  padding: 8px;
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.todos-edit-button:hover {
+  color: var(--info-color);
+  background-color: rgba(52, 152, 219, 0.1);
+}
+
+.todos-delete-button {
+  padding: 8px;
+  background-color: transparent;
+  color: var(--danger-color);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.todos-delete-button:hover {
+  background-color: rgba(255, 107, 107, 0.1);
+}
+
+.todos-view-toggle {
+  display: flex;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.todos-view-button {
+  padding: 10px 16px;
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.todos-view-button:hover {
+  background-color: var(--hover-bg);
+}
+
+.todos-view-button-active {
+  padding: 10px 16px;
+  background-color: var(--success-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.todos-users-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.todos-user-card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.todos-user-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.todos-user-info {
+  flex: 1;
+}
+
+.todos-user-name {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.todos-user-email {
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.todos-role-badge {
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.todos-user-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.todos-stat-badge {
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--text-muted);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.todos-no-todos {
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+.todos-user-todos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.todos-completed-title {
+  margin: 16px 0 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}

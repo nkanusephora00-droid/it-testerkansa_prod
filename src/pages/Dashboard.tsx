@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authAPI, applicationsAPI, comptesAPI, usersAPI, testsAPI, testSessionsAPI, todosAPI } from '../services/api';
+import { testsAPI, todosAPI, User } from '../services/api';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheckCircle, faClock, faTasks, faPlus, faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import '../styles/pages/Dashboard.css';
 
 interface User {
   id: number;

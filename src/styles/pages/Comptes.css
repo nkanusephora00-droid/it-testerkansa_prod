@@ -1,0 +1,525 @@
+.comptes-container {
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+}
+
+.comptes-main {
+  padding: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: calc(100vh - 70px);
+}
+
+.comptes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.comptes-page-title {
+  margin: 0;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-primary);
+}
+
+.comptes-page-subtitle {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.comptes-form-section {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.comptes-table-section {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.comptes-section-title {
+  margin: 0 0 20px;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.comptes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 760px;
+}
+
+.comptes-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 0;
+}
+
+.comptes-form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.comptes-form-group {
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+.comptes-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.comptes-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.comptes-input:focus {
+  outline: none;
+  border-color: var(--info-color);
+}
+
+.comptes-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  resize: vertical;
+  min-height: 100px;
+  box-sizing: border-box;
+}
+
+.comptes-textarea:focus {
+  outline: none;
+  border-color: var(--info-color);
+}
+
+.comptes-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.comptes-form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.comptes-primary-button {
+  padding: 12px 20px;
+  background-color: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.comptes-primary-button:hover {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+}
+
+.comptes-secondary-button {
+  padding: 12px 20px;
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.comptes-secondary-button:hover {
+  background-color: var(--bg-primary);
+}
+
+.comptes-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+}
+
+.comptes-table th {
+  padding: 12px;
+  text-align: left;
+  background-color: var(--hover-bg);
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+}
+
+.comptes-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.comptes-table tr:hover {
+  background-color: var(--hover-bg);
+}
+
+.comptes-search-input {
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  min-width: 250px;
+}
+
+.comptes-search-input:focus {
+  outline: none;
+  border-color: var(--info-color);
+}
+
+.comptes-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.comptes-stat-item {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.comptes-edit-button {
+  padding: 8px;
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.comptes-edit-button:hover {
+  color: var(--info-color);
+  background-color: rgba(52, 152, 219, 0.1);
+}
+
+.comptes-delete-button {
+  padding: 8px;
+  background-color: transparent;
+  color: var(--danger-color);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.comptes-delete-button:hover {
+  background-color: rgba(255, 107, 107, 0.1);
+}
+
+.comptes-view-button {
+  padding: 8px;
+  background-color: transparent;
+  color: var(--success-color);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.comptes-view-button:hover {
+  background-color: rgba(39, 174, 96, 0.1);
+}
+
+.comptes-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.comptes-list-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.comptes-success {
+  padding: 14px;
+  background-color: var(--success-color);
+  color: white;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+}
+
+.comptes-error {
+  padding: 14px;
+  background-color: var(--danger-color);
+  color: white;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+}
+
+.comptes-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 1000;
+  padding-top: 40px;
+  overflow-y: auto;
+  backdrop-filter: blur(4px);
+}
+
+.comptes-modal-content {
+  background-color: var(--bg-card);
+  padding: 20px;
+  border-radius: 16px;
+  width: 95%;
+  max-width: 500px;
+  position: relative;
+  margin: 0 auto 40px auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-light);
+}
+
+.comptes-modal-content h3 {
+  margin: 0 0 24px 0;
+  font-size: 20px;
+  color: var(--text-primary);
+}
+
+.comptes-comptes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.comptes-comptes-grid-mobile {
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: 0 16px;
+}
+
+.comptes-compte-card {
+  background-color: var(--bg-card);
+  border-radius: 16px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.comptes-compte-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px var(--shadow-color);
+}
+
+.comptes-compte-card-header {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.comptes-compte-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  background-color: var(--info-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  margin-right: 16px;
+}
+
+.comptes-compte-info {
+  flex: 1;
+}
+
+.comptes-compte-username {
+  margin: 0 0 4px 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.comptes-compte-app {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.comptes-compte-card-content {
+  padding: 20px;
+}
+
+.comptes-compte-detail {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.comptes-detail-label {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-right: 4px;
+}
+
+.comptes-compte-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-light);
+}
+
+.comptes-icon-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background-color: var(--hover-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.comptes-icon-button:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.comptes-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 28px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.comptes-close:hover {
+  color: var(--text-primary);
+}
+
+.comptes-modal-header {
+  margin-bottom: 24px;
+}
+
+.comptes-modal-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  font-weight: 400;
+}
+
+.comptes-compte-details {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.comptes-compte-commentaire {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+  min-height: 40px;
+}
+
+.comptes-card-body {
+  margin-bottom: 12px;
+}
+
+.comptes-card-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.comptes-card-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.comptes-card-value {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.comptes-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

@@ -3,7 +3,7 @@ import axios from "axios";
 // Use relative URL in development (proxy handles it), full URL in production
 const API_URL = process.env.NODE_ENV === 'development'
   ? ''
-  : (process.env.REACT_APP_API_URL || "https://backend-java-pkn3.onrender.com");
+  : (process.env.REACT_APP_API_URL || "https://backend-java-s6d8.onrender.com");
 
 // TypeScript interfaces for API data
 export interface User {

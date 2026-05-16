@@ -336,19 +336,13 @@ const TestSessions: React.FC = () => {
                   <span>{selectedSession.environnement}</span>
                 </div>
               )}
-               {selectedSession.version && (
-                 <div style={styles.detailRow}>
-                   <span style={styles.detailLabel}>Version:</span>
-                   <span>{selectedSession.version}</span>
-                 </div>
-               )}
-               {selectedSession.role && (
-                 <div style={styles.detailRow}>
-                   <span style={styles.detailLabel}>Rôle:</span>
-                   <span>{selectedSession.role}</span>
-                 </div>
-               )}
-               {selectedSession.nom_document && (
+              {selectedSession.version && (
+                <div style={styles.detailRow}>
+                  <span style={styles.detailLabel}>Version:</span>
+                  <span>{selectedSession.version}</span>
+                </div>
+              )}
+              {selectedSession.nom_document && (
                 <div style={styles.detailRow}>
                   <span style={styles.detailLabel}>Document:</span>
                   <span>{selectedSession.nom_document}</span>
@@ -649,8 +643,38 @@ const TestSessions: React.FC = () => {
                     style={styles.input}
                   />
                 </div>
-                </div>
                </div>
+               <div style={styles.formRow}>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Environnement</label>
+                   <input
+                     type="text"
+                     value={editFormData.environnement}
+                     onChange={(e) => setEditFormData({ ...editFormData, environnement: e.target.value })}
+                     style={styles.input}
+                     placeholder="Ex: Production"
+                   />
+                 </div>
+                 <div style={styles.formGroup}>
+                   <label style={styles.label}>Version</label>
+                   <input
+                     type="text"
+                     value={editFormData.version}
+                     onChange={(e) => setEditFormData({ ...editFormData, version: e.target.value })}
+                     style={styles.input}
+                     placeholder="Ex: 1.0.0"
+                   />
+                 </div>
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Nom du document</label>
+                  <input
+                    type="text"
+                    value={editFormData.nom_document}
+                    onChange={(e) => setEditFormData({ ...editFormData, nom_document: e.target.value })}
+                    style={styles.input}
+                  />
+                </div>
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Rôle</label>
                   <input

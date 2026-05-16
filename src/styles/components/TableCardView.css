@@ -1,0 +1,93 @@
+.tablecardview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tablecardview-card {
+  background-color: var(--bg-card);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px var(--shadow-color);
+  transition: all 0.2s ease;
+}
+
+.tablecardview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.tablecardview-card-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.tablecardview-card-row:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.tablecardview-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.tablecardview-card-value {
+  font-size: 16px;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.tablecardview-card-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+
+.tablecardview-action-button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  transition: all 0.2s ease;
+}
+
+.tablecardview-action-button:hover {
+  background-color: var(--hover-bg);
+  transform: translateY(-2px);
+}
+
+.tablecardview-delete-button {
+  background-color: var(--danger-color);
+  color: white;
+  border-color: var(--danger-color);
+}
+
+.tablecardview-delete-button:hover {
+  background-color: #c0392b;
+}
+
+.tablecardview-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}

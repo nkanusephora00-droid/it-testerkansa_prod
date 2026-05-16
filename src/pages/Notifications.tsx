@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { testsAPI, todosAPI } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faCheck, faExclamationTriangle, faInfo, faCheckCircle, faBug } from '@fortawesome/free-solid-svg-icons';
+import '../styles/pages/Notifications.css';
 
 interface Notification {
   id: string | number;
@@ -221,31 +222,6 @@ const Notifications: React.FC = () => {
       </main>
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
-  main: { padding: '30px', maxWidth: '900px', margin: '0 auto', width: '100%', minHeight: 'calc(100vh - 70px)' },
-  loading: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--text-secondary)' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' },
-  pageTitle: { margin: 0, fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px' },
-  pageSubtitle: { margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '14px' },
-  headerActions: { display: 'flex', gap: '12px', alignItems: 'center' },
-  filterSelect: { padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '13px', cursor: 'pointer' },
-  markAllButton: { padding: '8px 16px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' },
-  notifList: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  emptyState: { textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' },
-  emptyIcon: { fontSize: '48px', marginBottom: '16px', opacity: 0.5 },
-  notifItem: { display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)', transition: 'all 0.2s' },
-  notifItemUnread: { borderLeftWidth: '4px', borderLeftColor: 'var(--info-color)', borderLeftStyle: 'solid' },
-  notifItemRead: { opacity: 0.7 },
-  notifIcon: { width: '44px', height: '44px', minWidth: '44px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' },
-  notifContent: { flex: 1 },
-  notifHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' },
-  notifTitle: { margin: 0, fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)' },
-  notifDate: { fontSize: '12px', color: 'var(--text-muted)' },
-  notifMessage: { margin: 0, fontSize: '13px', color: 'var(--text-secondary)' },
-  markReadButton: { width: '32px', height: '32px', minWidth: '32px', borderRadius: '50%', border: '1px solid var(--success-color)', backgroundColor: 'transparent', color: 'var(--success-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', transition: 'all 0.2s' }
 };
 
 export default Notifications;
