@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { testsAPI, testSessionsAPI, applicationsAPI, api, Test, TestSession, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faPlay, faCheck, faTimes, faCompress, faExpand, faEye, faFilePdf, faFileWord } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faCheck, faTimes, faCompress, faExpand, faEye, faFilePdf, faFileWord } from '@fortawesome/free-solid-svg-icons';
 import { ConsolidatedSession, consolidateSessionsByUser, consolidateAllSessions } from '../utils/sessionConsolidation';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType } from 'docx';
 import '../styles/pages/Tests.css';
 
 // Hook pour détecter la taille d'écran

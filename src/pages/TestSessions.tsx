@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { testSessionsAPI, applicationsAPI, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faUser } from '@fortawesome/free-solid-svg-icons';
+import '../styles/pages/TestSessions.css';
 
 interface TestSession {
   id: number;
@@ -282,99 +283,98 @@ const TestSessions: React.FC = () => {
   };
 
   if (loading) {
-    return <div style={styles.loading}>Chargement...</div>;
+    return <div className="test-sessions-loading">Chargement...</div>;
   }
 
   return (
-    <div style={styles.container}>
-      <main style={styles.main}>
-        <div style={styles.sessionsHeader}>
-          <div style={styles.headerLeft}>
+    <div className="test-sessions-container">
+      <main className="test-sessions-main">
+        <div className="test-sessions-header">
+          <div className="test-sessions-header-left">
             <div>
-              <h2 style={styles.pageTitle}>Gestion des Sessions</h2>
-              <p style={styles.pageSubtitle}>
+              <h2 className="test-sessions-page-title">Gestion des Sessions</h2>
+              <p className="test-sessions-page-subtitle">
                 {sessions.length} session{sessions.length !== 1 ? 's' : ''} · {sessions.reduce((acc, s) => acc + (s.total_tests || 0), 0)} tests au total
               </p>
             </div>
           </div>
           <button
-            style={styles.newSessionButton}
+            className="test-sessions-new-button"
             onClick={() => setShowCreateModal(true)}
             title="Créer une nouvelle session"
           >
-            <FontAwesomeIcon icon={faPlus} />
-            Nouvelle session
+            <FontAwesomeIcon icon={faPlus} /> Nouvelle session
           </button>
         </div>
 
         {message.text && (
-          <div style={message.type === 'success' ? styles.success : styles.error}>
+          <div className={message.type === 'success' ? 'test-sessions-success' : 'test-sessions-error'}>
             {message.text}
           </div>
         )}
 
         {selectedSession && (
-          <div style={styles.sessionDetails}>
-            <div style={styles.sessionDetailsHeader}>
-              <h3 style={styles.sessionDetailsTitle}>{selectedSession.nom}</h3>
-              <button style={styles.closeDetailButton} onClick={() => setSelectedSession(null)}>
+          <div className="test-sessions-session-details">
+            <div className="test-sessions-session-details-header">
+              <h3 className="test-sessions-session-details-title">{selectedSession.nom}</h3>
+              <button className="test-sessions-close-detail-button" onClick={() => setSelectedSession(null)}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
-            <div style={styles.sessionDetailsContent}>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Statut:</span>
+            <div className="test-sessions-session-details-content">
+              <div className="test-sessions-detail-row">
+                <span className="test-sessions-detail-label">Statut:</span>
                 <span style={getStatusBadge(selectedSession.statut)}>{selectedSession.statut}</span>
               </div>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Application:</span>
+              <div className="test-sessions-detail-row">
+                <span className="test-sessions-detail-label">Application:</span>
                 <span>{getAppName(selectedSession.applicationId)}</span>
               </div>
               {selectedSession.environnement && (
-                <div style={styles.detailRow}>
-                  <span style={styles.detailLabel}>Environnement:</span>
+                <div className="test-sessions-detail-row">
+                  <span className="test-sessions-detail-label">Environnement:</span>
                   <span>{selectedSession.environnement}</span>
                 </div>
               )}
               {selectedSession.version && (
-                <div style={styles.detailRow}>
-                  <span style={styles.detailLabel}>Version:</span>
+                <div className="test-sessions-detail-row">
+                  <span className="test-sessions-detail-label">Version:</span>
                   <span>{selectedSession.version}</span>
                 </div>
               )}
               {selectedSession.nom_document && (
-                <div style={styles.detailRow}>
-                  <span style={styles.detailLabel}>Document:</span>
+                <div className="test-sessions-detail-row">
+                  <span className="test-sessions-detail-label">Document:</span>
                   <span>{selectedSession.nom_document}</span>
                 </div>
               )}
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Total tests:</span>
+              <div className="test-sessions-detail-row">
+                <span className="test-sessions-detail-label">Total tests:</span>
                 <span>{selectedSession.total_tests || 0}</span>
               </div>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Tests OK:</span>
+              <div className="test-sessions-detail-row">
+                <span className="test-sessions-detail-label">Tests OK:</span>
                 <span style={{ color: '#27ae60', fontWeight: 600 }}>{selectedSession.tests_ok || 0}</span>
               </div>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Tests BUG:</span>
+              <div className="test-sessions-detail-row">
+                <span className="test-sessions-detail-label">Tests BUG:</span>
                 <span style={{ color: '#dc3545', fontWeight: 600 }}>{selectedSession.tests_bug || 0}</span>
               </div>
               {selectedSession.description && (
-                <div style={styles.detailRow}>
-                  <span style={styles.detailLabel}>Description:</span>
+                <div className="test-sessions-detail-row">
+                  <span className="test-sessions-detail-label">Description:</span>
                   <span style={{ maxWidth: '400px' }}>{selectedSession.description}</span>
                 </div>
               )}
               <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-                <button 
-                  style={styles.exportPdfButton}
+                <button
+                  className="test-sessions-export-pdf-button"
                   onClick={() => handleExportPDF(selectedSession)}
                 >
                   <FontAwesomeIcon icon={faFilePdf} /> Exporter PDF
                 </button>
-                <button 
-                  style={styles.exportWordButton}
+                <button
+                  className="test-sessions-export-word-button"
                   onClick={() => handleExportWord(selectedSession)}
                 >
                   <FontAwesomeIcon icon={faFileWord} /> Exporter Word
@@ -385,67 +385,67 @@ const TestSessions: React.FC = () => {
         )}
 
         {sessions.length === 0 ? (
-          <div style={styles.emptyState}>
-            <div style={styles.emptyIcon}>
+          <div className="test-sessions-empty-state">
+            <div className="test-sessions-empty-icon">
               <FontAwesomeIcon icon={faPlus} />
             </div>
             <h3>Aucune session</h3>
             <p>Créez votre première session de test pour commencer</p>
-            <button style={styles.emptyButton} onClick={() => setShowCreateModal(true)}>
+            <button className="test-sessions-empty-button" onClick={() => setShowCreateModal(true)}>
               <FontAwesomeIcon icon={faPlus} /> Créer une session
             </button>
           </div>
         ) : (
-          <div className="sessions-grid" style={styles.sessionsGrid}>
+          <div className="sessions-grid test-sessions-grid">
             {sessions.map((session) => (
-              <div 
-                key={session.id} 
+              <div
+                key={session.id}
+                className="test-sessions-card"
                 style={{
-                  ...styles.sessionCard,
                   borderColor: getStatusColor(session.statut),
                   borderWidth: '2px',
                   borderStyle: 'solid'
                 }}
               >
-                <div style={styles.sessionHeader}>
-                  <h3 style={styles.sessionTitle}>{session.nom}</h3>
-                  <span style={{...styles.statusBadge, backgroundColor: getStatusColor(session.statut)}}>
+                <div className="test-sessions-card-header">
+                  <h3 className="test-sessions-card-title">{session.nom}</h3>
+                  <span className="test-sessions-status-badge" style={{ backgroundColor: getStatusColor(session.statut) }}>
                     {session.statut}
                   </span>
                 </div>
                  {session.createdByUsername && (
-                   <p style={styles.sessionOwner}>
+                   <p className="test-sessions-card-owner">
                      <FontAwesomeIcon icon={faUser} /> Créé par: {session.createdByUsername}
                    </p>
                  )}
                  {session.role && (
-                   <p style={{ ...styles.sessionMeta, marginBottom: '8px' }}>
+                   <p className="test-sessions-card-meta" style={{ marginBottom: '8px' }}>
                      <strong>Rôle:</strong> {session.role}
                    </p>
                  )}
                  {session.description && (
-                  <p style={{ ...styles.sessionMeta, marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.5' }}>{session.description}</p>
+                  <p className="test-sessions-card-meta" style={{ marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.5' }}>{session.description}</p>
                 )}
-                <div style={styles.sessionMeta}>
+                <div className="test-sessions-card-meta">
                   <span><i className="fas fa-mobile-alt"></i> {getAppName(session.applicationId)}</span>
                   {session.environnement && <span><i className="fas fa-server"></i> {session.environnement}</span>}
                   {session.version && <span><i className="fas fa-code-branch"></i> v{session.version}</span>}
                 </div>
-                <div style={styles.sessionStats}>
+                <div className="test-sessions-card-stats">
                   <span>Total: <strong>{session.total_tests || 0}</strong></span>
                   <span style={{ color: '#27ae60' }}>OK: <strong>{session.tests_ok || 0}</strong></span>
                   <span style={{ color: '#dc3545' }}>BUG: <strong>{session.tests_bug || 0}</strong></span>
                 </div>
-                <div style={styles.sessionActions}>
-                  <button 
-                    style={styles.viewButton}
+                <div className="test-sessions-card-actions">
+                  <button
+                    className="test-sessions-view-button"
                     onClick={() => setSelectedSession(session)}
                     title="Voir détails"
                   >
                     <FontAwesomeIcon icon={faEye} /> Détails
                   </button>
-                  <button 
-                    style={styles.editButton}
+                  <button
+                    className="test-sessions-edit-button"
                     onClick={(e) => {
                       e.stopPropagation();
                       openEditModal(session);
@@ -454,8 +454,8 @@ const TestSessions: React.FC = () => {
                   >
                     <FontAwesomeIcon icon={faEdit} /> Modifier
                   </button>
-                  <button 
-                    style={styles.deleteButton}
+                  <button
+                    className="test-sessions-delete-button"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(session.id);
@@ -473,30 +473,30 @@ const TestSessions: React.FC = () => {
 
       {/* Modal création */}
       {showCreateModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <span style={styles.modalCloseButton} onClick={() => setShowCreateModal(false)}>&times;</span>
-            <h3 style={styles.modalTitle}>Nouvelle session</h3>
-            <p style={styles.modalSubtitle}>Créez une session pour regrouper vos cas de test.</p>
-            <form onSubmit={handleCreateSession} style={styles.modalForm}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Nom *</label>
+        <div className="test-sessions-modal">
+          <div className="test-sessions-modal-content">
+            <span className="test-sessions-modal-close-button" onClick={() => setShowCreateModal(false)}>&times;</span>
+            <h3 className="test-sessions-modal-title">Nouvelle session</h3>
+            <p className="test-sessions-modal-subtitle">Créez une session pour regrouper vos cas de test.</p>
+            <form onSubmit={handleCreateSession} className="test-sessions-modal-form">
+              <div className="test-sessions-form-group">
+                <label className="test-sessions-label">Nom *</label>
                 <input
                   type="text"
                   value={sessionForm.nom}
                   onChange={(e) => setSessionForm({ ...sessionForm, nom: e.target.value })}
-                  style={styles.input}
+                  className="test-sessions-input"
                   required
                   placeholder="Nom de la session"
                 />
               </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Application</label>
+              <div className="test-sessions-form-row">
+                <div className="test-sessions-form-group">
+                  <label className="test-sessions-label">Application</label>
                   <select
                     value={sessionForm.applicationId || ''}
                     onChange={(e) => setSessionForm({ ...sessionForm, applicationId: Number(e.target.value) })}
-                    style={styles.select}
+                    className="test-sessions-select"
                   >
                     <option value="">Sélectionner</option>
                     {applications.map((app) => (
@@ -504,12 +504,12 @@ const TestSessions: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Statut</label>
+                <div className="test-sessions-form-group">
+                  <label className="test-sessions-label">Statut</label>
                   <select
                     value={sessionForm.statut}
                     onChange={(e) => setSessionForm({ ...sessionForm, statut: e.target.value })}
-                    style={styles.select}
+                    className="test-sessions-select"
                   >
                     <option value="En cours">En cours</option>
                     <option value="Terminée">Terminée</option>
@@ -517,61 +517,61 @@ const TestSessions: React.FC = () => {
                   </select>
                 </div>
               </div>
-               <div style={styles.formRow}>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Environnement</label>
+               <div className="test-sessions-form-row">
+                 <div className="test-sessions-form-group">
+                   <label className="test-sessions-label">Environnement</label>
                    <input
                      type="text"
                      value={sessionForm.environnement}
                      onChange={(e) => setSessionForm({ ...sessionForm, environnement: e.target.value })}
-                     style={styles.input}
+                     className="test-sessions-input"
                      placeholder="Ex: Production"
                    />
                  </div>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Version</label>
+                 <div className="test-sessions-form-group">
+                   <label className="test-sessions-label">Version</label>
                    <input
                      type="text"
                      value={sessionForm.version}
                      onChange={(e) => setSessionForm({ ...sessionForm, version: e.target.value })}
-                     style={styles.input}
+                     className="test-sessions-input"
                      placeholder="Ex: 1.0.0"
                    />
                  </div>
                </div>
-               <div style={styles.formGroup}>
-                 <label style={styles.label}>Rôle</label>
+               <div className="test-sessions-form-group">
+                 <label className="test-sessions-label">Rôle</label>
                  <input
                    type="text"
                    value={sessionForm.role}
                    onChange={(e) => setSessionForm({ ...sessionForm, role: e.target.value })}
-                   style={styles.input}
+                   className="test-sessions-input"
                    placeholder="Ex: Admin, Testeur, etc."
                  />
                </div>
-               <div style={styles.formGroup}>
-                 <label style={styles.label}>Nom du document</label>
+               <div className="test-sessions-form-group">
+                 <label className="test-sessions-label">Nom du document</label>
                  <input
                    type="text"
                    value={sessionForm.nom_document}
                    onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
-                   style={styles.input}
+                   className="test-sessions-input"
                    placeholder="Ex: Plan de tests v1.0"
                  />
                </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Description</label>
+              <div className="test-sessions-form-group">
+                <label className="test-sessions-label">Description</label>
                 <textarea
                   value={sessionForm.description}
                   onChange={(e) => setSessionForm({ ...sessionForm, description: e.target.value })}
-                  style={styles.textarea}
+                  className="test-sessions-textarea"
                   placeholder="Description..."
                   rows={3}
                 />
               </div>
-              <div style={styles.formActions}>
-                <button type="button" style={styles.cancelButton} onClick={() => setShowCreateModal(false)}>Annuler</button>
-                <button type="submit" style={styles.submitButton}>Créer</button>
+              <div className="test-sessions-form-actions">
+                <button type="button" className="test-sessions-cancel-button" onClick={() => setShowCreateModal(false)}>Annuler</button>
+                <button type="submit" className="test-sessions-submit-button">Créer</button>
               </div>
             </form>
           </div>
@@ -580,43 +580,43 @@ const TestSessions: React.FC = () => {
 
       {/* Modal édition */}
       {showModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <span style={styles.modalCloseButton} onClick={() => setShowModal(false)}>&times;</span>
-            <h3 style={styles.modalTitle}>Modifier la session</h3>
-            <form onSubmit={handleUpdateSession} style={styles.modalForm}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Nom *</label>
+        <div className="test-sessions-modal">
+          <div className="test-sessions-modal-content">
+            <span className="test-sessions-modal-close-button" onClick={() => setShowModal(false)}>&times;</span>
+            <h3 className="test-sessions-modal-title">Modifier la session</h3>
+            <form onSubmit={handleUpdateSession} className="test-sessions-modal-form">
+              <div className="test-sessions-form-group">
+                <label className="test-sessions-label">Nom *</label>
                 <input
                   type="text"
                   value={editFormData.nom}
                   onChange={(e) => setEditFormData({ ...editFormData, nom: e.target.value })}
-                  style={styles.input}
+                  className="test-sessions-input"
                   required
                 />
               </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Application</label>
+              <div className="test-sessions-form-row">
+                <div className="test-sessions-form-group">
+                  <label className="test-sessions-label">Application</label>
                   <select
                     value={editFormData.applicationId || ''}
                     onChange={(e) => setEditFormData({ ...editFormData, applicationId: Number(e.target.value) })}
-                    style={styles.select}
+                    className="test-sessions-select"
                   >
                     {applications.map((app) => (
                       <option key={app.id} value={app.id}>{app.nom}</option>
                     ))}
                   </select>
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Statut</label>
+                <div className="test-sessions-form-group">
+                  <label className="test-sessions-label">Statut</label>
                   <select
                     value={editFormData.statut}
                     onChange={(e) => {
                       console.log('Changement de statut:', e.target.value);
                       setEditFormData({ ...editFormData, statut: e.target.value });
                     }}
-                    style={styles.select}
+                    className="test-sessions-select"
                   >
                     <option value="En cours">En cours</option>
                     <option value="Terminée">Terminée</option>
@@ -624,79 +624,79 @@ const TestSessions: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Environnement</label>
+              <div className="test-sessions-form-row">
+                <div className="test-sessions-form-group">
+                  <label className="test-sessions-label">Environnement</label>
                   <input
                     type="text"
                     value={editFormData.environnement}
                     onChange={(e) => setEditFormData({ ...editFormData, environnement: e.target.value })}
-                    style={styles.input}
+                    className="test-sessions-input"
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Version</label>
+                <div className="test-sessions-form-group">
+                  <label className="test-sessions-label">Version</label>
                   <input
                     type="text"
                     value={editFormData.version}
                     onChange={(e) => setEditFormData({ ...editFormData, version: e.target.value })}
-                    style={styles.input}
+                    className="test-sessions-input"
                   />
                 </div>
                </div>
-               <div style={styles.formRow}>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Environnement</label>
+               <div className="test-sessions-form-row">
+                 <div className="test-sessions-form-group">
+                   <label className="test-sessions-label">Environnement</label>
                    <input
                      type="text"
                      value={editFormData.environnement}
                      onChange={(e) => setEditFormData({ ...editFormData, environnement: e.target.value })}
-                     style={styles.input}
+                     className="test-sessions-input"
                      placeholder="Ex: Production"
                    />
                  </div>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Version</label>
+                 <div className="test-sessions-form-group">
+                   <label className="test-sessions-label">Version</label>
                    <input
                      type="text"
                      value={editFormData.version}
                      onChange={(e) => setEditFormData({ ...editFormData, version: e.target.value })}
-                     style={styles.input}
+                     className="test-sessions-input"
                      placeholder="Ex: 1.0.0"
                    />
                  </div>
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Nom du document</label>
+                <div className="test-sessions-form-group">
+                  <label className="test-sessions-label">Nom du document</label>
                   <input
                     type="text"
                     value={editFormData.nom_document}
                     onChange={(e) => setEditFormData({ ...editFormData, nom_document: e.target.value })}
-                    style={styles.input}
+                    className="test-sessions-input"
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Rôle</label>
+                <div className="test-sessions-form-group">
+                  <label className="test-sessions-label">Rôle</label>
                   <input
                     type="text"
                     value={editFormData.role}
                     onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                    style={styles.input}
+                    className="test-sessions-input"
                     placeholder="Ex: Admin, Testeur, etc."
                   />
                 </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Description</label>
+              <div className="test-sessions-form-group">
+                <label className="test-sessions-label">Description</label>
                 <textarea
                   value={editFormData.description}
                   onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                  style={styles.textarea}
+                  className="test-sessions-textarea"
                   rows={3}
                 />
               </div>
-              <div style={styles.formActions}>
-                <button type="button" style={styles.cancelButton} onClick={() => setShowModal(false)}>Annuler</button>
-                <button type="submit" style={styles.submitButton}>Enregistrer</button>
+              <div className="test-sessions-form-actions">
+                <button type="button" className="test-sessions-cancel-button" onClick={() => setShowModal(false)}>Annuler</button>
+                <button type="submit" className="test-sessions-submit-button">Enregistrer</button>
               </div>
             </form>
           </div>
@@ -704,366 +704,6 @@ const TestSessions: React.FC = () => {
       )}
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
-  main: { padding: '20px', maxWidth: '1200px', margin: '0 auto', width: '100%' },
-
-  // Styles uniformisés avec Tests.tsx
-  sessionsHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' as const, gap: '12px' },
-  headerLeft: { display: 'flex', alignItems: 'center', gap: '12px', flex: 1 },
-  pageTitle: { margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' },
-  pageSubtitle: { margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '14px' },
-
-  // Nouveau bouton (style identique à Tests.tsx)
-  newSessionButton: { padding: '10px 18px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' },
-
-  // Grille de sessions (identique à Tests.tsx)
-  sessionsGrid: {
-    display: 'grid',
-    gap: '16px',
-    padding: '0 20px',
-    width: '100%'
-  },
-
-  sessionCard: {
-    backgroundColor: 'var(--bg-card)',
-    borderRadius: '12px',
-    padding: '20px',
-    border: '2px solid var(--border-color)',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-    transition: 'all 0.3s ease',
-    position: 'relative' as const,
-    minHeight: '200px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    cursor: 'pointer'
-  },
-
-  sessionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '12px',
-    gap: '8px'
-  },
-
-  sessionTitle: {
-    margin: 0,
-    color: 'var(--text-primary)',
-    fontSize: '18px',
-    fontWeight: '700',
-    flex: 1,
-    lineHeight: '1.3'
-  },
-
-  statusBadge: {
-    padding: '6px 12px',
-    borderRadius: '20px',
-    fontSize: '10px',
-    fontWeight: '700',
-    color: 'white',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px'
-  },
-
-  sessionOwner: {
-    color: 'var(--text-secondary)',
-    fontSize: '13px',
-    marginBottom: '8px',
-    fontWeight: '500',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px'
-  },
-
-  sessionMeta: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '6px',
-    fontSize: '13px',
-    color: 'var(--text-secondary)',
-    marginBottom: '12px',
-    flex: 1
-  },
-
-  sessionStats: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '8px',
-    marginBottom: '12px',
-    fontSize: '13px',
-    padding: '10px',
-    backgroundColor: 'var(--hover-bg)',
-    borderRadius: '8px',
-    border: '1px solid var(--border-color)'
-  },
-
-  sessionActions: {
-    display: 'flex',
-    gap: '8px',
-    marginTop: 'auto',
-    flexWrap: 'wrap' as const
-  },
-
-  viewButton: {
-    padding: '8px 14px',
-    backgroundColor: 'var(--info-color)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    flex: 1,
-    fontWeight: '600',
-    fontSize: '12px',
-    transition: 'all 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px'
-  },
-
-  editButton: {
-    padding: '8px 14px',
-    backgroundColor: 'var(--primary-color)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    flex: 1,
-    fontWeight: '600',
-    fontSize: '12px',
-    transition: 'all 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px'
-  },
-
-  deleteButton: {
-    padding: '8px 14px',
-    backgroundColor: 'var(--danger-color)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    flex: 1,
-    fontWeight: '600',
-    fontSize: '12px',
-    transition: 'all 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px'
-  },
-
-  emptyState: { textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' },
-  emptyIcon: { fontSize: '48px', marginBottom: '16px', opacity: 0.5, color: 'var(--text-secondary)' },
-  emptyButton: { marginTop: '16px', padding: '12px 24px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '8px' },
-
-  success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '8px', marginBottom: '20px' },
-  error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: '8px', marginBottom: '20px' },
-  loading: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--text-secondary)' },
-
-  // Session details panel
-  sessionDetails: {
-    backgroundColor: 'var(--bg-card)',
-    borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '24px',
-    border: '1px solid var(--border-color)',
-    boxShadow: '0 2px 8px var(--shadow-color)'
-  },
-
-  sessionDetailsHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '20px'
-  },
-
-  sessionDetailsTitle: {
-    margin: 0,
-    fontSize: '20px',
-    fontWeight: 600,
-    color: 'var(--text-primary)'
-  },
-
-  closeDetailButton: {
-    background: 'none',
-    border: 'none',
-    fontSize: '28px',
-    cursor: 'pointer',
-    color: 'var(--text-muted)',
-    lineHeight: 1,
-    width: '32px',
-    height: '32px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '50%',
-    transition: 'background-color 0.2s'
-  },
-
-  sessionDetailsContent: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '12px',
-    fontSize: '14px'
-  },
-
-  detailRow: {
-    display: 'flex',
-    gap: '12px',
-    alignItems: 'flex-start'
-  },
-
-  detailLabel: {
-    fontWeight: 600,
-    color: 'var(--text-secondary)',
-    minWidth: '140px',
-    flexShrink: 0
-  },
-
-  exportPdfButton: {
-    padding: '10px 16px',
-    backgroundColor: '#dc3545',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: 600,
-    fontSize: '13px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-
-  exportWordButton: {
-    padding: '10px 16px',
-    backgroundColor: '#17a2b8',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: 600,
-    fontSize: '13px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-
-  // Modal styles
-  modal: {
-    position: 'fixed' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    zIndex: 1000,
-    paddingTop: '40px',
-    overflowY: 'auto' as const,
-    backdropFilter: 'blur(4px)'
-  },
-
-  modalContent: {
-    backgroundColor: 'var(--bg-card)',
-    padding: '24px',
-    borderRadius: '16px',
-    width: '95%',
-    maxWidth: '500px',
-    position: 'relative' as const,
-    margin: '0 auto 40px auto',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-    border: '1px solid var(--border-light)'
-  },
-
-  modalTitle: { margin: '0 0 4px', fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' },
-  modalSubtitle: { margin: '0 0 20px', fontSize: '13px', color: 'var(--text-secondary)' },
-  modalCloseButton: {
-    position: 'absolute' as const,
-    top: '12px',
-    right: '16px',
-    cursor: 'pointer',
-    color: 'var(--text-muted)',
-    fontSize: '24px',
-    background: 'none',
-    border: 'none',
-    width: '28px',
-    height: '28px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '50%'
-  },
-
-  modalForm: { display: 'flex', flexDirection: 'column' as const, gap: '16px' },
-  formRow: { display: 'flex', gap: '16px', flexWrap: 'wrap' as const },
-  formGroup: { flex: 1, minWidth: '200px' },
-
-  label: { display: 'block', marginBottom: '6px', fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' },
-
-  input: {
-    width: '100%',
-    padding: '12px 14px',
-    border: '1px solid var(--border-color)',
-    borderRadius: '8px',
-    fontSize: '14px',
-    backgroundColor: 'var(--input-bg)',
-    color: 'var(--text-primary)'
-  },
-
-  select: {
-    width: '100%',
-    padding: '12px 14px',
-    border: '1px solid var(--border-color)',
-    borderRadius: '8px',
-    fontSize: '14px',
-    backgroundColor: 'var(--input-bg)',
-    color: 'var(--text-primary)',
-    cursor: 'pointer'
-  },
-
-  textarea: {
-    width: '100%',
-    padding: '12px 14px',
-    border: '1px solid var(--border-color)',
-    borderRadius: '8px',
-    fontSize: '14px',
-    backgroundColor: 'var(--input-bg)',
-    color: 'var(--text-primary)',
-    resize: 'vertical' as const,
-    minHeight: '80px'
-  },
-
-  formActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' },
-
-  submitButton: {
-    padding: '10px 20px',
-    backgroundColor: 'var(--success-color)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontWeight: 600
-  },
-
-  cancelButton: {
-    padding: '10px 20px',
-    backgroundColor: 'transparent',
-    color: 'var(--text-secondary)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontWeight: 500
-  }
 };
 
 export default TestSessions;

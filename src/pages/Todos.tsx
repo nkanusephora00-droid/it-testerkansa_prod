@@ -1,20 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { todosAPI, Todo } from '../services/api';
+import { todosAPI, Todo, usersAPI, UserWithTodos } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faCheck, faUsers, faListCheck, faDownload, faTimes } from '@fortawesome/free-solid-svg-icons';
 import '../styles/pages/Todos.css';
-
-interface Todo {
-  id: number;
-  title: string;
-  description: string | null;
-  completed: boolean;
-  priority: string;
-  dueDate: string | null;
-  createdAt: string;
-  created_by?: number;
-  createdByUsername?: string;
-}
 
 const Todos: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -66,13 +54,13 @@ const Todos: React.FC = () => {
         usersAPI.getAll(),
         todosAPI.getAll(),
       ]);
-      
-      // Filter todos by user manually (in case backend doesn't filter correctly)
+
+      // Filter todos by user using createdByUsername
       const usersWithTodos = usersData.map((user: any) => ({
         ...user,
-        todos: todosData.filter((todo:Todo) => todo.created_by === user.id)
+        todos: todosData.filter((todo: Todo) => todo.createdByUsername === user.username)
       }));
-      
+
       setUsersWithTodos(usersWithTodos);
     } catch (err: unknown) {
       if (process.env.NODE_ENV === 'development') {
@@ -253,7 +241,7 @@ const Todos: React.FC = () => {
                 <button className="todos-download-button" onClick={downloadTodos} disabled={todos.length === 0}>
                   <FontAwesomeIcon icon={faDownload} /> Télécharger
                 </button>
-                <button className="todos-primary-button" onClick={() => setShowModal(true)}>
+                <button className="todos-primary-button" onClick={() => setShowForm(true)}>
                   <FontAwesomeIcon icon={faPlus} /> Nouvelle tâche
                 </button>
               </>

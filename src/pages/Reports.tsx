@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { testsAPI, TestSession } from '../services/api';
+import { testsAPI, applicationsAPI, comptesAPI, usersAPI, todosAPI, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartBar, faDownload, faFilter } from '@fortawesome/free-solid-svg-icons';
+import { faChartBar, faCheckCircle, faTimesCircle, faClock, faChartPie } from '@fortawesome/free-solid-svg-icons';
 import '../styles/pages/Reports.css';
 
 interface Stats {
@@ -22,7 +22,7 @@ const Reports: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
+  const [period, setPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
 
   useEffect(() => {
     fetchStats();

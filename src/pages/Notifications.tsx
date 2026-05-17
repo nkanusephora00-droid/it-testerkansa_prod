@@ -148,42 +148,42 @@ const Notifications: React.FC = () => {
   };
 
   if (loading) {
-    return <div style={styles.loading}>Chargement...</div>;
+    return <div className="notifications-loading">Chargement...</div>;
   }
 
   return (
-    <div style={styles.container}>
-      <main style={styles.main}>
-        <div style={styles.header}>
+    <div className="notifications-container">
+      <main className="notifications-main">
+        <div className="notifications-header">
           <div>
-            <h2 style={styles.pageTitle}>
+            <h2 className="notifications-page-title">
               <FontAwesomeIcon icon={faBell} /> Notifications
             </h2>
-            <p style={styles.pageSubtitle}>
+            <p className="notifications-page-subtitle">
               {unreadCount > 0 ? `${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}` : 'Toutes lues'}
             </p>
           </div>
-          <div style={styles.headerActions}>
+          <div className="notifications-header-actions">
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as 'all' | 'unread')}
-              style={styles.filterSelect}
+              className="notifications-filter-select"
             >
               <option value="all">Toutes</option>
               <option value="unread">Non lues</option>
             </select>
             {unreadCount > 0 && (
-              <button style={styles.markAllButton} onClick={markAllAsRead}>
+              <button className="notifications-mark-all-button" onClick={markAllAsRead}>
                 <FontAwesomeIcon icon={faCheck} /> Tout marquer comme lu
               </button>
             )}
           </div>
         </div>
 
-        <div style={styles.notifList}>
+        <div className="notifications-notif-list">
           {filteredNotifs.length === 0 ? (
-            <div style={styles.emptyState}>
-              <FontAwesomeIcon icon={faBell} style={styles.emptyIcon as any} />
+            <div className="notifications-empty-state">
+              <FontAwesomeIcon icon={faBell} className="notifications-empty-icon" />
               <h3>Aucune notification</h3>
               <p>{filter === 'unread' ? 'Toutes vos notifications ont été lues' : 'Vous n\'avez aucune notification'}</p>
             </div>
@@ -191,24 +191,21 @@ const Notifications: React.FC = () => {
             filteredNotifs.map(notif => (
               <div
                 key={notif.id}
-                style={{
-                  ...styles.notifItem,
-                  ...(notif.read ? styles.notifItemRead : styles.notifItemUnread)
-                }}
+                className={`notifications-notif-item ${notif.read ? 'notifications-notif-item-read' : 'notifications-notif-item-unread'}`}
               >
-                <div style={{ ...styles.notifIcon, backgroundColor: `${getColor(notif.type)}20`, color: getColor(notif.type) }}>
+                <div className="notifications-notif-icon" style={{ backgroundColor: `${getColor(notif.type)}20`, color: getColor(notif.type) }}>
                   <FontAwesomeIcon icon={getIcon(notif.type)} />
                 </div>
-                <div style={styles.notifContent}>
-                  <div style={styles.notifHeader}>
-                    <h4 style={styles.notifTitle}>{notif.title}</h4>
-                    <span style={styles.notifDate}>{formatDate(notif.createdAt)}</span>
+                <div className="notifications-notif-content">
+                  <div className="notifications-notif-header">
+                    <h4 className="notifications-notif-title">{notif.title}</h4>
+                    <span className="notifications-notif-date">{formatDate(notif.createdAt)}</span>
                   </div>
-                  <p style={styles.notifMessage}>{notif.message}</p>
+                  <p className="notifications-notif-message">{notif.message}</p>
                 </div>
                 {!notif.read && (
                   <button
-                    style={styles.markReadButton}
+                    className="notifications-mark-read-button"
                     onClick={() => markAsRead(notif.id)}
                     title="Marquer comme lu"
                   >
