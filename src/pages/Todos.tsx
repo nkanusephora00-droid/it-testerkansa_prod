@@ -280,8 +280,61 @@ const Todos: React.FC = () => {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="todos-input"
+                  placeholder="Titre de la tâche"
+                  autoFocus={quickAddMode}
+                  required
                 />
               </div>
+              <div className="todos-form-group">
+                <label className="todos-label">Description</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="todos-textarea"
+                  placeholder="Description de la tâche"
+                  rows={3}
+                />
+              </div>
+              <div className="todos-form-row">
+                <div className="todos-form-group">
+                  <label className="todos-label">Priorité</label>
+                  <select
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                    className="todos-select"
+                  >
+                    <option value="low">Basse</option>
+                    <option value="medium">Moyenne</option>
+                    <option value="high">Haute</option>
+                  </select>
+                </div>
+                <div className="todos-form-group">
+                  <label className="todos-label">Date d'échéance</label>
+                  <input
+                    type="date"
+                    value={formData.dueDate}
+                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                    className="todos-input"
+                  />
+                </div>
+              </div>
+              <div className="todos-form-actions">
+                <button type="button" className="todos-cancel-button" onClick={() => { setShowForm(false); setEditingTodo(null); setQuickAddMode(false); }}>
+                  Annuler
+                </button>
+                <button type="submit" className="todos-submit-button">
+                  {editingTodo ? 'Modifier' : 'Ajouter'}
+                </button>
+              </div>
+            </form>
+            <button
+              className="todos-close-button"
+              onClick={() => { setShowForm(false); setEditingTodo(null); setQuickAddMode(false); }}
+              title="Fermer"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          </div>
         )}
 
         {todos.length === 0 ? (
@@ -330,18 +383,18 @@ const Todos: React.FC = () => {
                             </span>
                           )}
                           {todo.dueDate && (
-                            <span style={styles.dueDate}>
+                            <span className="todos-due-date">
                               <FontAwesomeIcon icon={faCheck} style={{ marginRight: 4 }} />
                               Échéance: {todo.dueDate}
                             </span>
                           )}
                         </div>
                       </div>
-                      <div style={styles.todoActions}>
-                        <button style={styles.editButton} onClick={() => handleEdit(todo)} title="Modifier">
+                      <div className="todos-todo-actions">
+                        <button className="todos-edit-button" onClick={() => handleEdit(todo)} title="Modifier">
                           <FontAwesomeIcon icon={faEdit} />
                         </button>
-                        <button style={styles.deleteButton} onClick={() => handleDelete(todo.id)} title="Supprimer">
+                        <button className="todos-delete-button" onClick={() => handleDelete(todo.id)} title="Supprimer">
                           <FontAwesomeIcon icon={faTrash} />
                         </button>
                       </div>
@@ -352,33 +405,33 @@ const Todos: React.FC = () => {
             )}
 
             {completedTodos.length > 0 && (
-              <div style={styles.listSection}>
-                <h3 style={{ ...styles.listTitle, opacity: 0.7 }}>Terminées</h3>
-                <div style={styles.todoList}>
+              <div className="todos-list-section">
+                <h3 className="todos-list-title">Terminées</h3>
+                <div className="todos-todo-list">
                   {completedTodos.map((todo) => (
-                    <div key={todo.id} style={{ ...styles.todoItem, opacity: 0.7 }}>
+                    <div key={todo.id} className="todos-todo-item todos-completed-item">
                       <button
-                        style={{ ...styles.checkButton, backgroundColor: 'var(--success-color)' }}
+                        className="todos-check-button todos-check-button-completed"
                         onClick={() => handleToggle(todo.id)}
                         title="Marquer comme non terminé"
                       >
                         <FontAwesomeIcon icon={faCheck} />
                       </button>
-                      <div style={styles.todoContent}>
-                        <div style={{ ...styles.todoTitle, textDecoration: 'line-through' }}>{todo.title}</div>
+                      <div className="todos-todo-content">
+                        <div className="todos-todo-title todos-todo-title-completed">{todo.title}</div>
                         {todo.description && (
-                          <div style={styles.todoDescription}>{todo.description}</div>
+                          <div className="todos-todo-description">{todo.description}</div>
                         )}
                         {todo.createdByUsername && (
-                          <div style={styles.todoMeta}>
-                            <span style={styles.creatorBadge}>
+                          <div className="todos-todo-meta">
+                            <span className="todos-creator-badge">
                               Par: {todo.createdByUsername}
                             </span>
                           </div>
                         )}
                       </div>
-                      <div style={styles.todoActions}>
-                        <button style={styles.deleteButton} onClick={() => handleDelete(todo.id)} title="Supprimer">
+                      <div className="todos-todo-actions">
+                        <button className="todos-delete-button" onClick={() => handleDelete(todo.id)} title="Supprimer">
                           <FontAwesomeIcon icon={faTrash} />
                         </button>
                       </div>
@@ -391,10 +444,10 @@ const Todos: React.FC = () => {
         )}
 
         {viewMode === 'users' && (
-          <div style={styles.usersContainer}>
+          <div className="todos-users-container">
             {usersWithTodos.length === 0 ? (
-              <div style={styles.emptyState}>
-                <div style={styles.emptyIcon}>
+              <div className="todos-empty-state">
+                <div className="todos-empty-icon">
                   <FontAwesomeIcon icon={faUsers} />
                 </div>
                 <h3>Aucun utilisateur avec des tâches</h3>
@@ -402,97 +455,53 @@ const Todos: React.FC = () => {
               </div>
             ) : (
               usersWithTodos.map((user) => (
-                <div key={user.id} style={styles.userCard}>
-                  <div style={styles.userHeader}>
-                    <div style={styles.userInfo}>
-                      <h3 style={styles.userName}>{user.username}</h3>
-                      <p style={styles.userEmail}>{user.email}</p>
-                      <span style={{ ...styles.roleBadge, backgroundColor: user.role === 'admin' ? 'var(--danger-color)' : 'var(--info-color)' }}>
+                <div key={user.id} className="todos-user-card">
+                  <div className="todos-user-header">
+                    <div className="todos-user-info">
+                      <h3 className="todos-user-name">{user.username}</h3>
+                      <p className="todos-user-email">{user.email}</p>
+                      <span className="todos-role-badge" style={{ backgroundColor: user.role === 'admin' ? 'var(--danger-color)' : 'var(--info-color)' }}>
                         {user.role}
                       </span>
                     </div>
-                    <div style={styles.userStats}>
-                      <span style={styles.statBadge}>
+                    <div className="todos-user-stats">
+                      <span className="todos-stat-badge">
                         {user.todos.filter(t => !t.completed).length} en cours
                       </span>
-                      <span style={{ ...styles.statBadge, backgroundColor: 'var(--success-color)' }}>
+                      <span className="todos-stat-badge todos-stat-badge-success">
                         {user.todos.filter(t => t.completed).length} terminées
                       </span>
                     </div>
                   </div>
                   
                   {user.todos.length === 0 ? (
-                    <p style={styles.noTodos}>Aucune tâche assignée</p>
+                    <p className="todos-no-todos">Aucune tâche assignée</p>
                   ) : (
-                    <div style={styles.userTodos}>
-                      {user.todos.filter(t => !t.completed).map((todo) => (
-                        <div key={todo.id} style={styles.todoItem}>
+                    <div className="todos-user-todos-list">
+                      {user.todos.map((todo) => (
+                        <div key={todo.id} className="todos-user-todo-item">
                           <button
-                            style={styles.checkButton}
+                            className="todos-check-button"
                             onClick={() => handleToggle(todo.id)}
-                            title="Marquer comme terminé"
+                            title={todo.completed ? "Marquer comme non terminé" : "Marquer comme terminé"}
                           >
                             <FontAwesomeIcon icon={faCheck} />
                           </button>
-                          <div style={styles.todoContent}>
-                            <div style={styles.todoTitle}>{todo.title}</div>
-                            {todo.description && (
-                              <div style={styles.todoDescription}>{todo.description}</div>
-                            )}
-                            <div style={styles.todoMeta}>
-                              {todo.priority === 'high' && (
-                                <span style={{ ...styles.priorityBadge, backgroundColor: 'var(--danger-color)' }}>
-                                  Haute
-                                </span>
-                              )}
-                              {todo.priority === 'low' && (
-                                <span style={styles.priorityBadge}>Basse</span>
-                              )}
-                              {todo.dueDate && (
-                                <span style={styles.dueDate}>
-                                  Échéance: {todo.dueDate}
-                                </span>
-                              )}
+                          <div className="todos-todo-content">
+                            <div className="todos-todo-title" style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
+                              {todo.title}
                             </div>
+                            {todo.description && (
+                              <div className="todos-todo-description">{todo.description}</div>
+                            )}
                           </div>
-                          <div style={styles.todoActions}>
-                            <button style={styles.editButton} onClick={() => handleEdit(todo)} title="Modifier">
-                              <FontAwesomeIcon icon={faEdit} />
-                            </button>
-                            <button style={styles.deleteButton} onClick={() => handleDelete(todo.id)} title="Supprimer">
+                          <div className="todos-todo-actions">
+                            <button className="todos-delete-button" onClick={() => handleDelete(todo.id)} title="Supprimer">
                               <FontAwesomeIcon icon={faTrash} />
                             </button>
                           </div>
                         </div>
                       ))}
-                      
-                      {user.todos.filter(t => t.completed).length > 0 && (
-                        <>
-                          <h4 style={styles.completedTitle}>Terminées ({user.todos.filter(t => t.completed).length})</h4>
-                          {user.todos.filter(t => t.completed).map((todo) => (
-                            <div key={todo.id} style={{ ...styles.todoItem, opacity: 0.7 }}>
-                              <button
-                                style={{ ...styles.checkButton, backgroundColor: 'var(--success-color)' }}
-                                onClick={() => handleToggle(todo.id)}
-                                title="Marquer comme non terminé"
-                              >
-                                <FontAwesomeIcon icon={faCheck} />
-                              </button>
-                              <div style={styles.todoContent}>
-                                <div style={{ ...styles.todoTitle, textDecoration: 'line-through' }}>{todo.title}</div>
-                                {todo.description && (
-                                  <div style={styles.todoDescription}>{todo.description}</div>
-                                )}
-                              </div>
-                              <div style={styles.todoActions}>
-                                <button style={styles.deleteButton} onClick={() => handleDelete(todo.id)} title="Supprimer">
-                                  <FontAwesomeIcon icon={faTrash} />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </>
-                      )}
                     </div>
                   )}
                 </div>
@@ -503,67 +512,6 @@ const Todos: React.FC = () => {
       </main>
     </div>
   );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-  container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
-  main: { padding: '30px', maxWidth: '900px', margin: '0 auto', width: '100%', minHeight: 'calc(100vh - 70px)' },
-  loading: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--text-secondary)' },
-  pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' },
-  pageTitle: { margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' },
-  pageSubtitle: { margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '14px' },
-  headerActions: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
-  addButton: { padding: '12px 20px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' },
-  downloadButton: { padding: '12px 20px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' },
-  success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: 'var(--radius-md)', marginBottom: '20px' },
-  error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: 'var(--radius-md)', marginBottom: '20px' },
-  formCard: { backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: '24px', marginBottom: '24px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px var(--shadow-color)' },
-  formTitle: { margin: '0 0 20px', fontSize: '18px' },
-  formGroup: { marginBottom: '16px', flex: 1 },
-  formRow: { display: 'flex', gap: '16px', flexWrap: 'wrap' },
-  label: { display: 'block', marginBottom: '6px', fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' },
-  input: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)' },
-  textarea: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', resize: 'vertical' },
-  select: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)' },
-  formActions: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '20px', flexWrap: 'wrap' },
-  quickAddLabel: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)', cursor: 'pointer' },
-  quickAddCheckbox: { width: '16px', height: '16px', cursor: 'pointer' },
-  cancelButton: { padding: '12px 20px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' },
-  submitButton: { padding: '12px 20px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' },
-  emptyState: { textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' },
-  emptyIcon: { fontSize: '48px', marginBottom: '16px', opacity: 0.5, color: 'var(--text-secondary)', display: 'inline-block' },
-  emptyButton: { marginTop: '16px', padding: '12px 24px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '8px' },
-  listsContainer: { display: 'flex', flexDirection: 'column', gap: '24px' },
-  listSection: {},
-  listTitle: { fontSize: '16px', marginBottom: '12px', color: 'var(--text-primary)' },
-  todoList: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  todoItem: { display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '16px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' },
-  checkButton: { width: '28px', height: '28px', minWidth: '28px', borderRadius: '50%', border: '2px solid var(--success-color)', backgroundColor: 'var(--success-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', transition: 'all 0.2s' },
-  todoContent: { flex: 1 },
-  todoTitle: { fontWeight: 500, color: 'var(--text-primary)', marginBottom: '4px' },
-  todoDescription: { fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' },
-  todoMeta: { display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '12px' },
-  priorityBadge: { padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--text-muted)', color: 'white', fontSize: '11px' },
-  creatorBadge: { padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--info-color)', color: 'white', fontSize: '11px' },
-  dueDate: { color: 'var(--text-muted)' },
-  todoActions: { display: 'flex', gap: '8px' },
-  editButton: { padding: '8px', backgroundColor: 'transparent', color: 'var(--text-secondary)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' },
-  deleteButton: { padding: '8px', backgroundColor: 'transparent', color: 'var(--danger-color)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' },
-  viewToggle: { display: 'flex', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', overflow: 'hidden' },
-  viewButton: { padding: '10px 16px', backgroundColor: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' },
-  viewButtonActive: { padding: '10px 16px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' },
-  usersContainer: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  userCard: { backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: '20px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px var(--shadow-color)' },
-  userHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' },
-  userInfo: { flex: 1 },
-  userName: { margin: '0 0 4px', fontSize: '18px', color: 'var(--text-primary)' },
-  userEmail: { margin: '0 0 8px', color: 'var(--text-secondary)', fontSize: '14px' },
-  roleBadge: { padding: '4px 8px', borderRadius: 'var(--radius-full)', color: 'white', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' },
-  userStats: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
-  statBadge: { padding: '4px 8px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--text-muted)', color: 'white', fontSize: '11px', fontWeight: 600 },
-  noTodos: { color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center', padding: '20px' },
-  userTodos: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  completedTitle: { margin: '16px 0 8px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 500 },
 };
 
 export default Todos;

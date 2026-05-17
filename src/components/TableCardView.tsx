@@ -1,6 +1,4 @@
 import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash, faEye } from '@fortawesome/free-solid-svg-icons';
 import '../styles/components/TableCardView.css';
 
 interface TableCardViewProps {
@@ -20,20 +18,20 @@ const TableCardView: React.FC<TableCardViewProps> = ({
 }) => {
   if (!data || data.length === 0) {
     return (
-      <div style={styles.empty}>
+      <div className="table-card-view-empty">
         <p>Aucune donnée disponible</p>
       </div>
     );
   }
 
   return (
-    <div style={styles.container}>
+    <div className="table-card-view-container">
       {data.map((item, index) => (
-        <div key={index} style={styles.card}>
+        <div key={index} className="table-card-view-card">
           {columns.map((column) => (
-            <div key={column.key} style={styles.cardRow}>
-              <span style={styles.cardLabel}>{column.label}:</span>
-              <span style={styles.cardValue}>
+            <div key={column.key} className="table-card-view-card-row">
+              <span className="table-card-view-card-label">{column.label}:</span>
+              <span className="table-card-view-card-value">
                 {item[column.key] !== undefined && item[column.key] !== null 
                   ? String(item[column.key]) 
                   : '-'}
@@ -41,11 +39,11 @@ const TableCardView: React.FC<TableCardViewProps> = ({
             </div>
           ))}
           {(onEdit || onDelete || onView) && (
-            <div style={styles.cardActions}>
+            <div className="table-card-view-card-actions">
               {onView && (
                 <button 
                   onClick={() => onView(item)}
-                  style={styles.actionButton}
+                  className="table-card-view-action-button"
                   title="Voir"
                 >
                   <i className="fas fa-eye"></i>
@@ -54,7 +52,7 @@ const TableCardView: React.FC<TableCardViewProps> = ({
               {onEdit && (
                 <button 
                   onClick={() => onEdit(item)}
-                  style={styles.actionButton}
+                  className="table-card-view-action-button"
                   title="Modifier"
                 >
                   <i className="fas fa-edit"></i>
@@ -63,7 +61,7 @@ const TableCardView: React.FC<TableCardViewProps> = ({
               {onDelete && (
                 <button 
                   onClick={() => onDelete(item.id)}
-                  style={{...styles.actionButton, ...styles.deleteButton}}
+                  className="table-card-view-action-button table-card-view-delete-button"
                   title="Supprimer"
                 >
                   <i className="fas fa-trash"></i>
@@ -75,77 +73,6 @@ const TableCardView: React.FC<TableCardViewProps> = ({
       ))}
     </div>
   );
-};
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '16px',
-  },
-  card: {
-    backgroundColor: 'var(--bg-card)',
-    borderRadius: '16px',
-    padding: '20px',
-    border: '1px solid var(--border-color)',
-    boxShadow: '0 2px 8px var(--shadow-color)',
-  },
-  cardRow: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    marginBottom: '12px',
-    paddingBottom: '12px',
-    borderBottom: '1px solid var(--border-light)',
-  },
-  cardRowLast: {
-    marginBottom: 0,
-    paddingBottom: 0,
-    borderBottom: 'none',
-  },
-  cardLabel: {
-    fontSize: '12px',
-    fontWeight: 600,
-    color: 'var(--text-secondary)',
-    marginBottom: '4px',
-    textTransform: 'uppercase',
-  },
-  cardValue: {
-    fontSize: '16px',
-    color: 'var(--text-primary)',
-    wordBreak: 'break-word' as const,
-  },
-  cardActions: {
-    display: 'flex',
-    gap: '12px',
-    marginTop: '16px',
-    paddingTop: '16px',
-    borderTop: '1px solid var(--border-light)',
-  },
-  actionButton: {
-    flex: 1,
-    padding: '12px',
-    borderRadius: '12px',
-    border: '1px solid var(--border-color)',
-    backgroundColor: 'var(--bg-primary)',
-    color: 'var(--text-primary)',
-    fontSize: '14px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    minHeight: '48px',
-  },
-  deleteButton: {
-    backgroundColor: 'var(--danger-color)',
-    color: 'white',
-    borderColor: 'var(--danger-color)',
-  },
-  empty: {
-    textAlign: 'center' as const,
-    padding: '40px 20px',
-    color: 'var(--text-secondary)',
-  },
 };
 
 export default TableCardView;

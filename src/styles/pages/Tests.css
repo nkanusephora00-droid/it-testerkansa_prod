@@ -743,11 +743,155 @@
   border: 1px solid var(--border-light);
 }
 
-.tests-statut-termine {
-  padding: 6px 12px;
+.tests-consolidation-button-active {
+  background-color: var(--info-color);
+  color: white;
+}
+
+.tests-session-card-selected {
+  border: 2px solid var(--info-color) !important;
+  background-color: var(--hover-bg);
+}
+
+.tests-session-card-selectable {
+  cursor: pointer;
+}
+
+.tests-mobile-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tests-test-card {
+  background-color: var(--bg-card);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  border: 1px solid var(--border-color);
+}
+
+.tests-test-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.tests-test-field {
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.tests-test-field-value {
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.tests-table-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.tests-table-container {
+  overflow-x: auto;
+}
+
+.tests-add-test-button {
+  padding: 8px 12px;
   background-color: var(--success-color);
   color: white;
-  border-radius: 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tests-add-test-button:hover {
+  background-color: #27ae60;
+}
+
+.tests-back-button {
+  padding: 8px 12px;
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.tests-back-button:hover {
+  background-color: var(--hover-bg);
+}
+
+.tests-cancel-button {
+  padding: 8px 16px;
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tests-submit-button {
+  padding: 8px 16px;
+  background-color: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tests-stat-ok {
+  color: var(--success-color);
+}
+
+.tests-stat-bug {
+  color: var(--danger-color);
+}
+
+.tests-edit-button-compact {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.tests-delete-button-outline {
+  background-color: transparent;
+  color: var(--danger-color);
+  border: 1px solid var(--danger-color);
+}
+
+.tests-delete-button-outline:hover {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.tests-session-card-consolidated {
+  border: 2px dashed var(--info-color);
+}
+
+.tests-session-description {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.tests-session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   font-size: 12px;
-  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 12px 0;
+}
+
+.tests-page-title i, .tests-page-subtitle i {
+  margin-right: 8px;
 }

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { testsAPI, Test } from '../services/api';
+import React, { useEffect, useState, useCallback } from 'react';
+import { testsAPI, testSessionsAPI, applicationsAPI, api, Test, TestSession, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faPlay, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faPlay, faCheck, faTimes, faCompress, faExpand, faEye, faFilePdf, faFileWord } from '@fortawesome/free-solid-svg-icons';
+import { ConsolidatedSession, consolidateSessionsByUser, consolidateAllSessions } from '../utils/sessionConsolidation';
 import '../styles/pages/Tests.css';
 
 // Hook pour détecter la taille d'écran
@@ -1258,15 +1259,15 @@ const Tests: React.FC = () => {
    // Render Sessions List
    const renderSessions = () => (
      <div>
-       <div style={styles.sessionsHeader}>
-         <div style={styles.headerLeft}>
+       <div className="tests-sessions-header">
+         <div className="tests-header-left">
            {isAdmin && (
-             <div style={styles.userFilter}>
-               <label style={styles.filterLabel}>Filtrer par utilisateur:</label>
+             <div className="tests-user-filter">
+               <label className="tests-filter-label">Filtrer par utilisateur:</label>
                <select 
                  value={selectedUser || ''} 
                  onChange={(e) => setSelectedUser(e.target.value ? Number(e.target.value) : null)}
-                 style={styles.filterSelect}
+                 className="tests-filter-select"
                >
                  <option value="">Tous les utilisateurs</option>
                  {(() => {
@@ -1288,13 +1289,13 @@ const Tests: React.FC = () => {
              </div>
            )}
          </div>
-         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+         <div className="tests-header-right">
            {isAdmin && (
-             <div style={styles.consolidationButtons}>
+             <div className="tests-consolidation-buttons">
                {consolidationMode === 'none' ? (
                  <>
                    <button 
-                     style={{...styles.consolidationButton, backgroundColor: selectionMode ? '#dc3545' : '#6c757d'}} 
+                     className={`tests-consolidation-button ${selectionMode ? 'tests-consolidation-button-active' : ''}`}
                      onClick={handleToggleSelectionMode}
                      title={selectionMode ? "Arrêter la sélection" : "Sélectionner des sessions"}
                    >
@@ -1303,26 +1304,26 @@ const Tests: React.FC = () => {
                    {selectionMode && (
                      <>
                        <button 
-                         style={styles.consolidationButton} 
+                         className="tests-consolidation-button"
                          onClick={handleSelectAllSessions}
                          title="Tout sélectionner"
                        >
                          Tout
                        </button>
                        <button 
-                         style={styles.consolidationButton} 
+                         className="tests-consolidation-button"
                          onClick={handleClearSelection}
                          title="Effacer la sélection"
                        >
                          Effacer
                        </button>
-                       <span style={styles.selectionInfo}>
+                       <span className="tests-selection-info">
                          {selectedSessions.length} session(s) sélectionnée(s)
                        </span>
                      </>
                    )}
                    <button 
-                     style={styles.consolidationButton} 
+                     className="tests-consolidation-button"
                      onClick={handleConsolidateByUser}
                      title="Consolider par utilisateur"
                      disabled={selectionMode && selectedSessions.length === 0}
@@ -1330,7 +1331,7 @@ const Tests: React.FC = () => {
                      <FontAwesomeIcon icon={faCompress} />
                    </button>
                    <button 
-                     style={styles.consolidationButton} 
+                     className="tests-consolidation-button"
                      onClick={handleConsolidateGlobal}
                      title="Consolider globalement"
                      disabled={selectionMode && selectedSessions.length === 0}
@@ -1340,7 +1341,7 @@ const Tests: React.FC = () => {
                  </>
                ) : (
                  <button 
-                   style={styles.resetButton} 
+                   className="tests-reset-button"
                    onClick={handleResetConsolidation}
                    title="Réinitialiser la consolidation"
                  >
@@ -1351,45 +1352,45 @@ const Tests: React.FC = () => {
             )}
           </div>
         </div>
-      <div style={styles.sessionsGrid}>
+      <div className="tests-sessions-grid">
         {consolidationMode !== 'none' ? (
           consolidatedSessions.map(consolidated => (
-            <div key={consolidated.id} style={{...styles.sessionCard, border: '2px solid #007bff', backgroundColor: '#f8f9ff'}}>
-              <div style={styles.sessionHeader}>
-                <h3 style={styles.sessionTitle}>{consolidated.nom}</h3>
-                <span style={{...styles.statusBadge, backgroundColor: getStatusColor(consolidated.statut)}}>
+            <div key={consolidated.id} className="tests-session-card tests-session-card-consolidated">
+              <div className="tests-session-header">
+                <h3 className="tests-session-title">{consolidated.nom}</h3>
+                <span className="tests-status-badge" style={{ backgroundColor: getStatusColor(consolidated.statut) }}>
                   {consolidated.statut}
                 </span>
               </div>
-              <p style={styles.sessionDescription}>{consolidated.description}</p>
-              <div style={styles.sessionMeta}>
+              <p className="tests-session-description">{consolidated.description}</p>
+              <div className="tests-session-meta">
                 <span><strong>Utilisateur:</strong> {consolidated.username}</span>
                 <span><strong>Tests:</strong> {consolidated.total_tests}</span>
                 <span><strong>OK:</strong> {consolidated.tests_ok}</span>
                 <span><strong>BUG:</strong> {consolidated.tests_bug}</span>
                 <span><strong>En cours:</strong> {consolidated.tests_en_cours}</span>
               </div>
-              <div style={styles.sessionMeta}>
+              <div className="tests-session-meta">
                 <span><strong>Sessions originales:</strong> {consolidated.originalSessions.length}</span>
                 <span><strong>Créé le:</strong> {new Date(consolidated.date_creation).toLocaleDateString()}</span>
               </div>
-              <div style={styles.sessionActions}>
+              <div className="tests-session-actions">
                 <button 
-                  style={styles.viewButton}
+                  className="tests-view-button"
                   onClick={() => handleViewConsolidatedSession(consolidated)}
                   title="Voir les détails"
                 >
                   <FontAwesomeIcon icon={faEye} />
                 </button>
                 <button 
-                  style={styles.exportButton}
+                  className="tests-export-button"
                   onClick={() => handleExportConsolidatedPDF(consolidated)}
                   title="Exporter en PDF"
                 >
                   <FontAwesomeIcon icon={faFilePdf} />
                 </button>
                 <button 
-                  style={styles.exportButton}
+                  className="tests-export-button"
                   onClick={() => handleExportConsolidatedWord(consolidated)}
                   title="Exporter en Word"
                 >
@@ -1399,60 +1400,40 @@ const Tests: React.FC = () => {
             </div>
           ))
         ) : (
-          <div style={window.innerWidth <= 768 ? styles.sessionsGrid : styles.sessionsGridDesktop}>
+          <div className={window.innerWidth <= 768 ? 'tests-sessions-grid' : 'tests-sessions-grid-desktop'}>
             {sessions.map((session) => (
-            <div key={session.id} style={{
-              ...styles.sessionCard, 
-              ...(selectionMode && selectedSessions.includes(session.id) ? { border: '2px solid #007bff', backgroundColor: '#f8f9ff' } : {}),
-              ...(selectionMode ? { cursor: 'pointer' } : {})
-            }}>
+            <div key={session.id} className={`tests-session-card ${selectionMode && selectedSessions.includes(session.id) ? 'tests-session-card-selected' : ''} ${selectionMode ? 'tests-session-card-selectable' : ''}`}>
               {selectionMode && (
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  zIndex: 10,
-                  backgroundColor: 'white',
-                  borderRadius: '6px',
-                  padding: '4px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  border: '2px solid #e1e5e9'
-                }}>
+                <div className="tests-selection-checkbox">
                   <input 
                     type="checkbox"
                     checked={selectedSessions.includes(session.id)}
                     onChange={() => handleToggleSessionSelection(session.id)}
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      cursor: 'pointer',
-                      accentColor: '#3b82f6',
-                      margin: '0'
-                    }}
+                    className="tests-checkbox"
                   />
                 </div>
               )}
-              <div style={styles.sessionHeader}>
-                <h3 style={styles.sessionTitle}>{session.nom}</h3>
-                <span style={{...styles.statusBadge, backgroundColor: getStatusColor(session.statut)}}>
+              <div className="tests-session-header">
+                <h3 className="tests-session-title">{session.nom}</h3>
+                <span className="tests-status-badge" style={{ backgroundColor: getStatusColor(session.statut) }}>
                   {session.statut}
                 </span>
               </div>
               {session.createdByUsername && (
-                <p style={styles.sessionOwner}><i className="fas fa-user"></i> Créé par: {session.createdByUsername}</p>
+                <p className="tests-session-owner"><i className="fas fa-user"></i> Créé par: {session.createdByUsername}</p>
               )}
-              <p style={styles.sessionDesc}>{session.description || 'Aucune description'}</p>
+              <p className="tests-session-desc">{session.description || 'Aucune description'}</p>
               {session.nom_document && (
-                <p style={styles.sessionInfo}><i className="fas fa-file"></i> Document: {session.nom_document}</p>
+                <p className="tests-session-info"><i className="fas fa-file"></i> Document: {session.nom_document}</p>
               )}
-              <div style={styles.sessionStats}>
+              <div className="tests-session-stats">
                 <span>Total: {getSessionTests(session.id).length}</span>
-                <span style={styles.statOk}><FontAwesomeIcon icon={faCheck} /> {getSessionTests(session.id).filter((t: Test) => t.statut === 'OK').length}</span>
-                <span style={styles.statBug}><FontAwesomeIcon icon={faTimes} /> {getSessionTests(session.id).filter((t: Test) => t.statut === 'BUG').length}</span>
+                <span className="tests-stat-ok"><FontAwesomeIcon icon={faCheck} /> {getSessionTests(session.id).filter((t: Test) => t.statut === 'OK').length}</span>
+                <span className="tests-stat-bug"><FontAwesomeIcon icon={faTimes} /> {getSessionTests(session.id).filter((t: Test) => t.statut === 'BUG').length}</span>
               </div>
-               <div style={styles.sessionActions}>
+               <div className="tests-session-actions">
                  <button 
-                   style={styles.viewButton} 
+                   className="tests-view-button"
                    onClick={() => {
                      setSelectedSession(session.id);
                      setView('tests');
@@ -1461,7 +1442,7 @@ const Tests: React.FC = () => {
                    <FontAwesomeIcon icon={faEye} />
                  </button>
                  <button 
-                   style={styles.editButton}
+                   className="tests-edit-button"
                    onClick={() => openEditSessionModal(session)}
                    title="Modifier la session"
                    disabled={session.statut === 'Terminé'}
@@ -1469,7 +1450,7 @@ const Tests: React.FC = () => {
                    <FontAwesomeIcon icon={faEdit} />
                  </button>
                  <button 
-                   style={styles.exportButton} 
+                   className="tests-export-button"
                    onClick={() => {
                      handleExportSessionPDF(session);
                    }}
@@ -1477,7 +1458,7 @@ const Tests: React.FC = () => {
                    <FontAwesomeIcon icon={faFilePdf} />
                  </button>
                  <button 
-                   style={styles.exportButton} 
+                   className="tests-export-button"
                    onClick={() => {
                      handleExportSessionWord(session);
                    }}
@@ -1486,7 +1467,7 @@ const Tests: React.FC = () => {
                  </button>
                  {session.statut !== 'Terminé' && (
                   <button 
-                    style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b', border: '1px solid #ff6b6b'}} 
+                    className="tests-delete-button tests-delete-button-outline"
                     onClick={() => {
                       handleDeleteSession(session.id);
                     }} 
@@ -1513,21 +1494,21 @@ const Tests: React.FC = () => {
     
     return (
       <div>
-        <button style={styles.backButton} onClick={() => { setSelectedSession(null); setView('sessions'); }}>
+        <button className="tests-back-button" onClick={() => { setSelectedSession(null); setView('sessions'); }}>
           <i className="fas fa-arrow-left"></i> Retour aux sessions
         </button>
         
         {currentSession && (
-          <div style={styles.currentSessionInfo}>
+          <div className="tests-current-session-info">
             <h3><i className="fas fa-file-alt"></i> {currentSession.nom}</h3>
             <p>{currentSession.description}</p>
-            {currentSession.nom_document && <p style={styles.sessionInfo}><i className="fas fa-file"></i> Document: {currentSession.nom_document}</p>}
+            {currentSession.nom_document && <p className="tests-session-info"><i className="fas fa-file"></i> Document: {currentSession.nom_document}</p>}
           </div>
         )}
 
-        <div style={styles.formSection}>
+        <div className="tests-form-section">
           <button 
-            style={styles.addTestButton} 
+            className="tests-add-test-button"
             onClick={() => {
               // Pré-remplir le formulaire avec les infos de la session
               const currentSession = sessions.find(s => s.id === selectedSession);
@@ -1552,11 +1533,11 @@ const Tests: React.FC = () => {
           </button>
         </div>
 
-        <div style={styles.tableSection}>
-          <div style={styles.testsHeader}>
+        <div className="tests-table-section">
+          <div className="tests-tests-header">
             <div>
-              <h3 style={styles.sectionTitle}>Tests de la session</h3>
-              <p style={styles.testsSubtitle}>
+              <h3 className="tests-section-title">Tests de la session</h3>
+              <p className="tests-tests-subtitle">
                 {sessionTests.length === 0
                   ? 'Aucun test enregistré pour cette session.'
                   : `${sessionTests.length} test${sessionTests.length > 1 ? 's' : ''} au total.`}
@@ -1567,67 +1548,60 @@ const Tests: React.FC = () => {
           {/* Affichage en fonction de la taille d'écran */}
           {isMobile ? (
             /* Affichage en cartes pour mobile */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div className="tests-mobile-cards">
             {sessionTests.map((test: Test) => (
-              <div key={test.id} style={{
-                ...styles.sessionCard,
-                border: `2px solid ${getStatusColor(test.statut)}`,
-                backgroundColor: '#fff',
-                padding: '15px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}>
-                <div style={styles.sessionHeader}>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#2c3e50' }}>
+              <div key={test.id} className="tests-test-card" style={{ border: `2px solid ${getStatusColor(test.statut)}` }}>
+                <div className="tests-session-header">
+                  <h4 className="tests-test-title">
                     {test.fonction || 'Test sans fonction'}
                   </h4>
-                  <span style={{...styles.statusBadge, backgroundColor: getStatusColor(test.statut)}}>
+                  <span className="tests-status-badge" style={{ backgroundColor: getStatusColor(test.statut) }}>
                     {test.statut}
                   </span>
                 </div>
                 
-                <div style={{ marginBottom: '10px' }}>
+                <div className="tests-test-field">
                   <strong>Précondition:</strong> {test.precondition || '-'}
                 </div>
                 
-                <div style={{ marginBottom: '10px' }}>
+                <div className="tests-test-field">
                   <strong>Étapes:</strong> 
-                  <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
+                  <div className="tests-test-field-value">
                     {test.etapes || '-'}
                   </div>
                 </div>
                 
-                <div style={{ marginBottom: '10px' }}>
+                <div className="tests-test-field">
                   <strong>Résultat Attendu:</strong>
-                  <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
+                  <div className="tests-test-field-value">
                     {test.resultatAttendu || '-'}
                   </div>
                 </div>
                 
-                <div style={{ marginBottom: '10px' }}>
+                <div className="tests-test-field">
                   <strong>Résultat Obtenu:</strong>
-                  <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
+                  <div className="tests-test-field-value">
                     {test.resultatObtenu || '-'}
                   </div>
                 </div>
                 
                 {test.commentaires && (
-                  <div style={{ marginBottom: '10px' }}>
+                  <div className="tests-test-field">
                     <strong>Commentaires:</strong>
-                    <div style={{ marginTop: '5px', fontSize: '13px', lineHeight: '1.4' }}>
+                    <div className="tests-test-field-value">
                       {test.commentaires}
                     </div>
                   </div>
                 )}
                 
-                <div style={styles.sessionActions}>
-                  <button style={{...styles.editButton, padding: '8px 12px', marginRight: '8px'}} onClick={() => handleGenerateTestWord(test)} title="Générer Word">
+                <div className="tests-session-actions">
+                  <button className="tests-edit-button tests-edit-button-compact" onClick={() => handleGenerateTestWord(test)} title="Générer Word">
                     <FontAwesomeIcon icon={faFileWord} />
                   </button>
-                  <button style={{...styles.editButton, padding: '8px 12px', marginRight: '8px'}} onClick={() => handleEditTest(test)} title="Modifier">
+                  <button className="tests-edit-button tests-edit-button-compact" onClick={() => handleEditTest(test)} title="Modifier">
                     <FontAwesomeIcon icon={faEdit} />
                   </button>
-                  <button style={{...styles.deleteButton, padding: '8px 12px'}} onClick={() => handleDeleteTest(test.id)} title="Supprimer">
+                  <button className="tests-delete-button tests-delete-button-compact" onClick={() => handleDeleteTest(test.id)} title="Supprimer">
                     <FontAwesomeIcon icon={faTrash} />
                   </button>
                 </div>
@@ -1636,8 +1610,8 @@ const Tests: React.FC = () => {
           </div>
           ) : (
             /* Affichage en tableau pour web/desktop */
-            <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
-              <table style={styles.table}>
+            <div className="tests-table-container">
+              <table className="tests-table">
                 <thead>
                   <tr>
                     <th>ID</th>
@@ -1661,31 +1635,28 @@ const Tests: React.FC = () => {
                       <td>{test.resultatAttendu ? (test.resultatAttendu.length > 50 ? test.resultatAttendu.substring(0, 50) + '...' : test.resultatAttendu) : '-'}</td>
                       <td>{test.resultatObtenu ? (test.resultatObtenu.length > 50 ? test.resultatObtenu.substring(0, 50) + '...' : test.resultatObtenu) : '-'}</td>
                       <td>
-                        <span style={{
-                          ...styles.statusBadge,
-                          backgroundColor: getStatusColor(test.statut)
-                        }}>
+                        <span className="tests-status-badge" style={{ backgroundColor: getStatusColor(test.statut) }}>
                           {test.statut}
                         </span>
                       </td>
                       <td>{test.commentaires ? (test.commentaires.length > 30 ? test.commentaires.substring(0, 30) + '...' : test.commentaires) : '-'}</td>
-                      <td style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <td className="tests-table-actions">
                         <button 
-                          style={styles.editButton}
+                          className="tests-edit-button"
                           onClick={() => handleEditTest(test)}
                           title="Modifier"
                         >
                           <FontAwesomeIcon icon={faEdit} />
                         </button>
                         <button 
-                          style={styles.exportButton}
+                          className="tests-export-button"
                           onClick={() => handleGenerateTestWord(test)}
                           title="Exporter en Word"
                         >
                           <FontAwesomeIcon icon={faFileWord} />
                         </button>
                         <button 
-                          style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b', border: '1px solid #ff6b6b'}} 
+                          className="tests-delete-button tests-delete-button-outline"
                           onClick={() => handleDeleteTest(test.id)}
                           title="Supprimer"
                         >
@@ -1816,11 +1787,11 @@ const Tests: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowSessionModal(false)}
-                  style={styles.secondaryButton}
+                  className="tests-secondary-button"
                 >
                   Annuler
                 </button>
-                <button type="submit" style={styles.primaryButton}>
+                <button type="submit" className="tests-primary-button">
                   Créer la session
                 </button>
               </div>
@@ -1830,34 +1801,34 @@ const Tests: React.FC = () => {
        )}
 
        {showEditSessionModal && (
-         <div style={styles.modal}>
-           <div style={{ ...styles.modalContent, ...styles.sessionModalContent }}>
-             <span style={styles.close} onClick={() => setShowEditSessionModal(false)}>&times;</span>
-             <div style={styles.modalHeader}>
-               <h3 style={styles.sectionTitle}>Modifier la session</h3>
-               <p style={styles.modalSubtitle}>
+         <div className="tests-modal">
+           <div className="tests-modal-content tests-session-modal-content">
+             <span className="tests-close" onClick={() => setShowEditSessionModal(false)}>&times;</span>
+             <div className="tests-modal-header">
+               <h3 className="tests-section-title">Modifier la session</h3>
+               <p className="tests-modal-subtitle">
                  Modifiez les informations de la session.
                </p>
              </div>
-             <form onSubmit={handleUpdateSession} style={styles.sessionForm}>
-               <div style={styles.formRow}>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Nom de la session *</label>
+             <form onSubmit={handleUpdateSession} className="tests-session-form">
+               <div className="tests-form-row">
+                 <div className="tests-form-group">
+                   <label className="tests-label">Nom de la session *</label>
                    <input
                      type="text"
                      value={editSessionForm.nom}
                      onChange={(e) => setEditSessionForm({ ...editSessionForm, nom: e.target.value })}
-                     style={styles.sessionModalInput}
+                     className="tests-session-modal-input"
                      required
                      placeholder="Ex: Test Release v1.0"
                    />
                  </div>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Application</label>
+                 <div className="tests-form-group">
+                   <label className="tests-label">Application</label>
                    <select
                      value={editSessionForm.applicationId || ''}
                      onChange={(e) => setEditSessionForm({ ...editSessionForm, applicationId: Number(e.target.value) })}
-                     style={styles.sessionModalSelect}
+                     className="tests-session-modal-select"
                    >
                      <option value="">Sélectionner une application</option>
                      {applications.map((app) => (
@@ -1866,23 +1837,23 @@ const Tests: React.FC = () => {
                    </select>
                  </div>
                </div>
-               <div style={styles.formRow}>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Nom du document de test</label>
+               <div className="tests-form-row">
+                 <div className="tests-form-group">
+                   <label className="tests-label">Nom du document de test</label>
                    <input
                      type="text"
                      value={editSessionForm.nom_document}
                      onChange={(e) => setEditSessionForm({ ...editSessionForm, nom_document: e.target.value })}
-                     style={styles.sessionModalInput}
+                     className="tests-session-modal-input"
                      placeholder="Ex: Plan de tests v1.0"
                    />
                  </div>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Statut</label>
+                 <div className="tests-form-group">
+                   <label className="tests-label">Statut</label>
                    <select
                      value={editSessionForm.statut}
                      onChange={(e) => setEditSessionForm({ ...editSessionForm, statut: e.target.value })}
-                     style={styles.sessionModalSelect}
+                     className="tests-session-modal-select"
                    >
                      <option value="En cours">En cours</option>
                      <option value="Terminé">Terminé</option>
@@ -1890,46 +1861,46 @@ const Tests: React.FC = () => {
                    </select>
                  </div>
                </div>
-               <div style={styles.formRow}>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Environnement</label>
+               <div className="tests-form-row">
+                 <div className="tests-form-group">
+                   <label className="tests-label">Environnement</label>
                    <input
                      type="text"
                      value={editSessionForm.environnement}
                      onChange={(e) => setEditSessionForm({ ...editSessionForm, environnement: e.target.value })}
-                     style={styles.sessionModalInput}
+                     className="tests-session-modal-input"
                      placeholder="Ex: Production"
                    />
                  </div>
-                 <div style={styles.formGroup}>
-                   <label style={styles.label}>Version</label>
+                 <div className="tests-form-group">
+                   <label className="tests-label">Version</label>
                    <input
                      type="text"
                      value={editSessionForm.version}
                      onChange={(e) => setEditSessionForm({ ...editSessionForm, version: e.target.value })}
-                     style={styles.sessionModalInput}
+                     className="tests-session-modal-input"
                      placeholder="Ex: 1.0.0"
                    />
                  </div>
                </div>
-               <div style={styles.formGroup}>
-                 <label style={styles.label}>Description</label>
+               <div className="tests-form-group">
+                 <label className="tests-label">Description</label>
                  <textarea
                    value={editSessionForm.description}
                    onChange={(e) => setEditSessionForm({ ...editSessionForm, description: e.target.value })}
-                   style={styles.sessionModalTextarea}
+                   className="tests-session-modal-textarea"
                    placeholder="Description de la session de test..."
                  />
                </div>
-               <div style={styles.formActions}>
+               <div className="tests-form-actions">
                  <button
                    type="button"
                    onClick={() => setShowEditSessionModal(false)}
-                   style={styles.secondaryButton}
+                   className="tests-secondary-button"
                  >
                    Annuler
                  </button>
-                 <button type="submit" style={styles.primaryButton}>
+                 <button type="submit" className="tests-primary-button">
                    Enregistrer
                  </button>
                </div>
@@ -1939,31 +1910,31 @@ const Tests: React.FC = () => {
        )}
 
        {showTestForm && (
-        <div style={styles.modal}>
-          <div style={{ ...styles.modalContent, ...styles.testModalContent }}>
-            <span style={styles.close} onClick={() => setShowTestForm(false)}>&times;</span>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.sectionTitle}>Nouveau test</h3>
+        <div className="tests-modal">
+          <div className="tests-modal-content tests-test-modal-content">
+            <span className="tests-close" onClick={() => setShowTestForm(false)}>&times;</span>
+            <div className="tests-modal-header">
+              <h3 className="tests-section-title">Nouveau test</h3>
             </div>
-            <form onSubmit={handleSubmit} style={styles.testForm}>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Fonction *</label>
+            <form onSubmit={handleSubmit} className="tests-test-form">
+              <div className="tests-form-row">
+                <div className="tests-form-group">
+                  <label className="tests-label">Fonction *</label>
                   <input
                     type="text"
                     placeholder="Fonction"
                     value={formData.fonction}
                     onChange={(e) => setFormData({ ...formData, fonction: e.target.value })}
-                    style={styles.input}
+                    className="tests-input"
                     required
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Statut *</label>
+                <div className="tests-form-group">
+                  <label className="tests-label">Statut *</label>
                   <select
                     value={formData.statut}
                     onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
-                    style={styles.select}
+                    className="tests-select"
                     required
                   >
                     <option value="">Sélectionner...</option>
@@ -1974,64 +1945,64 @@ const Tests: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Précondition</label>
+              <div className="tests-form-row">
+                <div className="tests-form-group">
+                  <label className="tests-label">Précondition</label>
                   <textarea
                     placeholder="Précondition"
                     value={formData.precondition}
                     onChange={(e) => setFormData({ ...formData, precondition: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Étapes</label>
+                <div className="tests-form-group">
+                  <label className="tests-label">Étapes</label>
                   <textarea
                     placeholder="Étapes"
                     value={formData.etapes}
                     onChange={(e) => setFormData({ ...formData, etapes: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
               </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Résultat attendu</label>
+              <div className="tests-form-row">
+                <div className="tests-form-group">
+                  <label className="tests-label">Résultat attendu</label>
                   <textarea
                     placeholder="Résultat Attendu"
                     value={formData.resultatAttendu}
                     onChange={(e) => setFormData({ ...formData, resultatAttendu: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Résultat obtenu</label>
+                <div className="tests-form-group">
+                  <label className="tests-label">Résultat obtenu</label>
                   <textarea
                     placeholder="Résultat Obtenu"
                     value={formData.resultatObtenu}
                     onChange={(e) => setFormData({ ...formData, resultatObtenu: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Commentaires</label>
+              <div className="tests-form-group">
+                <label className="tests-label">Commentaires</label>
                 <textarea
                   placeholder="Commentaires"
                   value={formData.commentaires}
                   onChange={(e) => setFormData({ ...formData, commentaires: e.target.value })}
-                  style={styles.textarea}
+                  className="tests-textarea"
                 />
               </div>
-              <div style={styles.formActions}>
+              <div className="tests-form-actions">
                 <button
                   type="button"
                   onClick={() => setShowTestForm(false)}
-                  style={styles.secondaryButton}
+                  className="tests-secondary-button"
                 >
                   Annuler
                 </button>
-                <button type="submit" style={styles.primaryButton}>
+                <button type="submit" className="tests-primary-button">
                   Ajouter
                 </button>
               </div>
@@ -2041,35 +2012,35 @@ const Tests: React.FC = () => {
       )}
 
       {showEditModal && (
-        <div style={styles.modal}>
-          <div style={{ ...styles.modalContent, ...styles.sessionModalContent }}>
-            <span style={styles.close} onClick={() => { setShowEditModal(false); setEditingTest(null); }}>&times;</span>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.sectionTitle}>Modifier le test</h3>
+        <div className="tests-modal">
+          <div className="tests-modal-content tests-session-modal-content">
+            <span className="tests-close" onClick={() => { setShowEditModal(false); setEditingTest(null); }}>&times;</span>
+            <div className="tests-modal-header">
+              <h3 className="tests-section-title">Modifier le test</h3>
             </div>
-            <form onSubmit={handleUpdateTest} style={styles.sessionForm}>
+            <form onSubmit={handleUpdateTest} className="tests-session-form">
               <input
                 type="hidden"
                 value={formData.sessionId}
               />
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Fonction *</label>
+              <div className="tests-form-row">
+                <div className="tests-form-group">
+                  <label className="tests-label">Fonction *</label>
                   <input
                     type="text"
                     placeholder="Fonction"
                     value={formData.fonction}
                     onChange={(e) => setFormData({ ...formData, fonction: e.target.value })}
-                    style={styles.input}
+                    className="tests-input"
                     required
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Statut *</label>
+                <div className="tests-form-group">
+                  <label className="tests-label">Statut *</label>
                   <select
                     value={formData.statut}
                     onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
-                    style={styles.select}
+                    className="tests-select"
                     required
                   >
                     <option value="">Sélectionner...</option>
@@ -2080,55 +2051,55 @@ const Tests: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Précondition</label>
+              <div className="tests-form-group">
+                <label className="tests-label">Précondition</label>
                 <textarea
                   placeholder="Précondition"
                   value={formData.precondition}
                   onChange={(e) => setFormData({ ...formData, precondition: e.target.value })}
-                  style={styles.textarea}
+                  className="tests-textarea"
                 />
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Étapes</label>
+              <div className="tests-form-group">
+                <label className="tests-label">Étapes</label>
                 <textarea
                   placeholder="Étapes"
                   value={formData.etapes}
                   onChange={(e) => setFormData({ ...formData, etapes: e.target.value })}
-                  style={styles.textarea}
+                  className="tests-textarea"
                 />
               </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Résultat attendu</label>
+              <div className="tests-form-row">
+                <div className="tests-form-group">
+                  <label className="tests-label">Résultat attendu</label>
                   <textarea
                     placeholder="Résultat Attendu"
                     value={formData.resultatAttendu}
                     onChange={(e) => setFormData({ ...formData, resultatAttendu: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Résultat obtenu</label>
+                <div className="tests-form-group">
+                  <label className="tests-label">Résultat obtenu</label>
                   <textarea
                     placeholder="Résultat Obtenu"
                     value={formData.resultatObtenu}
                     onChange={(e) => setFormData({ ...formData, resultatObtenu: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Commentaires</label>
+              <div className="tests-form-group">
+                <label className="tests-label">Commentaires</label>
                 <textarea
                   placeholder="Commentaires"
                   value={formData.commentaires}
                   onChange={(e) => setFormData({ ...formData, commentaires: e.target.value })}
-                  style={styles.textarea}
+                  className="tests-textarea"
                 />
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Image (capture d'écran)</label>
+              <div className="tests-form-group">
+                <label className="tests-label">Image (capture d'écran)</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -2143,30 +2114,30 @@ const Tests: React.FC = () => {
                       reader.readAsDataURL(file);
                     }
                   }}
-                  style={styles.fileInput}
+                  className="tests-file-input"
                 />
                 {imagePreview && (
-                  <div style={styles.imagePreview}>
-                    <img src={imagePreview} alt="Preview" style={styles.previewImg} />
+                  <div className="tests-image-preview">
+                    <img src={imagePreview} alt="Preview" className="tests-preview-img" />
                     <button 
                       type="button" 
                       onClick={() => { setFormData({ ...formData, image: '' }); setImagePreview(null); }}
-                      style={styles.removeImageBtn}
+                      className="tests-remove-image-btn"
                     >
                       ×
                     </button>
                   </div>
                 )}
               </div>
-              <div style={styles.formActions}>
+              <div className="tests-form-actions">
                 <button
                   type="button"
                   onClick={() => { setShowEditModal(false); setEditingTest(null); }}
-                  style={styles.secondaryButton}
+                  className="tests-secondary-button"
                 >
                   Annuler
                 </button>
-                <button type="submit" style={styles.primaryButton}>
+                <button type="submit" className="tests-primary-button">
                   Modifier le test
                 </button>
               </div>
@@ -2176,92 +2147,6 @@ const Tests: React.FC = () => {
       )}
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
-  main: { padding: '20px', maxWidth: '1400px', margin: '0 auto', minHeight: 'calc(100vh - 70px)' },
-  pageTitle: { fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' },
-  pageSubtitle: { fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', fontWeight: '400' },
-  formSection: { backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '10px', marginBottom: '16px', boxShadow: '0 2px 8px var(--shadow-color)', border: '1px solid var(--border-light)' },
-  tableSection: { backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '10px', boxShadow: '0 2px 8px var(--shadow-color)', border: '1px solid var(--border-light)' },
-  sectionTitle: { fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '12px', paddingBottom: '8px', borderBottom: '2px solid var(--border-light)' },
-  form: { display: 'flex', gap: '12px', flexWrap: 'wrap' as const },
-   input: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', maxWidth: '100%', transition: 'border-color 0.2s, box-shadow 0.2s' },
-   textarea: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', minHeight: '35px', maxHeight: '50px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', resize: 'vertical' as const, width: '100%', overflow: 'auto', transition: 'border-color 0.2s, box-shadow 0.2s' },
-   select: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', cursor: 'pointer', transition: 'border-color 0.2s' },
-   label: { display: 'block', marginBottom: '2px', fontSize: '10px', fontWeight: '600', color: 'var(--text-secondary)' },
-
-   // Styles spécifiques pour le modal de session (plus grands)
-   sessionModalInput: { padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', transition: 'border-color 0.2s, box-shadow 0.2s', minHeight: '44px', width: '100%' },
-   sessionModalSelect: { padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', cursor: 'pointer', transition: 'border-color 0.2s', minHeight: '44px', width: '100%' },
-   sessionModalTextarea: { padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', resize: 'vertical' as const, minHeight: '100px', width: '100%', transition: 'border-color 0.2s, box-shadow 0.2s' },
-
-   fileInput: { padding: '4px', border: '1px solid var(--border-color)', borderRadius: '3px', width: '100%', fontSize: '11px', backgroundColor: 'var(--bg-card)' },
-  imagePreview: { position: 'relative', marginTop: '10px', display: 'inline-block' },
-  previewImg: { maxWidth: '150px', maxHeight: '100px', borderRadius: '6px', border: '2px solid var(--info-color)' },
-  removeImageBtn: { position: 'absolute', top: '-8px', right: '-8px', backgroundColor: 'var(--danger-color)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '14px', lineHeight: '1' },
-  formActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' },
-  primaryButton: { padding: '5px 10px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer', fontWeight: '600', fontSize: '11px' },
-  secondaryButton: { padding: '5px 8px', backgroundColor: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '3px', cursor: 'pointer', fontWeight: '600', fontSize: '11px' },
-  deleteButton: { padding: '8px 14px', backgroundColor: 'var(--danger-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', transition: 'opacity 0.2s' },
-  table: { width: '100%', borderCollapse: 'collapse' as const, borderRadius: '8px', overflow: 'hidden' },
-  success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' },
-  error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' },
-    testsHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '12px' },
-  testsSubtitle: { fontSize: '13px', color: 'var(--text-secondary)' },
-  sessionInfo: { fontSize: '13px', color: 'var(--text-secondary)', margin: '5px 0' },
-   modal: { position: 'fixed' as const, top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, overflowY: 'auto' as const, backdropFilter: 'blur(8px)' },
-   modalContent: { backgroundColor: 'var(--bg-card)', padding: '30px', borderRadius: '16px', width: '95%', maxWidth: '600px', position: 'relative' as const, boxShadow: '0 20px 60px rgba(0,0,0,0.5)', border: '2px solid var(--primary-color)', transform: 'translateY(0)' },
-   sessionModalContent: { maxWidth: '700px', padding: '30px', width: '100%' },
-   testModalContent: { maxWidth: '420px', padding: '10px' },
-  close: { position: 'absolute' as const, top: '6px', right: '10px', fontSize: '20px', cursor: 'pointer', color: 'var(--text-muted)', transition: 'color 0.2s', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' },
-  modalHeader: { marginBottom: '6px' },
-  modalSubtitle: { fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' },
-   formGroup: { marginBottom: '6px', flex: '1 1 200px' as const, minWidth: '200px' },
-   formRow: { display: 'flex', gap: '12px', flexWrap: 'wrap' as const, width: '100%' },
-   sessionForm: { display: 'flex', flexDirection: 'column' as const, gap: '16px', width: '100%' },
-  testForm: { display: 'flex', flexDirection: 'column' as const, gap: '6px', width: '100%', maxWidth: '400px', margin: '0 auto' },
-    sessionsHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' as const, gap: '12px' },
-  headerLeft: { display: 'flex', alignItems: 'center', gap: '12px', flex: 1 },
-  userFilter: { display: 'flex', alignItems: 'center', gap: '8px' },
-  filterLabel: { fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' },
-  filterSelect: { padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '13px', minWidth: '200px' },
-   newSessionButton: { padding: '10px 18px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' },
-  consolidationButtons: { display: 'flex', gap: '8px', alignItems: 'center' },
-  consolidationButton: { padding: '8px 12px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', transition: 'background-color 0.2s' },
-  resetButton: { padding: '8px 12px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', transition: 'background-color 0.2s' },
-  selectionInfo: { padding: '6px 10px', backgroundColor: '#e9ecef', color: '#495057', borderRadius: '4px', fontSize: '12px', fontWeight: '500' },
-  selectionCheckbox: { position: 'absolute' as const, top: '10px', right: '10px', zIndex: 10, backgroundColor: 'rgba(255, 255, 255, 0.95)', padding: '4px', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
-  sessionsGrid: { 
-    display: 'grid', 
-    gridTemplateColumns: '1fr', 
-    gap: '16px', 
-    padding: '0 20px',
-    width: '100%'
-  },
-  sessionsGridDesktop: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '16px',
-    padding: '0 20px',
-    width: '100%'
-  },
-  sessionCard: { backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', border: '1px solid #e1e5e9', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s ease', position: 'relative' as const, minHeight: '280px', display: 'flex', flexDirection: 'column', cursor: 'pointer' },
-  sessionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', gap: '8px' },
-  sessionTitle: { margin: 0, color: '#1a1a1a', fontSize: '18px', fontWeight: '700', flex: 1, lineHeight: '1.3' },
-  statusBadge: { padding: '6px 12px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', color: 'white', textTransform: 'uppercase' as const, letterSpacing: '0.5px' },
-  sessionOwner: { color: '#6b7280', fontSize: '13px', marginBottom: '8px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' },
-  sessionDesc: { color: '#6b7280', fontSize: '14px', marginBottom: '16px', lineHeight: '1.5', minHeight: '40px', flex: 1 },
-  sessionStats: { display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '16px', fontSize: '13px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' },
-  sessionActions: { display: 'flex', gap: '8px', marginTop: 'auto' },
-  viewButton: { padding: '10px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', flex: 1, fontWeight: '600', fontSize: '13px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)' },
-  exportButton: { padding: '10px 16px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)' },
-  headerActions: { display: 'flex', gap: '8px', alignItems: 'center' },
-  toggleViewButton: { padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s' },
-  editButton: { padding: '8px 12px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 },
-  currentSessionInfo: { backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '10px', marginBottom: '14px', boxShadow: '0 2px 8px var(--shadow-color)', border: '1px solid var(--border-light)' },
-  statutTermine: { padding: '6px 12px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' }
 };
 
 export default Tests;

@@ -23,6 +23,7 @@ const ThemeToggle: React.FC = () => {
   return (
     <button
       className="theme-toggle"
+      onClick={toggleTheme}
       title={theme === 'light' ? 'Passer en mode sombre' : 'Passer en mode clair'}
     >
       <FontAwesomeIcon icon={theme === 'light' ? faMoon : faSun} />

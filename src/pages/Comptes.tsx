@@ -1,24 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { comptesAPI, Compte } from '../services/api';
+import React, { useEffect, useState, useCallback } from 'react';
+import { comptesAPI, applicationsAPI, Compte } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTrash, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import '../styles/pages/Comptes.css';
-
-interface Compte {
-  id: number;
-  applicationId: number;
-  username: string;
-  code?: string;
-  role?: string;
-  commentaire?: string;
-  createdBy?: number;
-  application?: ApplicationInfoDTO;
-}
 
 const Comptes: React.FC = () => {
   const [comptes, setComptes] = useState<Compte[]>([]);
   const [filteredComptes, setFilteredComptes] = useState<Compte[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);

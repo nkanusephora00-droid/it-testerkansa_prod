@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { applicationsAPI, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faPlus, faEdit,, faEye faTrash, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import '../styles/pages/Applications.css';
 
 const Applications: React.FC = () => {
