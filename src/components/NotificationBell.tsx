@@ -1,37 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBell, faTimes, faCheck, faExclamationTriangle, faInfoCircle, faCheckCircle, faEnvelope } from '@fortawesome/free-solid-svg-icons';
-import { messagesAPI, todosAPI, testsAPI, systemNotificationsAPI } from '../services/api';
+import { faBell, faTimes, faCheck, faExclamationTriangle, faInfoCircle, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { createStyles } from '../shared/utils/styleUtils';
 import './NotificationBell.css';
-
-// Hook pour détecter la taille d'écran
-const useResponsive = () => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  return isMobile;
-};
 
 interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'message';
+  type: 'info' | 'success' | 'warning' | 'error';
   timestamp: Date;
   read: boolean;
   actionUrl?: string;
-  senderId?: number;
-  senderUsername?: string;
 }
 
 const NotificationBell: React.FC = () => {
@@ -40,111 +21,42 @@ const NotificationBell: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const isMobile = useResponsive();
 
-  // Charger les notifications depuis le backend
+  // Simuler des notifications initiales
   useEffect(() => {
-    fetchNotifications();
+    const initialNotifications: Notification[] = [
+      {
+        id: '1',
+        title: 'Nouvelle session de test',
+        message: 'La session "Tests Release v2.0" a été créée avec succès',
+        type: 'success',
+        timestamp: new Date(Date.now() - 1000 * 60 * 5), // Il y a 5 minutes
+        read: false,
+        actionUrl: '/tests'
+      },
+      {
+        id: '2',
+        title: 'Rappel de tâche',
+        message: 'Vous avez 3 tâches en attente de validation',
+        type: 'warning',
+        timestamp: new Date(Date.now() - 1000 * 60 * 30), // Il y a 30 minutes
+        read: false,
+        actionUrl: '/todos'
+      },
+      {
+        id: '3',
+        title: 'Message reçu',
+        message: 'Vous avez reçu un nouveau message de l\'administrateur',
+        type: 'info',
+        timestamp: new Date(Date.now() - 1000 * 60 * 60), // Il y a 1 heure
+        read: true,
+        actionUrl: '/messages'
+      }
+    ];
     
-    // Rafraîchir automatiquement toutes les 30 secondes
-    const interval = setInterval(fetchNotifications, 30000);
-    
-    return () => clearInterval(interval);
+    setNotifications(initialNotifications);
+    setUnreadCount(initialNotifications.filter(n => !n.read).length);
   }, []);
-
-  const fetchNotifications = async () => {
-    try {
-      const [messages, todos, tests, systemNotifications] = await Promise.all([
-        messagesAPI.getAll(),
-        todosAPI.getAll(),
-        testsAPI.getAll(),
-        systemNotificationsAPI.getAll()
-      ]);
-
-      const allNotifications: Notification[] = [];
-
-      // Ajouter les messages non lus comme notifications
-      messages.forEach((message: any) => {
-        allNotifications.push({
-          id: `msg_${message.id}`,
-          title: `Message de ${message.senderUsername}`,
-          message: message.content,
-          type: 'message',
-          timestamp: new Date(message.timestamp),
-          read: message.read,
-          actionUrl: '/messages',
-          senderId: message.senderId,
-          senderUsername: message.senderUsername
-        });
-      });
-
-      // Ajouter les notifications système
-      systemNotifications.forEach((notif: any) => {
-        allNotifications.push({
-          id: `sys_${notif.id}`,
-          title: notif.title,
-          message: notif.message,
-          type: notif.type.toLowerCase() as Notification['type'],
-          timestamp: new Date(notif.createdAt),
-          read: notif.read,
-          actionUrl: notif.actionUrl
-        });
-      });
-
-      // Ajouter les tâches en attente
-      todos.filter((t: any) => !t.completed).forEach((todo: any) => {
-        allNotifications.push({
-          id: `todo_${todo.id}`,
-          title: 'Tâche en attente',
-          message: todo.title,
-          type: 'warning',
-          timestamp: new Date(todo.createdAt),
-          read: false,
-          actionUrl: '/todos'
-        });
-      });
-
-      // Ajouter les tests avec des problèmes
-      tests.filter((t: any) => t.statut === 'BUG').forEach((test: any) => {
-        allNotifications.push({
-          id: `test_bug_${test.id}`,
-          title: 'BUG détecté',
-          message: `Test "${test.fonction}" - Statut: BUG`,
-          type: 'error',
-          timestamp: new Date(test.createdAt || Date.now()),
-          read: false,
-          actionUrl: '/tests'
-        });
-      });
-
-      tests.filter((t: any) => t.statut === 'EN COURS').forEach((test: any) => {
-        allNotifications.push({
-          id: `test_progress_${test.id}`,
-          title: 'Test en cours',
-          message: `Test "${test.fonction}" - En cours de vérification`,
-          type: 'info',
-          timestamp: new Date(test.createdAt || Date.now()),
-          read: false,
-          actionUrl: '/tests'
-        });
-      });
-
-      // Trier par date (plus récent en premier)
-      allNotifications.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-      // Restaurer le statut "read" depuis localStorage
-      const readNotifs = JSON.parse(localStorage.getItem('readNotifications') || '[]');
-      const notifsWithReadStatus = allNotifications.map(n => ({
-        ...n,
-        read: readNotifs.includes(n.id)
-      }));
-
-      setNotifications(notifsWithReadStatus);
-      setUnreadCount(notifsWithReadStatus.filter(n => !n.read).length);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  };
 
   // Fermer le dropdown quand on clique ailleurs
   useEffect(() => {
@@ -158,49 +70,14 @@ const NotificationBell: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const markAsRead = async (notificationId: string) => {
-    try {
-      // Si c'est un message, utiliser l'API messages
-      if (notificationId.startsWith('msg_')) {
-        const messageId = parseInt(notificationId.replace('msg_', ''));
-        await messagesAPI.markAsRead(messageId);
-      }
-      // Si c'est une notification système, utiliser l'API systemNotifications
-      else if (notificationId.startsWith('sys_')) {
-        const notifId = parseInt(notificationId.replace('sys_', ''));
-        await systemNotificationsAPI.markAsRead(notifId);
-      }
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-
-    // Mettre à jour l'état local
+  const markAsRead = (notificationId: string) => {
     setNotifications(prev => 
       prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
     );
     setUnreadCount(prev => Math.max(0, prev - 1));
   };
 
-  const markAllAsRead = async () => {
-    try {
-      // Marquer tous les messages comme lus via l'API
-      const messageNotifications = notifications.filter(n => n.id.startsWith('msg_'));
-      for (const notification of messageNotifications) {
-        const messageId = parseInt(notification.id.replace('msg_', ''));
-        await messagesAPI.markAsRead(messageId);
-      }
-
-      // Marquer toutes les notifications système comme lues via l'API
-      const systemNotifs = notifications.filter(n => n.id.startsWith('sys_'));
-      for (const notification of systemNotifs) {
-        const notifId = parseInt(notification.id.replace('sys_', ''));
-        await systemNotificationsAPI.markAsRead(notifId);
-      }
-    } catch (error) {
-      console.error('Error marking notifications as read:', error);
-    }
-
-    // Mettre à jour l'état local
+  const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
   };
@@ -227,7 +104,6 @@ const NotificationBell: React.FC = () => {
       case 'warning': return faExclamationTriangle;
       case 'error': return faTimes;
       case 'info': return faInfoCircle;
-      case 'message': return faEnvelope;
       default: return faInfoCircle;
     }
   };
@@ -238,7 +114,6 @@ const NotificationBell: React.FC = () => {
       case 'warning': return '#f39c12';
       case 'error': return '#e74c3c';
       case 'info': return '#3498db';
-      case 'message': return '#9b59b6';
       default: return '#3498db';
     }
   };
@@ -260,62 +135,18 @@ const NotificationBell: React.FC = () => {
   return (
     <div style={styles.container} ref={dropdownRef}>
       <button
-        style={{
-          ...styles.bellButton,
-          ...(isMobile ? {
-            width: "36px",
-            height: "36px",
-            backgroundColor: "rgba(52, 152, 219, 0.1)",
-            border: "2px solid rgba(52, 152, 219, 0.3)",
-            boxShadow: "0 2px 8px rgba(52, 152, 219, 0.2)",
-            fontSize: "14px"
-          } : {})
-        }}
+        style={styles.bellButton}
         onClick={() => setIsOpen(!isOpen)}
         title="Notifications"
       >
-        <FontAwesomeIcon 
-          icon={faBell} 
-          className="notification-bell-icon"
-          style={{
-            ...(isMobile ? {
-              color: "var(--info-color)",
-              fontSize: "14px"
-            } : {})
-          }}
-        />
+        <FontAwesomeIcon icon={faBell} className="notification-bell-icon" />
         {unreadCount > 0 && (
-          <span style={{
-            ...styles.badge,
-            ...(isMobile ? {
-              width: "18px",
-              height: "18px",
-              fontSize: "10px",
-              right: "-4px",
-              top: "-4px",
-              backgroundColor: "var(--danger-color)",
-              border: "2px solid white"
-            } : {})
-          }}>
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
+          <span style={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>
         )}
       </button>
 
       {isOpen && (
-        <div style={{
-          ...styles.dropdown,
-          ...(isMobile ? {
-            right: "-10px",
-            top: "45px",
-            width: "320px",
-            maxWidth: "90vw",
-            maxHeight: "70vh",
-            borderRadius: "12px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-            border: "1px solid var(--border-light)"
-          } : {})
-        }}>
+        <div style={styles.dropdown}>
           <div style={styles.dropdownHeader}>
             <h3 style={styles.dropdownTitle}>Notifications</h3>
             <div style={styles.headerActions}>
@@ -405,7 +236,7 @@ const NotificationBell: React.FC = () => {
   );
 };
 
-const styles: Record<string, React.CSSProperties> = {
+const styles = createStyles({
   container: {
     position: 'relative',
     display: 'inline-block',
@@ -415,8 +246,8 @@ const styles: Record<string, React.CSSProperties> = {
     height: '40px',
     borderRadius: '50%',
     border: 'none',
-    backgroundColor: 'var(--hover-bg)' as any,
-    color: 'var(--text-secondary)' as any,
+    backgroundColor: 'var(--hover-bg)',
+    color: 'var(--text-secondary)',
     fontSize: '16px',
     cursor: 'pointer',
     display: 'flex',
@@ -440,7 +271,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: '2px solid var(--bg-card)' as any,
+    border: '2px solid var(--bg-card)',
   },
   dropdown: {
     position: 'absolute',
@@ -448,8 +279,8 @@ const styles: Record<string, React.CSSProperties> = {
     right: '0',
     width: '350px',
     maxHeight: '400px',
-    backgroundColor: 'var(--bg-card)' as any,
-    border: '1px solid var(--border-color)' as any,
+    backgroundColor: 'var(--bg-card)',
+    border: '1px solid var(--border-color)',
     borderRadius: '12px',
     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
     zIndex: 1000,
@@ -460,14 +291,14 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '16px 20px',
-    borderBottom: '1px solid var(--border-color)' as any,
-    backgroundColor: 'var(--hover-bg)' as any,
+    borderBottom: '1px solid var(--border-color)',
+    backgroundColor: 'var(--hover-bg)',
   },
   dropdownTitle: {
     margin: 0,
     fontSize: '16px',
     fontWeight: '600',
-    color: 'var(--text-primary)' as any,
+    color: 'var(--text-primary)',
   },
   headerActions: {
     display: 'flex',
@@ -491,8 +322,8 @@ const styles: Record<string, React.CSSProperties> = {
     height: '32px',
     borderRadius: '6px',
     border: 'none',
-    backgroundColor: 'var(--hover-bg)' as any,
-    color: 'var(--text-secondary)' as any,
+    backgroundColor: 'var(--hover-bg)',
+    color: 'var(--text-secondary)',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -509,7 +340,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '40px 20px',
-    color: 'var(--text-secondary)' as any,
+    color: 'var(--text-secondary)',
   },
   emptyText: {
     margin: 0,
@@ -519,11 +350,11 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     padding: '12px 20px',
-    borderBottom: '1px solid var(--border-light)' as any,
+    borderTop: '1px solid var(--border-color)',
     transition: 'background-color 0.2s ease',
   },
   notificationUnread: {
-    backgroundColor: 'var(--hover-bg)' as any,
+    backgroundColor: 'var(--hover-bg)',
   },
   notificationRead: {
     backgroundColor: 'transparent',
@@ -544,7 +375,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '32px',
     height: '32px',
     borderRadius: '50%',
-    backgroundColor: 'var(--hover-bg)' as any,
+    backgroundColor: 'var(--hover-bg)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -559,19 +390,19 @@ const styles: Record<string, React.CSSProperties> = {
   notificationTitle: {
     fontSize: '14px',
     fontWeight: '600',
-    color: 'var(--text-primary)' as any,
+    color: 'var(--text-primary)',
     margin: '0 0 4px 0',
     lineHeight: '1.3',
   },
   notificationMessage: {
     fontSize: '13px',
-    color: 'var(--text-secondary)' as any,
+    color: 'var(--text-secondary)',
     margin: '0 0 4px 0',
     lineHeight: '1.4',
   },
   notificationTime: {
     fontSize: '11px',
-    color: 'var(--text-muted)' as any,
+    color: 'var(--text-muted)',
     margin: 0,
   },
   deleteButton: {
@@ -580,7 +411,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '4px',
     border: 'none',
     backgroundColor: 'transparent',
-    color: 'var(--text-muted)' as any,
+    color: 'var(--text-muted)',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -590,21 +421,21 @@ const styles: Record<string, React.CSSProperties> = {
   },
   dropdownFooter: {
     padding: '12px 20px',
-    borderTop: '1px solid var(--border-color)' as any,
-    backgroundColor: 'var(--hover-bg)' as any,
+    borderTop: '1px solid var(--border-color)',
+    backgroundColor: 'var(--hover-bg)',
   },
   viewAllButton: {
     width: '100%',
     padding: '8px 16px',
-    border: '1px solid var(--border-color)' as any,
+    border: '1px solid var(--border-color)',
     borderRadius: '6px',
-    backgroundColor: 'var(--bg-card)' as any,
-    color: 'var(--text-primary)' as any,
+    backgroundColor: 'var(--bg-card)',
+    color: 'var(--text-primary)',
     fontSize: '14px',
     fontWeight: '500',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
   },
-};
+});
 
 export default NotificationBell;

@@ -1,25 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { authAPI } from "../services/api";
 import NotificationBell from "./NotificationBell";
 import "./Layout.css";
-
-// Hook pour détecter la taille d'écran
-const useResponsive = () => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768); // 768px est la limite commune pour mobile
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  return isMobile;
-};
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -27,11 +10,9 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isMobile = useResponsive();
 
-  const currentPath = location.pathname;
+  const currentPath = window.location.pathname;
 
   // Vérifier le token au chargement
   useEffect(() => {
@@ -186,56 +167,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div style={styles.mainWrapper} className="main-wrapper">
        {/* Header */}
        <header
-         style={{
-           ...styles.header,
-           ...(isMobile ? { 
-             left: 0, 
-             padding: "0 16px",
-             height: "60px",
-             backgroundColor: "var(--bg-card)",
-             backdropFilter: "blur(10px)",
-             WebkitBackdropFilter: "blur(10px)"
-           } : {}),
-         }}
+         style={styles.header}
        >
          <div style={styles.headerTitle}>
-           <h1 style={{
-             ...styles.headerTitleText,
-             ...(isMobile ? { fontSize: "18px" } : {})
-           }}>
-             {isMobile ? "IT Access" : "Gestion des Accès IT"}
-           </h1>
+           <h1>Gestion des Accès IT</h1>
          </div>
-         <div style={{
-           ...styles.headerActions,
-           ...(isMobile ? { 
-             gap: "8px",
-             display: "flex",
-             alignItems: "center",
-             justifyContent: "flex-end",
-             flexShrink: 0,
-             flexDirection: "row"
-           } : {})
-         }}>
+         <div style={styles.headerActions}>
            <NotificationBell />
            <button
             onClick={handleLogout}
-            style={{
-              ...styles.logoutButton,
-              ...(isMobile ? {
-                width: "32px",
-                height: "32px",
-                borderRadius: "8px",
-                backgroundColor: "var(--danger-color)",
-                color: "white",
-                fontSize: "14px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                padding: "0"
-              } : {})
-            }}
+            style={styles.logoutButton}
             title="Se déconnecter"
           >
             <i className="fas fa-sign-out-alt"></i>
@@ -407,9 +348,6 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "12px",
-    justifyContent: "flex-end",
-    flexShrink: 0,
-    flexDirection: "row" as const
   },
   notifBellButton: {
     width: "40px",
@@ -478,10 +416,7 @@ const styles = {
     padding: "90px 30px 30px 30px",
     overflowY: "auto" as const,
     backgroundColor: "var(--bg-primary)",
-    overflow: "auto",
-    '@media (max-width: 768px)': {
-      paddingTop: "80px", 
-    }
+    minHeight: "calc(100vh - 70px)",
   },
   bottomNav: {
     display: "none",

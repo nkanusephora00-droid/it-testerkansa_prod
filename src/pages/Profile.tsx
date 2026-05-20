@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { profileAPI, User } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faCamera, faLock, faSave } from '@fortawesome/free-solid-svg-icons';
-import '../styles/pages/Profile.css';
 
 interface ProfileData extends User {
   profilePhoto?: string | null;
@@ -117,8 +116,8 @@ const Profile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="profile-container">
-        <div className="profile-loading">Chargement...</div>
+      <div style={styles.container}>
+        <div style={styles.loading}>Chargement...</div>
       </div>
     );
   }
@@ -131,24 +130,24 @@ const Profile: React.FC = () => {
   `)}`;
 
   return (
-    <div className="profile-container">
-      <main className="profile-main">
+    <div style={styles.container}>
+      <main style={styles.main}>
         <h2>Mon Profil</h2>
         
         {message.text && (
-          <div className={message.type === 'success' ? 'profile-success' : 'profile-error'}>
+          <div style={message.type === 'success' ? styles.success : styles.error}>
             {message.text}
           </div>
         )}
 
-        <div className="profile-header">
-          <div className="profile-photo-container" onClick={handlePhotoClick}>
+        <div style={styles.profileHeader}>
+          <div style={styles.photoContainer} onClick={handlePhotoClick}>
             <img
               src={previewPhoto || defaultPhoto}
               alt="Profil"
-              className="profile-photo"
+              style={styles.photo}
             />
-            <div className="profile-photo-overlay">
+            <div style={styles.photoOverlay}>
               <FontAwesomeIcon icon={faCamera} size="lg" />
               <span>Changer</span>
             </div>
@@ -160,24 +159,24 @@ const Profile: React.FC = () => {
             accept="image/*"
             style={{ display: 'none' }}
           />
-          <div className="profile-user-info">
+          <div style={styles.userInfo}>
             <h3>{profile?.username}</h3>
             <p>{profile?.email}</p>
-            <span className="profile-role-badge">
+            <span style={styles.roleBadge}>
               {profile?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
             </span>
           </div>
         </div>
 
-        <div className="profile-tabs">
+        <div style={styles.tabs}>
           <button 
-            className={activeTab === 'info' ? 'profile-tab-active' : 'profile-tab'}
+            style={activeTab === 'info' ? styles.tabActive : styles.tab}
             onClick={() => setActiveTab('info')}
           >
             <FontAwesomeIcon icon={faUser} /> Informations
           </button>
           <button 
-            className={activeTab === 'password' ? 'profile-tab-active' : 'profile-tab'}
+            style={activeTab === 'password' ? styles.tabActive : styles.tab}
             onClick={() => setActiveTab('password')}
           >
             <FontAwesomeIcon icon={faLock} /> Changer le mot de passe
@@ -185,39 +184,39 @@ const Profile: React.FC = () => {
         </div>
 
         {activeTab === 'info' && (
-          <div className="profile-form-section">
+          <div style={styles.formSection}>
             <form onSubmit={handleSubmit}>
-              <div className="profile-form-group">
-                <label className="profile-label">Nom d'utilisateur</label>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Nom d'utilisateur</label>
                 <input 
                   type="text" 
                   value={profile?.username || ''} 
                   disabled 
-                  className="profile-input-disabled"
+                  style={styles.inputDisabled}
                 />
               </div>
-              <div className="profile-form-group">
-                <label className="profile-label">Email</label>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Email</label>
                 <input 
                   type="email" 
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="profile-input"
+                  style={styles.input}
                   required
                 />
               </div>
-              <div className="profile-form-group">
-                <label className="profile-label">Date de création</label>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Date de création</label>
                 <input 
                   type="text" 
                   value={profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('fr-FR') : ''} 
                   disabled 
-                  className="profile-input-disabled"
+                  style={styles.inputDisabled}
                 />
               </div>
               <button 
                 type="submit" 
-                className="profile-submit-button"
+                style={styles.submitButton}
                 disabled={saving}
               >
                 <FontAwesomeIcon icon={faSave} /> {saving ? 'Enregistrement...' : 'Enregistrer'}
@@ -227,42 +226,42 @@ const Profile: React.FC = () => {
         )}
 
         {activeTab === 'password' && (
-          <div className="profile-form-section">
+          <div style={styles.formSection}>
             <form onSubmit={handlePasswordSubmit}>
-              <div className="profile-form-group">
-                <label className="profile-label">Ancien mot de passe</label>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Ancien mot de passe</label>
                 <input 
                   type="password"
                   value={passwordData.oldPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
-                  className="profile-input"
+                  style={styles.input}
                   required
                 />
               </div>
-              <div className="profile-form-group">
-                <label className="profile-label">Nouveau mot de passe</label>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Nouveau mot de passe</label>
                 <input 
                   type="password"
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  className="profile-input"
+                  style={styles.input}
                   required
                   minLength={6}
                 />
               </div>
-              <div className="profile-form-group">
-                <label className="profile-label">Confirmer le mot de passe</label>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Confirmer le mot de passe</label>
                 <input 
                   type="password"
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  className="profile-input"
+                  style={styles.input}
                   required
                 />
               </div>
               <button 
                 type="submit" 
-                className="profile-submit-button"
+                style={styles.submitButton}
                 disabled={saving}
               >
                 <FontAwesomeIcon icon={faLock} /> {saving ? 'Enregistrement...' : 'Changer le mot de passe'}
@@ -273,6 +272,29 @@ const Profile: React.FC = () => {
       </main>
     </div>
   );
+};
+
+const styles = {
+  container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
+  main: { padding: '30px', maxWidth: '800px', margin: '0 auto', minHeight: 'calc(100vh - 70px)' },
+  loading: { textAlign: 'center' as const, padding: '40px', color: 'var(--text-muted)' },
+  profileHeader: { display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '30px', flexWrap: 'wrap' as const },
+  photoContainer: { position: 'relative' as const, width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer' },
+  photo: { width: '100%', height: '100%', objectFit: 'cover' as const },
+  photoOverlay: { position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', color: 'white', opacity: 0, transition: 'opacity 0.2s', gap: '4px', fontSize: '12px' },
+  userInfo: { flex: 1 },
+  roleBadge: { display: 'inline-block', padding: '4px 12px', backgroundColor: 'var(--info-color)', color: 'white', borderRadius: '16px', fontSize: '12px', marginTop: '8px' },
+  tabs: { display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' as const },
+  tab: { padding: '12px 20px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' },
+  tabActive: { padding: '12px 20px', backgroundColor: 'var(--info-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' },
+  formSection: { backgroundColor: 'var(--bg-card)', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 8px var(--shadow-color)' },
+  formGroup: { marginBottom: '20px' },
+  label: { display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: 'var(--text-secondary)' },
+  input: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', boxSizing: 'border-box' as const },
+  inputDisabled: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '14px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-muted)', boxSizing: 'border-box' as const },
+  submitButton: { padding: '12px 24px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' },
+  success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '8px', marginBottom: '20px' },
+  error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: '8px', marginBottom: '20px' },
 };
 
 export default Profile;

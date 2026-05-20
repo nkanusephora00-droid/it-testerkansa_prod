@@ -1,13 +1,23 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { comptesAPI, applicationsAPI, Compte } from '../services/api';
+import { comptesAPI, applicationsAPI, Application, ApplicationInfoDTO } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
-import '../styles/pages/Comptes.css';
+import { faPen, faTrash, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+
+interface Compte {
+  id: number;
+  applicationId: number;
+  username: string;
+  code?: string;
+  role?: string;
+  commentaire?: string;
+  createdBy?: number;
+  application?: ApplicationInfoDTO;
+}
 
 const Comptes: React.FC = () => {
   const [comptes, setComptes] = useState<Compte[]>([]);
   const [filteredComptes, setFilteredComptes] = useState<Compte[]>([]);
-  const [applications, setApplications] = useState<any[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -17,7 +27,6 @@ const Comptes: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [searchTerm, setSearchTerm] = useState('');
-  const [isMobile, setIsMobile] = useState(false);
   
   const [formData, setFormData] = useState({ applicationId: 0, username: '', code: '', role: '', commentaire: '' });
   const [editFormData, setEditFormData] = useState({ applicationId: 0, username: '', code: '', role: '', commentaire: '' });
@@ -29,15 +38,6 @@ const Comptes: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   useEffect(() => {
@@ -138,31 +138,31 @@ const Comptes: React.FC = () => {
   };
 
   return (
-    <div className="comptes-container">
-      <main className="comptes-main">
-        <div className="comptes-header">
+    <div style={styles.container}>
+      <main style={styles.main}>
+        <div style={styles.header}>
           <div>
-            <h2 className="comptes-page-title">Gestion des comptes</h2>
-            <p className="comptes-page-subtitle">Suivez les accès par application et centralisez les identifiants sensibles.</p>
+            <h2 style={styles.pageTitle}>Gestion des comptes</h2>
+            <p style={styles.pageSubtitle}>Suivez les accès par application et centralisez les identifiants sensibles.</p>
           </div>
-          <button className="comptes-primary-button" onClick={() => setShowCreateModal(true)}>
+          <button style={styles.primaryButton} onClick={() => setShowCreateModal(true)}>
             Nouveau compte
           </button>
         </div>
         
         {message.text && (
-          <div className={message.type === 'success' ? 'comptes-success' : 'comptes-error'}>
+          <div style={message.type === 'success' ? styles.success : styles.error}>
             {message.text}
           </div>
         )}
 
-        <div className="comptes-table-section">
-          <div className="comptes-list-header">
+        <div style={styles.tableSection}>
+          <div style={styles.listHeader}>
             <div>
-              <h3 className="comptes-section-title">Liste des comptes</h3>
-              <div className="comptes-stats">
-                <span className="comptes-stat-item">Total: {comptes.length}</span>
-                <span className="comptes-stat-item">Affichées: {filteredComptes.length}</span>
+              <h3 style={styles.sectionTitle}>Liste des comptes</h3>
+              <div style={styles.stats}>
+                <span style={styles.statItem}>Total: {comptes.length}</span>
+                <span style={styles.statItem}>Affichées: {filteredComptes.length}</span>
               </div>
             </div>
             <input
@@ -170,78 +170,40 @@ const Comptes: React.FC = () => {
               placeholder="Rechercher..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="comptes-search-input"
+              style={styles.searchInput}
             />
           </div>
           {loading ? (
             <p>Chargement...</p>
-          ) : isMobile ? (
-            <div className={isMobile ? 'comptes-comptes-grid comptes-comptes-grid-mobile' : 'comptes-comptes-grid'}>
-              {filteredComptes.map((compte) => (
-                <div key={compte.id} className="comptes-compte-card">
-                  <div className="comptes-compte-card-header">
-                    <div className="comptes-compte-icon">
-                      <i className="fas fa-user"></i>
-                    </div>
-                    <div className="comptes-compte-info">
-                      <h4 className="comptes-compte-username">{compte.username}</h4>
-                      <p className="comptes-compte-app">{getAppName(compte.applicationId)}</p>
-                    </div>
-                  </div>
-                  <div className="comptes-compte-card-content">
-                    {compte.role && (
-                      <div className="comptes-compte-detail">
-                        <span className="comptes-detail-label">Rôle:</span>
-                        {compte.role}
-                      </div>
-                    )}
-                    {compte.commentaire && (
-                      <p className="comptes-compte-commentaire">{compte.commentaire}</p>
-                    )}
-                  </div>
-                  <div className="comptes-compte-card-actions">
-                    <button className="comptes-icon-button" onClick={() => { setViewingCompte(compte); setShowViewModal(true); }} title="Voir">
-                      <FontAwesomeIcon icon={faEye} />
-                    </button>
-                    <button className="comptes-icon-button" onClick={() => openEditModal(compte)} title="Modifier">
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                    <button className="comptes-icon-button" onClick={() => handleDelete(compte.id)} title="Supprimer">
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
           ) : (
             <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
-              <table className="comptes-table">
+              <table style={styles.table}>
                 <thead>
                   <tr>
-                    <th className="comptes-table-th">ID</th>
-                    <th className="comptes-table-th">Utilisateur</th>
-                    <th className="comptes-table-th">Application</th>
-                    <th className="comptes-table-th">Rôle</th>
-                    <th className="comptes-table-th">Commentaire</th>
-                    <th className="comptes-table-th">Actions</th>
+                    <th style={styles.tableTh}>ID</th>
+                    <th style={styles.tableTh}>Username</th>
+                    <th style={styles.tableTh}>Application</th>
+                    <th style={styles.tableTh}>Rôle</th>
+                    <th style={styles.tableTh}>Commentaire</th>
+                    <th style={styles.tableTh}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredComptes.map((compte) => (
-                    <tr key={compte.id} className="comptes-table-tr-hover">
-                      <td className="comptes-table-td">{compte.id}</td>
-                      <td className="comptes-table-td">{compte.username}</td>
-                      <td className="comptes-table-td">{getAppName(compte.applicationId)}</td>
-                      <td className="comptes-table-td">{compte.role || '-'}</td>
-                      <td className="comptes-table-td">{compte.commentaire || '-'}</td>
-                      <td className="comptes-table-td">
-                        <button className="comptes-icon-button" onClick={() => { setViewingCompte(compte); setShowViewModal(true); }} title="Voir">
+                    <tr key={compte.id} style={styles.tableTrHover}>
+                      <td style={styles.tableTd}>{compte.id}</td>
+                      <td style={styles.tableTd}>{compte.username}</td>
+                      <td style={styles.tableTd}>{getAppName(compte.applicationId)}</td>
+                      <td style={styles.tableTd}>{compte.role || '-'}</td>
+                      <td style={styles.tableTd}>{compte.commentaire || '-'}</td>
+                      <td style={{...styles.tableTd, display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <button style={{...styles.viewButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#27ae60'}} onClick={() => { setViewingCompte(compte); setShowViewModal(true); }} title="Voir">
                           <FontAwesomeIcon icon={faEye} />
                         </button>
-                        <button className="comptes-icon-button" onClick={() => openEditModal(compte)} title="Modifier">
-                          <FontAwesomeIcon icon={faEdit} />
+                        <button style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#3498db'}} onClick={() => openEditModal(compte)} title="Modifier">
+                          <FontAwesomeIcon icon={faPen} />
                         </button>
-                        <button className="comptes-icon-button" onClick={() => handleDelete(compte.id)} title="Supprimer">
+                        <button style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b'}} onClick={() => handleDelete(compte.id)} title="Supprimer">
                           <FontAwesomeIcon icon={faTrash} />
                         </button>
                       </td>
@@ -255,21 +217,21 @@ const Comptes: React.FC = () => {
       </main>
 
       {showCreateModal && (
-        <div className="comptes-modal">
-          <div className="comptes-modal-content">
-            <span className="comptes-close" onClick={() => setShowCreateModal(false)}>&times;</span>
-            <div className="comptes-modal-header">
-              <h3 className="comptes-section-title">Nouveau compte</h3>
-              <p className="comptes-modal-subtitle">Ajoutez un compte et liez-le à une application.</p>
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <span style={styles.close} onClick={() => setShowCreateModal(false)}>&times;</span>
+            <div style={styles.modalHeader}>
+              <h3 style={styles.sectionTitle}>Nouveau compte</h3>
+              <p style={styles.modalSubtitle}>Ajoutez un compte et liez-le à une application.</p>
             </div>
-            <form onSubmit={handleSubmit} className="comptes-modal-form">
-              <div className="comptes-form-row">
-                <div className="comptes-form-group">
-                  <label className="comptes-label">Application *</label>
+            <form onSubmit={handleSubmit} style={styles.modalForm}>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Application *</label>
                   <select
                     value={formData.applicationId || ''}
                     onChange={(e) => setFormData({ ...formData, applicationId: parseInt(e.target.value) })}
-                    className="comptes-select"
+                    style={styles.select}
                     required
                   >
                     <option value="">Sélectionnez une application</option>
@@ -278,53 +240,53 @@ const Comptes: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div className="comptes-form-group">
-                  <label className="comptes-label">Nom d'utilisateur *</label>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Nom d'utilisateur *</label>
                   <input
                     type="text"
                     placeholder="Ex: jdupont"
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="comptes-input"
+                    style={styles.input}
                     required
                   />
                 </div>
               </div>
-              <div className="comptes-form-row">
-                <div className="comptes-form-group">
-                  <label className="comptes-label">Code / mot de passe *</label>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Code / mot de passe *</label>
                   <input
                     type="text"
                     placeholder="Saisir le secret ou code d'accès"
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    className="comptes-input"
+                    style={styles.input}
                     required
                   />
                 </div>
-                <div className="comptes-form-group">
-                  <label className="comptes-label">Rôle</label>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Rôle</label>
                   <input
                     type="text"
                     placeholder="Ex: Administrateur, Lecture seule..."
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="comptes-input"
+                    style={styles.input}
                   />
                 </div>
               </div>
-              <div className="comptes-form-group">
-                <label className="comptes-label">Commentaire</label>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Commentaire</label>
                 <textarea
                   placeholder="Contexte, remarques sur ce compte..."
                   value={formData.commentaire}
                   onChange={(e) => setFormData({ ...formData, commentaire: e.target.value })}
-                  className="comptes-textarea"
+                  style={styles.textarea}
                 />
               </div>
-              <div className="comptes-form-actions">
-                <button type="button" className="comptes-secondary-button" onClick={() => setShowCreateModal(false)}>Annuler</button>
-                <button type="submit" className="comptes-primary-button">Ajouter</button>
+              <div style={styles.formActions}>
+                <button type="button" style={styles.secondaryButton} onClick={() => setShowCreateModal(false)}>Annuler</button>
+                <button type="submit" style={styles.primaryButton}>Ajouter</button>
               </div>
             </form>
           </div>
@@ -333,10 +295,10 @@ const Comptes: React.FC = () => {
 
       {/* View Modal */}
       {showViewModal && viewingCompte && (
-        <div className="comptes-modal">
-          <div className="comptes-modal-content">
-            <span className="comptes-close" onClick={() => setShowViewModal(false)}>&times;</span>
-            <h3 className="comptes-section-title">Détails du compte</h3>
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <span style={styles.close} onClick={() => setShowViewModal(false)}>&times;</span>
+            <h3 style={styles.sectionTitle}>Détails du compte</h3>
             <div style={{ marginTop: '20px' }}>
               <p><strong>ID:</strong> {viewingCompte.id}</p>
               <p><strong>Application:</strong> {getAppName(viewingCompte.applicationId)}</p>
@@ -348,8 +310,7 @@ const Comptes: React.FC = () => {
                 </span>
                 <button 
                   onClick={() => setShowPassword(!showPassword)} 
-                  className="comptes-icon-button"
-                  style={{ marginLeft: '8px' }}
+                  style={{ ...styles.iconButton, marginLeft: '8px' }}
                   title={showPassword ? 'Masquer' : 'Afficher'}
                 >
                   <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
@@ -358,26 +319,26 @@ const Comptes: React.FC = () => {
               <p><strong>Rôle:</strong> {viewingCompte.role || 'Non défini'}</p>
               <p><strong>Commentaire:</strong> {viewingCompte.commentaire || 'Aucun'}</p>
             </div>
-            <div className="comptes-form-actions">
-              <button type="button" className="comptes-secondary-button" onClick={() => setShowViewModal(false)}>Fermer</button>
+            <div style={styles.formActions}>
+              <button type="button" style={styles.secondaryButton} onClick={() => setShowViewModal(false)}>Fermer</button>
             </div>
           </div>
         </div>
       )}
 
       {showModal && (
-        <div className="comptes-modal">
-          <div className="comptes-modal-content">
-            <span className="comptes-close" onClick={() => setShowModal(false)}>&times;</span>
-            <h3 className="comptes-section-title">Modifier le compte</h3>
-            <form onSubmit={handleEdit} className="comptes-modal-form">
-              <div className="comptes-form-row">
-                <div className="comptes-form-group">
-                  <label className="comptes-label">Application</label>
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <span style={styles.close} onClick={() => setShowModal(false)}>&times;</span>
+            <h3 style={styles.sectionTitle}>Modifier le compte</h3>
+            <form onSubmit={handleEdit} style={styles.modalForm}>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Application</label>
                   <select
                     value={editFormData.applicationId || ''}
                     onChange={(e) => setEditFormData({ ...editFormData, applicationId: parseInt(e.target.value) })}
-                    className="comptes-select"
+                    style={styles.select}
                     required
                   >
                     <option value="">Sélectionnez une application</option>
@@ -386,49 +347,48 @@ const Comptes: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div className="comptes-form-group">
-                  <label className="comptes-label">Nom d'utilisateur</label>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Nom d'utilisateur</label>
                   <input
                     type="text"
                     value={editFormData.username}
                     onChange={(e) => setEditFormData({ ...editFormData, username: e.target.value })}
-                    className="comptes-input"
+                    style={styles.input}
                     required
                   />
                 </div>
               </div>
-              <div className="comptes-form-row">
-                <div className="comptes-form-group">
-                  <label className="comptes-label">Code (mot de passe)</label>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Code (mot de passe)</label>
                   <input
                     type="text"
                     value={editFormData.code}
                     onChange={(e) => setEditFormData({ ...editFormData, code: e.target.value })}
-                    className="comptes-input"
+                    style={styles.input}
                   />
                 </div>
-                <div className="comptes-form-group">
-                  <label className="comptes-label">Rôle</label>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Rôle</label>
                   <input
                     type="text"
                     value={editFormData.role}
                     onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                    className="comptes-input"
+                    style={styles.input}
                   />
                 </div>
               </div>
-              <div className="comptes-form-group">
-                <label className="comptes-label">Commentaire</label>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Commentaire</label>
                 <textarea
                   value={editFormData.commentaire}
                   onChange={(e) => setEditFormData({ ...editFormData, commentaire: e.target.value })}
-                  className="comptes-textarea"
-                  style={{ minHeight: '70px' }}
+                  style={{ ...styles.textarea, minHeight: '70px' }}
                 />
               </div>
-              <div className="comptes-form-actions">
-                <button type="button" className="comptes-secondary-button" onClick={() => setShowModal(false)}>Annuler</button>
-                <button type="submit" className="comptes-primary-button">Enregistrer</button>
+              <div style={styles.formActions}>
+                <button type="button" style={styles.secondaryButton} onClick={() => setShowModal(false)}>Annuler</button>
+                <button type="submit" style={styles.primaryButton}>Enregistrer</button>
               </div>
             </form>
           </div>
@@ -436,6 +396,71 @@ const Comptes: React.FC = () => {
       )}
     </div>
   );
+};
+
+const styles: Record<string, React.CSSProperties> = {
+  container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
+  main: { padding: '30px', maxWidth: '1400px', margin: '0 auto', minHeight: 'calc(100vh - 70px)' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap' as const, gap: '16px' },
+  pageTitle: { margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' },
+  pageSubtitle: { margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '14px' },
+  formSection: { backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: '24px', marginBottom: '24px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px var(--shadow-color)' },
+  tableSection: { backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px var(--shadow-color)' },
+  sectionTitle: { margin: '0 0 20px', fontSize: '18px' },
+  form: { display: 'flex', flexDirection: 'column' as const, gap: '18px', maxWidth: '760px' },
+  modalForm: { display: 'flex', flexDirection: 'column' as const, gap: '20px', padding: '8px 0' },
+  formRow: { display: 'flex', gap: '16px', flexWrap: 'wrap' as const },
+  formGroup: { marginBottom: '16px', flex: 1 },
+  label: { display: 'block', marginBottom: '6px', fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' },
+  input: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)' },
+  textarea: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', resize: 'vertical' as const, minHeight: '100px' },
+  select: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)' },
+  formActions: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '20px', flexWrap: 'wrap' },
+  primaryButton: { padding: '12px 20px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' },
+  secondaryButton: { padding: '12px 20px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' },
+  table: { 
+    width: '100%', 
+    borderCollapse: 'separate' as const, 
+    borderSpacing: '0',
+    borderRadius: 'var(--radius-md)', 
+    overflow: 'hidden',
+    border: '1px solid var(--border-color)',
+    backgroundColor: 'var(--bg-card)'
+  },
+  searchInput: { padding: '10px 16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', minWidth: '250px' },
+  stats: { display: 'flex', gap: '16px', marginBottom: '8px' },
+  statItem: { fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' },
+  editButton: { padding: '8px', backgroundColor: 'transparent', color: 'var(--text-secondary)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' },
+  deleteButton: { padding: '8px', backgroundColor: 'transparent', color: 'var(--danger-color)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' },
+  viewButton: { padding: '8px', backgroundColor: 'transparent', color: 'var(--success-color)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' },
+  listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' as const, gap: '12px' },
+  listSubtitle: { fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 400 },
+  success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: 'var(--radius-md)', marginBottom: '20px' },
+  error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: 'var(--radius-md)', marginBottom: '20px' },
+  modal: { position: 'fixed' as const, top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', zIndex: 1000, paddingTop: '40px', overflowY: 'auto' as const, backdropFilter: 'blur(4px)' },
+  modalContent: { backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '16px', width: '95%', maxWidth: '500px', position: 'relative' as const, margin: '0 auto 40px auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', border: '1px solid var(--border-light)' },
+  comptesGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' },
+  compteCard: { backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '0', border: '1px solid var(--border-color)', transition: 'all 0.2s ease', cursor: 'pointer', overflow: 'hidden' },
+  compteCardHeader: { display: 'flex', alignItems: 'center', padding: '20px', borderBottom: '1px solid var(--border-light)' },
+  compteIcon: { width: '50px', height: '50px', borderRadius: '10px', backgroundColor: 'var(--info-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '20px', marginRight: '16px' },
+  compteInfo: { flex: 1 },
+  compteUsername: { margin: '0 0 4px 0', color: 'var(--text-primary)', fontSize: '18px', fontWeight: '600' },
+  compteApp: { color: 'var(--text-secondary)', fontSize: '14px' },
+  compteCardContent: { padding: '20px' },
+  compteDetail: { marginBottom: '12px', fontSize: '14px', color: 'var(--text-secondary)' },
+  detailLabel: { fontWeight: '500', color: 'var(--text-primary)', marginRight: '4px' },
+  compteCardActions: { display: 'flex', gap: '8px', justifyContent: 'flex-end', padding: '16px 20px', borderTop: '1px solid var(--border-light)' },
+  iconButton: { width: '36px', height: '36px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--hover-bg)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' },
+  close: { position: 'absolute' as const, top: '15px', right: '20px', fontSize: '28px', cursor: 'pointer', color: 'var(--text-muted)' },
+  modalHeader: { marginBottom: '24px' },
+  modalSubtitle: { fontSize: '14px', color: 'var(--text-secondary)', marginTop: '6px', fontWeight: 400 },
+  compteDetails: { display: 'flex', gap: '16px', marginBottom: '12px', flexWrap: 'wrap' as const },
+  compteCommentaire: { margin: '0', color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.4', minHeight: '40px' },
+  cardBody: { marginBottom: '12px' },
+  cardRow: { display: 'flex', justifyContent: 'space-between', marginBottom: '6px' },
+  cardLabel: { fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' },
+  cardValue: { fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' },
+  cardActions: { display: 'flex', gap: '8px', justifyContent: 'flex-end' },
 };
 
 export default Comptes;

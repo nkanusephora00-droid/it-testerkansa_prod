@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { testSessionsAPI, applicationsAPI, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faUser } from '@fortawesome/free-solid-svg-icons';
-import '../styles/pages/TestSessions.css';
+import { faPen, faTrash, faSearch, faSort, faChartBar, faClock, faCheckCircle, faExclamationTriangle, faPlayCircle, faTimesCircle, faEye } from '@fortawesome/free-solid-svg-icons';
+import './TestSessions.css';
 
 interface TestSession {
   id: number;
@@ -15,35 +15,50 @@ interface TestSession {
   nom_document?: string;
   date_creation: string;
   statut: string;
-  role?: string;
   created_by?: number;
   createdByUsername?: string;
+  tests?: Test[];
   total_tests?: number;
   tests_ok?: number;
   tests_bug?: number;
+  tests_en_cours?: number;
+  progression?: number;
+  lastActivity?: string;
+}
+
+interface Test {
+  id: number;
+  fonction: string;
+  statut: string;
 }
 
 const TestSessions: React.FC = () => {
   const [sessions, setSessions] = useState<TestSession[]>([]);
+  const [filteredSessions, setFilteredSessions] = useState<TestSession[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingSession, setEditingSession] = useState<TestSession | null>(null);
-  const [selectedSession, setSelectedSession] = useState<TestSession | null>(null);
-
-  const [sessionForm, setSessionForm] = useState({ 
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'date_creation' | 'nom' | 'statut' | 'progression'>('date_creation');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterApp, setFilterApp] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  
+  const [formData, setFormData] = useState({ 
     nom: '', 
     description: '', 
     applicationId: 0,
-    environnement: '',
+    environnement: '', 
     version: '',
     nom_document: '',
-    statut: 'En cours',
-    role: ''
+    statut: 'En cours'
   });
-
   const [editFormData, setEditFormData] = useState({ 
     nom: '', 
     description: '', 
@@ -51,465 +66,621 @@ const TestSessions: React.FC = () => {
     environnement: '', 
     version: '',
     nom_document: '',
-    statut: 'En cours',
-    role: ''
+    statut: 'En cours'
   });
 
-  const getStatusColor = (statut: string) => {
-    switch (statut) {
-      case 'Terminée':
-        return '#28a745';
-      case 'Bloquée':
-        return '#dc3545';
-      case 'En cours':
-      default:
-        return '#ffc107';
-    }
-  };
+  const getAppName = useCallback((appId?: number) => {
+    if (!appId) return 'Aucune';
+    const app = applications.find(a => a.id === appId);
+    return app ? app.nom : 'Application inconnue';
+  }, [applications]);
 
-  const getStatusBadge = (statut: string) => ({
-    padding: '4px 10px',
-    borderRadius: '12px',
-    fontSize: '11px',
-    fontWeight: 600,
-    backgroundColor: getStatusColor(statut),
-    color: 'white',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px'
-  });
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const fetchData = useCallback(async () => {
+  const filteredAndSortedSessions = useMemo(() => {
+    let filtered = sessions.filter(session => {
+      const matchesSearch = session.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (session.description && session.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (session.environnement && session.environnement.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (session.version && session.version.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        getAppName(session.applicationId).toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = filterStatus === 'all' || session.statut === filterStatus;
+      const matchesApp = filterApp === 'all' || session.applicationId === parseInt(filterApp);
+      
+      return matchesSearch && matchesStatus && matchesApp;
+    });
+
+    return filtered.sort((a, b) => {
+      let aValue: any = a[sortBy];
+      let bValue: any = b[sortBy];
+      
+      if (sortBy === 'progression') {
+        aValue = a.total_tests ? (a.tests_ok || 0) * 100 / a.total_tests : 0;
+        bValue = b.total_tests ? (b.tests_ok || 0) * 100 / b.total_tests : 0;
+      }
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [sessions, searchTerm, filterStatus, filterApp, sortBy, sortOrder, getAppName]);
+
+  useEffect(() => {
+    setFilteredSessions(filteredAndSortedSessions);
+  }, [filteredAndSortedSessions]);
+
+  const fetchData = async () => {
     try {
+      setError(null);
       const [sessionsData, appsData] = await Promise.all([
         testSessionsAPI.getAll(),
-        applicationsAPI.getAll()
+        applicationsAPI.getAll(),
       ]);
       const sessions: any = sessionsData;
       const apps: any = appsData;
       const sessionsList = Array.isArray(sessions) ? sessions : (sessions?.content || []);
       setSessions(sessionsList);
+      setFilteredSessions(sessionsList);
       setApplications(Array.isArray(apps) ? apps : (apps?.content || []));
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Erreur de chargement' });
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      const errorMessage = error.response?.data?.detail || 'Erreur de chargement des données';
+      setError(errorMessage);
+      setMessage({ type: 'error', text: errorMessage });
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Fetch error:', err);
+      }
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleCreateSession = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setActionLoading(true);
     try {
-      const sessionData = {
-        nom: sessionForm.nom,
-        description: sessionForm.description,
-        applicationId: sessionForm.applicationId || undefined,
-        environnement: sessionForm.environnement || undefined,
-        version: sessionForm.version || undefined,
-        nom_document: sessionForm.nom_document || undefined,
-        statut: sessionForm.statut,
-        role: sessionForm.role || undefined
-      };
-      await testSessionsAPI.create(sessionData);
-      setMessage({ type: 'success', text: 'Session créée avec succès!' });
+      await testSessionsAPI.create(formData);
+      setMessage({ type: 'success', text: 'Session ajoutée avec succès!' });
+      setFormData({ 
+        nom: '', 
+        description: '', 
+        applicationId: 0,
+        environnement: '', 
+        version: '',
+        nom_document: '',
+        statut: 'En cours'
+      });
       setShowCreateModal(false);
-      setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nom_document: '', statut: 'En cours', role: '' });
       fetchData();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
-      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erreur lors de la création' });
+      const errorMessage = error.response?.data?.detail || 'Erreur lors de l\'ajout';
+      setMessage({ type: 'error', text: errorMessage });
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Create error:', err);
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSession) return;
+    
+    setActionLoading(true);
+    try {
+      await testSessionsAPI.update(editingSession.id, editFormData);
+      setMessage({ type: 'success', text: 'Session mise à jour avec succès!' });
+      setShowModal(false);
+      setEditingSession(null);
+      setEditFormData({ 
+        nom: '', 
+        description: '', 
+        applicationId: 0,
+        environnement: '', 
+        version: '',
+        nom_document: '',
+        statut: 'En cours'
+      });
+      fetchData();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      const errorMessage = error.response?.data?.detail || 'Erreur lors de la mise à jour';
+      setMessage({ type: 'error', text: errorMessage });
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Update error:', err);
+      }
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('Voulez-vous vraiment supprimer cette session?')) return;
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette session ?')) return;
+    
+    setActionLoading(true);
     try {
       await testSessionsAPI.delete(id);
-      setMessage({ type: 'success', text: 'Session supprimée!' });
+      setMessage({ type: 'success', text: 'Session supprimée avec succès!' });
       fetchData();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
-      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erreur lors de la suppression' });
+      const errorMessage = error.response?.data?.detail || 'Erreur lors de la suppression';
+      setMessage({ type: 'error', text: errorMessage });
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Delete error:', err);
+      }
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const openEditModal = (session: TestSession) => {
-    console.log('Ouverture du formulaire d\'édition pour la session:', session);
     setEditingSession(session);
-    
-    const formData = {
+    setEditFormData({
       nom: session.nom,
       description: session.description || '',
       applicationId: session.applicationId || 0,
       environnement: session.environnement || '',
       version: session.version || '',
       nom_document: session.nom_document || '',
-      statut: session.statut || 'En cours',
-      role: session.role || ''
-    };
-    
-    console.log('Données du formulaire d\'édition:', formData);
-    setEditFormData(formData);
+      statut: session.statut || 'En cours'
+    });
     setShowModal(true);
   };
 
-  const handleUpdateSession = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingSession) return;
+  const getStatusIcon = (statut: string) => {
+    switch (statut) {
+      case 'En cours': return faPlayCircle;
+      case 'Terminée': return faCheckCircle;
+      case 'Bloquée': return faExclamationTriangle;
+      default: return faClock;
+    }
+  };
+
+  const getStatusColor = (statut: string) => {
+    switch (statut) {
+      case 'En cours': return '#3498db';
+      case 'Terminée': return '#27ae60';
+      case 'Bloquée': return '#e74c3c';
+      default: return '#95a5a6';
+    }
+  };
+
+  const toggleSort = (field: 'date_creation' | 'nom' | 'statut' | 'progression') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const getSessionStats = useMemo(() => {
+    const total = sessions.length;
+    const enCours = sessions.filter(s => s.statut === 'En cours').length;
+    const terminees = sessions.filter(s => s.statut === 'Terminée').length;
+    const bloquees = sessions.filter(s => s.statut === 'Bloquée').length;
+    const avgProgression = sessions.length > 0 
+      ? sessions.reduce((acc, s) => acc + (s.total_tests ? (s.tests_ok || 0) * 100 / s.total_tests : 0), 0) / sessions.length 
+      : 0;
     
-    console.log('Tentative de mise à jour de la session:', editingSession.id);
-    console.log('Données envoyées:', editFormData);
-    
-    try {
-      const response = await testSessionsAPI.update(editingSession.id, editFormData);
-      console.log('Mise à jour réussie:', response);
-      setMessage({ type: 'success', text: 'Session mise à jour!' });
-      setShowModal(false);
-      setEditingSession(null);
-      fetchData();
-    } catch (err: unknown) {
-      console.error('Erreur lors de la mise à jour:', err);
-      const error = err as { response?: { data?: { detail?: string } } };
-      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erreur lors de la mise à jour' });
-    }
-  };
-
-  const getAppName = (appId?: number) => {
-    if (!appId) return 'Aucune';
-    const app = applications.find(a => a.id === appId);
-    return app ? app.nom : 'Application inconnue';
-  };
-
-  const handleExportWord = async (session: TestSession) => {
-    try {
-      const wordContent = `
-        RAPPORT DE SESSION DE TEST - ${session.nom}
-        ==========================================
-        
-        INFORMATIONS GÉNÉRALES
-        ------------------------
-        Nom de la session: ${session.nom}
-        Application: ${getAppName(session.applicationId)}
-        ${session.environnement ? `Environnement: ${session.environnement}` : ''}
-        ${session.version ? `Version: ${session.version}` : ''}
-        Statut: ${session.statut}
-        Date de création: ${new Date(session.date_creation).toLocaleDateString('fr-FR')}
-        
-        DESCRIPTION
-        -----------
-        ${session.description || 'Aucune description disponible'}
-        
-        PROGRESSION DES TESTS
-        --------------------
-        ${session.total_tests ? `Tests complétés: ${session.tests_ok || 0} / ${session.total_tests}` : 'Aucun test associé'}
-        
-        STATUT
-        ------
-        Ce rapport a été généré automatiquement le ${new Date().toLocaleDateString('fr-FR')}
-      `;
-
-      const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Rapport_Session_${session.nom.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
-    }
-  };
-
-  const handleExportPDF = (session: TestSession) => {
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>${session.applicationNom || session.nom}</title>
-        <style>
-          @page { size: A4 landscape; margin: 15mm; }
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #333; font-size: 14px; line-height: 1.4; }
-          .header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #2c3e50; padding-bottom: 12px; }
-          .header h1 { font-size: 22px; color: #2c3e50; margin-bottom: 8px; }
-          .session-name { font-size: 14px; color: #7f8c8d; margin-top: 4px; font-style: italic; }
-          .session-info { display: flex; justify-content: center; gap: 25px; margin: 12px 0; flex-wrap: wrap; }
-          .info-item { text-align: center; }
-          .info-label { font-size: 10px; color: #7f8c8d; text-transform: uppercase; font-weight: 600; }
-          .info-value { font-size: 13px; font-weight: 600; color: #2c3e50; }
-          .stats { display: flex; justify-content: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
-          .stat-box { padding: 8px 15px; border-radius: 6px; text-align: center; }
-          .stat-total { background: #3498db; color: white; }
-          .stat-ok { background: #27ae60; color: white; }
-          .stat-bug { background: #e74c3c; color: white; }
-          .footer { margin-top: 15px; text-align: center; color: #7f8c8d; font-size: 10px; border-top: 1px solid #ddd; padding-top: 8px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>${session.applicationNom || session.nom}</h1>
-          ${session.nom ? `<div class="session-name">Session: ${session.nom}</div>` : ''}
-          <div class="session-info">
-            <div class="info-item"><div class="info-label">Date</div><div class="info-value">${new Date(session.date_creation).toLocaleDateString('fr-FR')}</div></div>
-            ${session.environnement ? `<div class="info-item"><div class="info-label">Environnement</div><div class="info-value">${session.environnement}</div></div>` : ''}
-            ${session.version ? `<div class="info-item"><div class="info-label">Version</div><div class="info-value">${session.version}</div></div>` : ''}
-            <div class="info-item"><div class="info-label">Statut</div><div class="info-value">${session.statut}</div></div>
-          </div>
-        </div>
-        <div class="stats">
-          <div class="stat-box stat-total"><strong>${session.total_tests || 0}</strong><br/>Total</div>
-          <div class="stat-box stat-ok"><strong>${session.tests_ok || 0}</strong><br/>OK</div>
-          <div class="stat-box stat-bug"><strong>${session.tests_bug || 0}</strong><br/>BUG</div>
-        </div>
-        ${session.description ? `<div style="margin: 15px 0;"><strong>Description:</strong> ${session.description}</div>` : ''}
-        <div class="footer">IT Access Manager - Document de test</div>
-      </body>
-      </html>
-    `;
-
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.onload = () => printWindow.print();
-    }
-  };
-
-  if (loading) {
-    return <div className="test-sessions-loading">Chargement...</div>;
-  }
+    return { total, enCours, terminees, bloquees, avgProgression };
+  }, [sessions]);
 
   return (
-    <div className="test-sessions-container">
-      <main className="test-sessions-main">
-        <div className="test-sessions-header">
-          <div className="test-sessions-header-left">
-            <div>
-              <h2 className="test-sessions-page-title">Gestion des Sessions</h2>
-              <p className="test-sessions-page-subtitle">
-                {sessions.length} session{sessions.length !== 1 ? 's' : ''} · {sessions.reduce((acc, s) => acc + (s.total_tests || 0), 0)} tests au total
-              </p>
-            </div>
+    <div style={styles.container}>
+      <main style={styles.main}>
+        <div style={styles.header}>
+          <div>
+            <h2 style={styles.pageTitle}>Gestion des sessions professionnelles</h2>
+            <p style={styles.pageSubtitle}>Organisez vos campagnes de test par application et suivez leur progression.</p>
           </div>
-          <button
-            className="test-sessions-new-button"
-            onClick={() => setShowCreateModal(true)}
-            title="Créer une nouvelle session"
-          >
-            <FontAwesomeIcon icon={faPlus} /> Nouvelle session
-          </button>
+          <div style={styles.headerActions}>
+            <div style={styles.viewToggle}>
+              <button 
+                style={{...styles.viewButton, ...(viewMode === 'table' ? styles.activeView : {})}}
+                onClick={() => setViewMode('table')}
+                title="Vue tableau"
+              >
+                <FontAwesomeIcon icon={faChartBar} />
+              </button>
+              <button 
+                style={{...styles.viewButton, ...(viewMode === 'cards' ? styles.activeView : {})}}
+                onClick={() => setViewMode('cards')}
+                title="Vue cartes"
+              >
+                <FontAwesomeIcon icon={faEye} />
+              </button>
+            </div>
+            <button style={styles.primaryButton} onClick={() => setShowCreateModal(true)}>
+              Nouvelle session
+            </button>
+          </div>
         </div>
 
+        <div style={styles.statsContainer}>
+          <div style={styles.statCard}>
+            <div style={{...styles.statIcon, backgroundColor: '#3498db20', color: '#3498db'}}>
+              <FontAwesomeIcon icon={faChartBar} />
+            </div>
+            <div style={styles.statContent}>
+              <div style={styles.statNumber}>{getSessionStats.total}</div>
+              <div style={styles.statLabel}>Total sessions</div>
+            </div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={{...styles.statIcon, backgroundColor: '#3498db20', color: '#3498db'}}>
+              <FontAwesomeIcon icon={faPlayCircle} />
+            </div>
+            <div style={styles.statContent}>
+              <div style={styles.statNumber}>{getSessionStats.enCours}</div>
+              <div style={styles.statLabel}>En cours</div>
+            </div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={{...styles.statIcon, backgroundColor: '#27ae6020', color: '#27ae60'}}>
+              <FontAwesomeIcon icon={faCheckCircle} />
+            </div>
+            <div style={styles.statContent}>
+              <div style={styles.statNumber}>{getSessionStats.terminees}</div>
+              <div style={styles.statLabel}>Terminées</div>
+            </div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={{...styles.statIcon, backgroundColor: '#e74c3c20', color: '#e74c3c'}}>
+              <FontAwesomeIcon icon={faExclamationTriangle} />
+            </div>
+            <div style={styles.statContent}>
+              <div style={styles.statNumber}>{getSessionStats.bloquees}</div>
+              <div style={styles.statLabel}>Bloquées</div>
+            </div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={{...styles.statIcon, backgroundColor: '#f39c1220', color: '#f39c12'}}>
+              <FontAwesomeIcon icon={faChartBar} />
+            </div>
+            <div style={styles.statContent}>
+              <div style={styles.statNumber}>{getSessionStats.avgProgression.toFixed(1)}%</div>
+              <div style={styles.statLabel}>Progression moyenne</div>
+            </div>
+          </div>
+        </div>
+        
         {message.text && (
-          <div className={message.type === 'success' ? 'test-sessions-success' : 'test-sessions-error'}>
+          <div style={message.type === 'success' ? styles.success : styles.error}>
             {message.text}
           </div>
         )}
 
-        {selectedSession && (
-          <div className="test-sessions-session-details">
-            <div className="test-sessions-session-details-header">
-              <h3 className="test-sessions-session-details-title">{selectedSession.nom}</h3>
-              <button className="test-sessions-close-detail-button" onClick={() => setSelectedSession(null)}>
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
+        <div style={styles.tableSection}>
+          <div style={styles.listHeader}>
+            <div>
+              <h3 style={styles.sectionTitle}>Liste des sessions</h3>
+              <div style={styles.stats}>
+                <span style={styles.statItem}>Total: {sessions.length}</span>
+                <span style={styles.statItem}>Affichées: {filteredSessions.length}</span>
+              </div>
             </div>
-            <div className="test-sessions-session-details-content">
-              <div className="test-sessions-detail-row">
-                <span className="test-sessions-detail-label">Statut:</span>
-                <span style={getStatusBadge(selectedSession.statut)}>{selectedSession.statut}</span>
-              </div>
-              <div className="test-sessions-detail-row">
-                <span className="test-sessions-detail-label">Application:</span>
-                <span>{getAppName(selectedSession.applicationId)}</span>
-              </div>
-              {selectedSession.environnement && (
-                <div className="test-sessions-detail-row">
-                  <span className="test-sessions-detail-label">Environnement:</span>
-                  <span>{selectedSession.environnement}</span>
-                </div>
-              )}
-              {selectedSession.version && (
-                <div className="test-sessions-detail-row">
-                  <span className="test-sessions-detail-label">Version:</span>
-                  <span>{selectedSession.version}</span>
-                </div>
-              )}
-              {selectedSession.nom_document && (
-                <div className="test-sessions-detail-row">
-                  <span className="test-sessions-detail-label">Document:</span>
-                  <span>{selectedSession.nom_document}</span>
-                </div>
-              )}
-              <div className="test-sessions-detail-row">
-                <span className="test-sessions-detail-label">Total tests:</span>
-                <span>{selectedSession.total_tests || 0}</span>
-              </div>
-              <div className="test-sessions-detail-row">
-                <span className="test-sessions-detail-label">Tests OK:</span>
-                <span style={{ color: '#27ae60', fontWeight: 600 }}>{selectedSession.tests_ok || 0}</span>
-              </div>
-              <div className="test-sessions-detail-row">
-                <span className="test-sessions-detail-label">Tests BUG:</span>
-                <span style={{ color: '#dc3545', fontWeight: 600 }}>{selectedSession.tests_bug || 0}</span>
-              </div>
-              {selectedSession.description && (
-                <div className="test-sessions-detail-row">
-                  <span className="test-sessions-detail-label">Description:</span>
-                  <span style={{ maxWidth: '400px' }}>{selectedSession.description}</span>
-                </div>
-              )}
-              <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-                <button
-                  className="test-sessions-export-pdf-button"
-                  onClick={() => handleExportPDF(selectedSession)}
+            <div style={styles.controlsRow}>
+              <div style={styles.filters}>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  style={styles.filterSelect}
                 >
-                  <FontAwesomeIcon icon={faFilePdf} /> Exporter PDF
-                </button>
-                <button
-                  className="test-sessions-export-word-button"
-                  onClick={() => handleExportWord(selectedSession)}
+                  <option value="all">Tous les statuts</option>
+                  <option value="En cours">En cours</option>
+                  <option value="Terminée">Terminée</option>
+                  <option value="Bloquée">Bloquée</option>
+                </select>
+                <select
+                  value={filterApp}
+                  onChange={(e) => setFilterApp(e.target.value)}
+                  style={styles.filterSelect}
                 >
-                  <FontAwesomeIcon icon={faFileWord} /> Exporter Word
-                </button>
+                  <option value="all">Toutes les applications</option>
+                  {applications.map(app => (
+                    <option key={app.id} value={app.id}>{app.nom}</option>
+                  ))}
+                </select>
               </div>
-            </div>
-          </div>
-        )}
-
-        {sessions.length === 0 ? (
-          <div className="test-sessions-empty-state">
-            <div className="test-sessions-empty-icon">
-              <FontAwesomeIcon icon={faPlus} />
-            </div>
-            <h3>Aucune session</h3>
-            <p>Créez votre première session de test pour commencer</p>
-            <button className="test-sessions-empty-button" onClick={() => setShowCreateModal(true)}>
-              <FontAwesomeIcon icon={faPlus} /> Créer une session
-            </button>
-          </div>
-        ) : (
-          <div className="sessions-grid test-sessions-grid">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="test-sessions-card"
-                style={{
-                  borderColor: getStatusColor(session.statut),
-                  borderWidth: '2px',
-                  borderStyle: 'solid'
-                }}
-              >
-                <div className="test-sessions-card-header">
-                  <h3 className="test-sessions-card-title">{session.nom}</h3>
-                  <span className="test-sessions-status-badge" style={{ backgroundColor: getStatusColor(session.statut) }}>
-                    {session.statut}
-                  </span>
-                </div>
-                 {session.createdByUsername && (
-                   <p className="test-sessions-card-owner">
-                     <FontAwesomeIcon icon={faUser} /> Créé par: {session.createdByUsername}
-                   </p>
-                 )}
-                 {session.role && (
-                   <p className="test-sessions-card-meta" style={{ marginBottom: '8px' }}>
-                     <strong>Rôle:</strong> {session.role}
-                   </p>
-                 )}
-                 {session.description && (
-                  <p className="test-sessions-card-meta" style={{ marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.5' }}>{session.description}</p>
-                )}
-                <div className="test-sessions-card-meta">
-                  <span><i className="fas fa-mobile-alt"></i> {getAppName(session.applicationId)}</span>
-                  {session.environnement && <span><i className="fas fa-server"></i> {session.environnement}</span>}
-                  {session.version && <span><i className="fas fa-code-branch"></i> v{session.version}</span>}
-                </div>
-                <div className="test-sessions-card-stats">
-                  <span>Total: <strong>{session.total_tests || 0}</strong></span>
-                  <span style={{ color: '#27ae60' }}>OK: <strong>{session.tests_ok || 0}</strong></span>
-                  <span style={{ color: '#dc3545' }}>BUG: <strong>{session.tests_bug || 0}</strong></span>
-                </div>
-                <div className="test-sessions-card-actions">
-                  <button
-                    className="test-sessions-view-button"
-                    onClick={() => setSelectedSession(session)}
-                    title="Voir détails"
-                  >
-                    <FontAwesomeIcon icon={faEye} /> Détails
-                  </button>
-                  <button
-                    className="test-sessions-edit-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEditModal(session);
-                    }}
-                    title="Modifier"
-                  >
-                    <FontAwesomeIcon icon={faEdit} /> Modifier
-                  </button>
-                  <button
-                    className="test-sessions-delete-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(session.id);
-                    }}
-                    title="Supprimer"
-                  >
-                    <FontAwesomeIcon icon={faTrash} /> Supprimer
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-
-      {/* Modal création */}
-      {showCreateModal && (
-        <div className="test-sessions-modal">
-          <div className="test-sessions-modal-content">
-            <span className="test-sessions-modal-close-button" onClick={() => setShowCreateModal(false)}>&times;</span>
-            <h3 className="test-sessions-modal-title">Nouvelle session</h3>
-            <p className="test-sessions-modal-subtitle">Créez une session pour regrouper vos cas de test.</p>
-            <form onSubmit={handleCreateSession} className="test-sessions-modal-form">
-              <div className="test-sessions-form-group">
-                <label className="test-sessions-label">Nom *</label>
+              <div style={styles.searchWrapper}>
+                <FontAwesomeIcon icon={faSearch} className="search-icon" />
                 <input
                   type="text"
-                  value={sessionForm.nom}
-                  onChange={(e) => setSessionForm({ ...sessionForm, nom: e.target.value })}
-                  className="test-sessions-input"
-                  required
-                  placeholder="Nom de la session"
+                  placeholder="Rechercher..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={styles.searchInput}
                 />
               </div>
-              <div className="test-sessions-form-row">
-                <div className="test-sessions-form-group">
-                  <label className="test-sessions-label">Application</label>
+            </div>
+          </div>
+          {initialLoading ? (
+            <div style={styles.loadingContainer}>
+              <div style={styles.spinner}></div>
+              <p>Chargement des sessions...</p>
+            </div>
+          ) : error ? (
+            <div style={styles.errorContainer}>
+              <FontAwesomeIcon icon={faTimesCircle} className="error-icon" />
+              <h3>Erreur de chargement</h3>
+              <p>{error}</p>
+              <button style={styles.retryButton} onClick={fetchData}>
+                Réessayer
+              </button>
+            </div>
+          ) : viewMode === 'cards' ? (
+            <div style={styles.cardsGrid}>
+              {filteredSessions.map((session) => (
+                <div key={session.id} style={styles.sessionCard}>
+                  <div style={styles.cardHeader}>
+                    <h4 style={styles.cardTitle}>{session.nom}</h4>
+                    <span style={{
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      backgroundColor: getStatusColor(session.statut) + '20',
+                      color: getStatusColor(session.statut),
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <FontAwesomeIcon icon={getStatusIcon(session.statut)} style={{ fontSize: '10px' }} />
+                      {session.statut}
+                    </span>
+                  </div>
+                  
+                  <div style={styles.cardContent}>
+                    <div style={styles.cardInfo}>
+                      <span style={styles.infoLabel}>Application:</span>
+                      <span style={styles.infoValue}>{getAppName(session.applicationId)}</span>
+                    </div>
+                    {session.environnement && (
+                      <div style={styles.cardInfo}>
+                        <span style={styles.infoLabel}>Environnement:</span>
+                        <span style={styles.infoValue}>{session.environnement}</span>
+                      </div>
+                    )}
+                    {session.version && (
+                      <div style={styles.cardInfo}>
+                        <span style={styles.infoLabel}>Version:</span>
+                        <span style={styles.infoValue}>{session.version}</span>
+                      </div>
+                    )}
+                    {session.description && (
+                      <p style={styles.cardDescription}>{session.description}</p>
+                    )}
+                  </div>
+                  
+                  {session.total_tests && (
+                    <div style={styles.progressSection}>
+                      <div style={styles.progressHeader}>
+                        <span style={styles.progressLabel}>Progression</span>
+                        <span style={styles.progressText}>
+                          {session.tests_ok || 0}/{session.total_tests}
+                        </span>
+                      </div>
+                      <div style={styles.progressBar}>
+                        <div style={{ 
+                          width: `${(session.tests_ok || 0) * 100 / session.total_tests}%`, 
+                          height: '100%', 
+                          backgroundColor: '#27ae60',
+                          borderRadius: '3px',
+                          transition: 'width 0.3s ease'
+                        }} />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div style={styles.cardActions}>
+                    <button 
+                      style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#3498db'}} 
+                      onClick={() => openEditModal(session)} 
+                      title="Modifier"
+                      disabled={actionLoading}
+                    >
+                      <FontAwesomeIcon icon={faPen} />
+                    </button>
+                    <button 
+                      style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b'}} 
+                      onClick={() => handleDelete(session.id)} 
+                      title="Supprimer"
+                      disabled={actionLoading}
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto', margin: '0 -12px', padding: '0 12px' }}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.tableTh}>
+                      <button style={styles.sortableHeader} onClick={() => toggleSort('date_creation')}>
+                        ID
+                        {sortBy === 'date_creation' && (
+                          <FontAwesomeIcon icon={faSort} style={{ marginLeft: '4px', fontSize: '10px' }} />
+                        )}
+                      </button>
+                    </th>
+                    <th style={styles.tableTh}>
+                      <button style={styles.sortableHeader} onClick={() => toggleSort('nom')}>
+                        Nom
+                        {sortBy === 'nom' && (
+                          <FontAwesomeIcon icon={faSort} style={{ marginLeft: '4px', fontSize: '10px' }} />
+                        )}
+                      </button>
+                    </th>
+                    <th style={styles.tableTh}>Application</th>
+                    <th style={styles.tableTh}>Environnement</th>
+                    <th style={styles.tableTh}>Version</th>
+                    <th style={styles.tableTh}>
+                      <button style={styles.sortableHeader} onClick={() => toggleSort('statut')}>
+                        Statut
+                        {sortBy === 'statut' && (
+                          <FontAwesomeIcon icon={faSort} style={{ marginLeft: '4px', fontSize: '10px' }} />
+                        )}
+                      </button>
+                    </th>
+                    <th style={styles.tableTh}>
+                      <button style={styles.sortableHeader} onClick={() => toggleSort('progression')}>
+                        Progression
+                        {sortBy === 'progression' && (
+                          <FontAwesomeIcon icon={faSort} style={{ marginLeft: '4px', fontSize: '10px' }} />
+                        )}
+                      </button>
+                    </th>
+                    <th style={styles.tableTh}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSessions.map((session) => (
+                    <tr key={session.id} style={styles.tableTrHover}>
+                      <td style={styles.tableTd}>{session.id}</td>
+                      <td style={styles.tableTd}>{session.nom}</td>
+                      <td style={styles.tableTd}>{getAppName(session.applicationId)}</td>
+                      <td style={styles.tableTd}>{session.environnement || '-'}</td>
+                      <td style={styles.tableTd}>{session.version || '-'}</td>
+                      <td style={styles.tableTd}>
+                        <span style={{
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          backgroundColor: getStatusColor(session.statut) + '20',
+                          color: getStatusColor(session.statut),
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          <FontAwesomeIcon icon={getStatusIcon(session.statut)} style={{ fontSize: '10px' }} />
+                          {session.statut}
+                        </span>
+                      </td>
+                      <td style={styles.tableTd}>
+                        {session.total_tests ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ 
+                              flex: 1, 
+                              height: '6px', 
+                              backgroundColor: 'var(--border-color)', 
+                              borderRadius: '3px',
+                              overflow: 'hidden'
+                            }}>
+                              <div style={{ 
+                                width: `${session.total_tests ? (session.tests_ok || 0) * 100 / session.total_tests : 0}%`, 
+                                height: '100%', 
+                                backgroundColor: '#27ae60' 
+                              }} />
+                            </div>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                              {session.tests_ok || 0}/{session.total_tests}
+                            </span>
+                          </div>
+                        ) : '-'}
+                      </td>
+                      <td style={{...styles.tableTd, display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <button style={{...styles.editButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#3498db'}} onClick={() => openEditModal(session)} title="Modifier">
+                          <FontAwesomeIcon icon={faPen} />
+                        </button>
+                        <button style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b'}} onClick={() => handleDelete(session.id)} title="Supprimer">
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {showCreateModal && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <span style={styles.close} onClick={() => setShowCreateModal(false)}>&times;</span>
+            <div style={styles.modalHeader}>
+              <h3 style={styles.sectionTitle}>Nouvelle session professionnelle</h3>
+              <p style={styles.modalSubtitle}>Créez une session de test et liez-la à une application.</p>
+            </div>
+            <form onSubmit={handleSubmit} style={styles.modalForm}>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Nom du document de test</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Tests Release v2.0"
+                    value={formData.nom}
+                    onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Application </label>
                   <select
-                    value={sessionForm.applicationId || ''}
-                    onChange={(e) => setSessionForm({ ...sessionForm, applicationId: Number(e.target.value) })}
-                    className="test-sessions-select"
+                    value={formData.applicationId || ''}
+                    onChange={(e) => setFormData({ ...formData, applicationId: parseInt(e.target.value) })}
+                    style={styles.select}
+                    required
                   >
-                    <option value="">Sélectionner</option>
-                    {applications.map((app) => (
+                    <option value="">Sélectionnez une application</option>
+                    {applications.map(app => (
                       <option key={app.id} value={app.id}>{app.nom}</option>
                     ))}
                   </select>
                 </div>
-                <div className="test-sessions-form-group">
-                  <label className="test-sessions-label">Statut</label>
+              </div>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Environnement</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Production, Recette, Dev"
+                    value={formData.environnement}
+                    onChange={(e) => setFormData({ ...formData, environnement: e.target.value })}
+                    style={styles.input}
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Role</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 2.0.0"
+                    value={formData.version}
+                    onChange={(e) => setFormData({ ...formData, version: e.target.value })}
+                    style={styles.input}
+                  />
+                </div>
+              </div>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}></label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Recette_Fonctionnelle_v2.pdf"
+                    value={formData.nom_document}
+                    onChange={(e) => setFormData({ ...formData, nom_document: e.target.value })}
+                    style={styles.input}
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Statut</label>
                   <select
-                    value={sessionForm.statut}
-                    onChange={(e) => setSessionForm({ ...sessionForm, statut: e.target.value })}
-                    className="test-sessions-select"
+                    value={formData.statut}
+                    onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
+                    style={styles.select}
                   >
                     <option value="En cours">En cours</option>
                     <option value="Terminée">Terminée</option>
@@ -517,106 +688,92 @@ const TestSessions: React.FC = () => {
                   </select>
                 </div>
               </div>
-               <div className="test-sessions-form-row">
-                 <div className="test-sessions-form-group">
-                   <label className="test-sessions-label">Environnement</label>
-                   <input
-                     type="text"
-                     value={sessionForm.environnement}
-                     onChange={(e) => setSessionForm({ ...sessionForm, environnement: e.target.value })}
-                     className="test-sessions-input"
-                     placeholder="Ex: Production"
-                   />
-                 </div>
-                 <div className="test-sessions-form-group">
-                   <label className="test-sessions-label">Version</label>
-                   <input
-                     type="text"
-                     value={sessionForm.version}
-                     onChange={(e) => setSessionForm({ ...sessionForm, version: e.target.value })}
-                     className="test-sessions-input"
-                     placeholder="Ex: 1.0.0"
-                   />
-                 </div>
-               </div>
-               <div className="test-sessions-form-group">
-                 <label className="test-sessions-label">Rôle</label>
-                 <input
-                   type="text"
-                   value={sessionForm.role}
-                   onChange={(e) => setSessionForm({ ...sessionForm, role: e.target.value })}
-                   className="test-sessions-input"
-                   placeholder="Ex: Admin, Testeur, etc."
-                 />
-               </div>
-               <div className="test-sessions-form-group">
-                 <label className="test-sessions-label">Nom du document</label>
-                 <input
-                   type="text"
-                   value={sessionForm.nom_document}
-                   onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
-                   className="test-sessions-input"
-                   placeholder="Ex: Plan de tests v1.0"
-                 />
-               </div>
-              <div className="test-sessions-form-group">
-                <label className="test-sessions-label">Description</label>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Description</label>
                 <textarea
-                  value={sessionForm.description}
-                  onChange={(e) => setSessionForm({ ...sessionForm, description: e.target.value })}
-                  className="test-sessions-textarea"
-                  placeholder="Description..."
-                  rows={3}
+                  placeholder="Objectifs, périmètre de la session de test..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  style={{ ...styles.textarea, minHeight: '80px' }}
                 />
               </div>
-              <div className="test-sessions-form-actions">
-                <button type="button" className="test-sessions-cancel-button" onClick={() => setShowCreateModal(false)}>Annuler</button>
-                <button type="submit" className="test-sessions-submit-button">Créer</button>
+              <div style={styles.formActions}>
+                <button type="button" style={styles.secondaryButton} onClick={() => setShowCreateModal(false)}>Annuler</button>
+                <button type="submit" style={styles.primaryButton}>Ajouter</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modal édition */}
       {showModal && (
-        <div className="test-sessions-modal">
-          <div className="test-sessions-modal-content">
-            <span className="test-sessions-modal-close-button" onClick={() => setShowModal(false)}>&times;</span>
-            <h3 className="test-sessions-modal-title">Modifier la session</h3>
-            <form onSubmit={handleUpdateSession} className="test-sessions-modal-form">
-              <div className="test-sessions-form-group">
-                <label className="test-sessions-label">Nom *</label>
-                <input
-                  type="text"
-                  value={editFormData.nom}
-                  onChange={(e) => setEditFormData({ ...editFormData, nom: e.target.value })}
-                  className="test-sessions-input"
-                  required
-                />
-              </div>
-              <div className="test-sessions-form-row">
-                <div className="test-sessions-form-group">
-                  <label className="test-sessions-label">Application</label>
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <span style={styles.close} onClick={() => setShowModal(false)}>&times;</span>
+            <h3 style={styles.sectionTitle}>Modifier la session</h3>
+            <form onSubmit={handleEdit} style={styles.modalForm}>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Nom</label>
+                  <input
+                    type="text"
+                    value={editFormData.nom}
+                    onChange={(e) => setEditFormData({ ...editFormData, nom: e.target.value })}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Application</label>
                   <select
                     value={editFormData.applicationId || ''}
-                    onChange={(e) => setEditFormData({ ...editFormData, applicationId: Number(e.target.value) })}
-                    className="test-sessions-select"
+                    onChange={(e) => setEditFormData({ ...editFormData, applicationId: parseInt(e.target.value) })}
+                    style={styles.select}
+                    required
                   >
-                    {applications.map((app) => (
+                    <option value="">Sélectionnez une application</option>
+                    {applications.map(app => (
                       <option key={app.id} value={app.id}>{app.nom}</option>
                     ))}
                   </select>
                 </div>
-                <div className="test-sessions-form-group">
-                  <label className="test-sessions-label">Statut</label>
+              </div>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Environnement</label>
+                  <input
+                    type="text"
+                    value={editFormData.environnement}
+                    onChange={(e) => setEditFormData({ ...editFormData, environnement: e.target.value })}
+                    style={styles.input}
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Version</label>
+                  <input
+                    type="text"
+                    value={editFormData.version}
+                    onChange={(e) => setEditFormData({ ...editFormData, version: e.target.value })}
+                    style={styles.input}
+                  />
+                </div>
+              </div>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Nom du document</label>
+                  <input
+                    type="text"
+                    value={editFormData.nom_document}
+                    onChange={(e) => setEditFormData({ ...editFormData, nom_document: e.target.value })}
+                    style={styles.input}
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Statut</label>
                   <select
                     value={editFormData.statut}
-                    onChange={(e) => {
-                      console.log('Changement de statut:', e.target.value);
-                      setEditFormData({ ...editFormData, statut: e.target.value });
-                    }}
-                    className="test-sessions-select"
+                    onChange={(e) => setEditFormData({ ...editFormData, statut: e.target.value })}
+                    style={styles.select}
                   >
                     <option value="En cours">En cours</option>
                     <option value="Terminée">Terminée</option>
@@ -624,79 +781,17 @@ const TestSessions: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <div className="test-sessions-form-row">
-                <div className="test-sessions-form-group">
-                  <label className="test-sessions-label">Environnement</label>
-                  <input
-                    type="text"
-                    value={editFormData.environnement}
-                    onChange={(e) => setEditFormData({ ...editFormData, environnement: e.target.value })}
-                    className="test-sessions-input"
-                  />
-                </div>
-                <div className="test-sessions-form-group">
-                  <label className="test-sessions-label">Version</label>
-                  <input
-                    type="text"
-                    value={editFormData.version}
-                    onChange={(e) => setEditFormData({ ...editFormData, version: e.target.value })}
-                    className="test-sessions-input"
-                  />
-                </div>
-               </div>
-               <div className="test-sessions-form-row">
-                 <div className="test-sessions-form-group">
-                   <label className="test-sessions-label">Environnement</label>
-                   <input
-                     type="text"
-                     value={editFormData.environnement}
-                     onChange={(e) => setEditFormData({ ...editFormData, environnement: e.target.value })}
-                     className="test-sessions-input"
-                     placeholder="Ex: Production"
-                   />
-                 </div>
-                 <div className="test-sessions-form-group">
-                   <label className="test-sessions-label">Version</label>
-                   <input
-                     type="text"
-                     value={editFormData.version}
-                     onChange={(e) => setEditFormData({ ...editFormData, version: e.target.value })}
-                     className="test-sessions-input"
-                     placeholder="Ex: 1.0.0"
-                   />
-                 </div>
-                </div>
-                <div className="test-sessions-form-group">
-                  <label className="test-sessions-label">Nom du document</label>
-                  <input
-                    type="text"
-                    value={editFormData.nom_document}
-                    onChange={(e) => setEditFormData({ ...editFormData, nom_document: e.target.value })}
-                    className="test-sessions-input"
-                  />
-                </div>
-                <div className="test-sessions-form-group">
-                  <label className="test-sessions-label">Rôle</label>
-                  <input
-                    type="text"
-                    value={editFormData.role}
-                    onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                    className="test-sessions-input"
-                    placeholder="Ex: Admin, Testeur, etc."
-                  />
-                </div>
-              <div className="test-sessions-form-group">
-                <label className="test-sessions-label">Description</label>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Description</label>
                 <textarea
                   value={editFormData.description}
                   onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                  className="test-sessions-textarea"
-                  rows={3}
+                  style={{ ...styles.textarea, minHeight: '80px' }}
                 />
               </div>
-              <div className="test-sessions-form-actions">
-                <button type="button" className="test-sessions-cancel-button" onClick={() => setShowModal(false)}>Annuler</button>
-                <button type="submit" className="test-sessions-submit-button">Enregistrer</button>
+              <div style={styles.formActions}>
+                <button type="button" style={styles.secondaryButton} onClick={() => setShowModal(false)}>Annuler</button>
+                <button type="submit" style={styles.primaryButton}>Enregistrer</button>
               </div>
             </form>
           </div>
@@ -704,6 +799,112 @@ const TestSessions: React.FC = () => {
       )}
     </div>
   );
+};
+
+const styles: Record<string, React.CSSProperties> = {
+  container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
+  main: { padding: '30px', maxWidth: '1400px', margin: '0 auto', minHeight: 'calc(100vh - 70px)' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap' as const, gap: '16px' },
+  headerActions: { display: 'flex', alignItems: 'center', gap: '12px' },
+  viewToggle: { display: 'flex', gap: '4px', backgroundColor: 'var(--bg-card)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' },
+  viewButton: { padding: '8px 12px', backgroundColor: 'transparent', border: 'none', borderRadius: '6px', cursor: 'pointer', color: 'var(--text-secondary)' },
+  activeView: { backgroundColor: 'var(--primary-color)', color: 'white' },
+  pageTitle: { margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' },
+  pageSubtitle: { margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '14px' },
+  
+  // Stats container
+  statsContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' },
+  statCard: { backgroundColor: 'var(--bg-card)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '16px', boxShadow: '0 2px 8px var(--shadow-color)' },
+  statIcon: { width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' },
+  statContent: { flex: 1 },
+  statNumber: { fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 },
+  statLabel: { fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' },
+  
+  // Filters and controls
+  controlsRow: { display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' as const },
+  filters: { display: 'flex', gap: '12px', flexWrap: 'wrap' as const },
+  filterSelect: { padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: '14px' },
+  searchWrapper: { position: 'relative' as const, display: 'flex', alignItems: 'center' },
+  
+  tableSection: { backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: '24px', marginBottom: '24px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px var(--shadow-color)' },
+  sectionTitle: { margin: '0 0 20px', fontSize: '18px' },
+  modalForm: { display: 'flex', flexDirection: 'column' as const, gap: '20px', padding: '8px 0' },
+  formRow: { display: 'flex', gap: '16px', flexWrap: 'wrap' as const },
+  formGroup: { marginBottom: '16px', flex: 1 },
+  label: { display: 'block', marginBottom: '6px', fontWeight: 500, color: 'var(--text-secondary)', fontSize: '13px' },
+  input: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)' },
+  textarea: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', resize: 'vertical' as const, minHeight: '100px' },
+  select: { width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)' },
+  formActions: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '20px', flexWrap: 'wrap' },
+  primaryButton: { padding: '12px 20px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' },
+  secondaryButton: { padding: '12px 20px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' },
+  
+  // Table styles
+  table: { 
+    width: '100%', 
+    borderCollapse: 'separate' as const, 
+    borderSpacing: '0',
+    borderRadius: 'var(--radius-md)', 
+    overflow: 'hidden',
+    border: '1px solid var(--border-color)',
+    backgroundColor: 'var(--bg-card)'
+  },
+  sortableHeader: { background: 'none', border: 'none', color: 'inherit', font: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 },
+  tableTh: { 
+    padding: '12px', 
+    textAlign: 'left' as const, 
+    backgroundColor: 'var(--hover-bg)', 
+    fontWeight: '600' as const, 
+    color: 'var(--text-primary)',
+    borderBottom: '1px solid var(--border-color)',
+    fontSize: '13px'
+  },
+  tableTd: { 
+    padding: '12px', 
+    borderBottom: '1px solid var(--border-color)', 
+    color: 'var(--text-primary)',
+    fontSize: '13px'
+  },
+  tableTrHover: { 
+    backgroundColor: 'var(--hover-bg)',
+    transition: 'background-color 0.2s ease'
+  },
+  searchInput: { padding: '10px 16px 10px 40px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '14px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', minWidth: '250px' },
+  stats: { display: 'flex', gap: '16px', marginBottom: '8px' },
+  statItem: { fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' },
+  deleteButton: { padding: '8px', backgroundColor: 'transparent', color: 'var(--danger-color)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' },
+  editButton: { padding: '8px', backgroundColor: 'transparent', color: 'var(--text-secondary)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' },
+  listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' as const, gap: '12px' },
+  success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: 'var(--radius-md)', marginBottom: '20px' },
+  error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: 'var(--radius-md)', marginBottom: '20px' },
+  modal: { position: 'fixed' as const, top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', zIndex: 9999, paddingTop: '40px', overflowY: 'auto' as const, backdropFilter: 'blur(4px)' },
+  modalContent: { backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '16px', width: '95%', maxWidth: '500px', position: 'relative' as const, margin: '0 auto 40px auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', border: '1px solid var(--border-light)' },
+  close: { position: 'absolute' as const, top: '15px', right: '20px', fontSize: '28px', cursor: 'pointer', color: 'var(--text-muted)' },
+  // Loading and error states
+  loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center' as const },
+  spinner: { width: '40px', height: '40px', border: '4px solid var(--border-color)', borderTop: '4px solid var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' },
+  errorContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center' as const },
+  errorIcon: { fontSize: '48px', color: 'var(--danger-color)', marginBottom: '16px' },
+  retryButton: { padding: '12px 24px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', marginTop: '16px' },
+  
+  // Card view styles
+  cardsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px', padding: '0 12px' },
+  sessionCard: { backgroundColor: 'var(--bg-card)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px var(--shadow-color)', transition: 'transform 0.2s ease, box-shadow 0.2s ease' },
+  cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', gap: '12px' },
+  cardTitle: { margin: 0, fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)', flex: 1 },
+  cardContent: { marginBottom: '16px' },
+  cardInfo: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '14px' },
+  infoLabel: { color: 'var(--text-secondary)', fontWeight: '500' },
+  infoValue: { color: 'var(--text-primary)', fontWeight: '600' },
+  cardDescription: { margin: '12px 0 0 0', color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.5' },
+  progressSection: { marginBottom: '16px' },
+  progressHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
+  progressLabel: { fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' },
+  progressText: { fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' },
+  progressBar: { height: '6px', backgroundColor: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' },
+  cardActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' },
+  
+  // Animation keyframes (removed as CSS-in-JS doesn't support keyframes well)
 };
 
 export default TestSessions;

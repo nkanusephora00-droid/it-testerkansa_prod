@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apkAPI, applicationsAPI, ApkFile, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faUpload } from '@fortawesome/free-solid-svg-icons';
+import { faDownload, faTrash, faUpload } from '@fortawesome/free-solid-svg-icons';
 
 const Apk: React.FC = () => {
   const [apks, setApks] = useState<ApkFile[]>([]);
@@ -90,8 +90,6 @@ const Apk: React.FC = () => {
     }
   };
 
-  
-  
   const handleDelete = async (id: number) => {
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce APK ?')) return;
     
@@ -182,7 +180,7 @@ const Apk: React.FC = () => {
                           onClick={() => handleDownload(apk.id, apk.originalFileName)} 
                           title="Télécharger"
                         >
-                          📥
+                          <FontAwesomeIcon icon={faDownload} />
                         </button>
                         {isAdmin && (
                           <button 

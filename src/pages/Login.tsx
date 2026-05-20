@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
-import '../styles/pages/Login.css';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -49,46 +48,46 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h1 className="login-title">IT Access Manager</h1>
-        <h2 className="login-subtitle">Connexion</h2>
+    <div style={styles.container}>
+      <div className="login-card" style={styles.card}>
+        <h1 className="login-title" style={styles.title}>IT Access Manager</h1>
+        <h2 style={styles.subtitle}>Connexion</h2>
         
-        {error && <div className="login-error">{error}</div>}
+        {error && <div style={styles.error}>{error}</div>}
         
         <form onSubmit={handleSubmit}>
-          <div className="login-form-group">
-            <label className="login-label">Nom d'utilisateur</label>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Nom d'utilisateur</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="login-input"
+              style={styles.input}
               required
             />
           </div>
           
-          <div className="login-form-group">
-            <label className="login-label">Mot de passe</label>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Mot de passe</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="login-input"
+              style={styles.input}
               
               required
             />
           </div>
           
-          <button type="submit" className="login-button" disabled={loading}>
+          <button type="submit" style={styles.button} disabled={loading}>
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
         
-        <div className="login-forgot-password">
+        <div style={styles.forgotPassword}>
           <button 
             type="button" 
-            className="login-forgot-password-link" 
+            style={styles.forgotPasswordLink} 
             onClick={() => navigate('/forgot-password')}
           >
             Mot de passe oublié ?
@@ -98,6 +97,103 @@ const Login: React.FC = () => {
       </div>
     </div>
   );
+};
+
+const styles = {
+  container: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh',
+    backgroundColor: 'var(--bg-primary)',
+    padding: '20px',
+  },
+  card: {
+    backgroundColor: 'var(--bg-card)',
+    padding: '48px',
+    borderRadius: '24px',
+    boxShadow: '0 24px 80px var(--shadow-strong)',
+    width: '100%',
+    maxWidth: '440px',
+    border: '1px solid var(--border-light)',
+  },
+  title: {
+    textAlign: 'center' as const,
+    color: 'var(--text-primary)',
+    marginBottom: '8px',
+    fontSize: '32px',
+    fontWeight: 700,
+    letterSpacing: '-0.5px',
+  },
+  subtitle: {
+    textAlign: 'center' as const,
+    color: 'var(--text-secondary)',
+    marginBottom: '36px',
+    fontSize: '15px',
+    fontWeight: 400,
+  },
+  formGroup: {
+    marginBottom: '24px',
+  },
+  label: {
+    display: 'block',
+    marginBottom: '10px',
+    color: 'var(--text-secondary)',
+    fontWeight: 600 as const,
+    fontSize: '13px',
+    letterSpacing: '0.3px',
+    textTransform: 'uppercase' as const,
+  },
+  input: {
+    width: '100%',
+    padding: '16px 18px',
+    border: '2px solid var(--border-color)',
+    borderRadius: '14px',
+    fontSize: '15px',
+    backgroundColor: 'var(--input-bg)',
+    color: 'var(--text-primary)',
+    transition: 'all 0.2s ease',
+    outline: 'none',
+    fontWeight: 400,
+  },
+  button: {
+    width: '100%',
+    padding: '16px',
+    backgroundColor: 'var(--info-color)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '14px',
+    fontSize: '16px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 4px 16px rgba(52, 152, 219, 0.3)',
+    letterSpacing: '0.3px',
+  },
+  error: {
+    color: 'white',
+    backgroundColor: 'var(--danger-color)',
+    padding: '16px 20px',
+    borderRadius: '12px',
+    marginBottom: '24px',
+    fontSize: '14px',
+    fontWeight: 500,
+    boxShadow: '0 4px 12px rgba(255, 107, 107, 0.2)',
+  },
+  forgotPassword: {
+    textAlign: 'center' as const,
+    marginTop: '16px',
+  },
+  forgotPasswordLink: {
+    background: 'none',
+    border: 'none',
+    color: 'var(--info-color)',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    textDecoration: 'none',
+    transition: 'all 0.2s ease',
+  },
 };
 
 export default Login;

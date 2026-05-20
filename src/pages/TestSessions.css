@@ -1,21 +1,15 @@
-/* TestSessions page specific styles */
-
-/* Responsive grid for sessions */
-@media (max-width: 768px) {
-  .sessions-grid {
-    grid-template-columns: 1fr !important;
-  }
+.error-icon {
+  font-size: 48px;
+  color: var(--danger-color);
+  margin-bottom: 16px;
 }
 
-@media (min-width: 769px) {
-  .sessions-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
-}
-
-/* Mobile menu button - show only on mobile */
-@media (max-width: 768px) {
-  .mobile-menu-button {
-    display: flex !important;
-  }
+.search-icon {
+  position: absolute;
+  left: '12px';
+  top: '50%';
+  transform: 'translateY(-50%)';
+  color: 'var(--text-muted)';
+  font-size: '14px';
+  pointer-events: 'none';
 }
