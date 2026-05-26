@@ -24,11 +24,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, var(--info-color) 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #4338ca 100%);
   border-radius: 16px;
   padding: 30px 40px;
   margin-bottom: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 12px 40px rgba(67, 56, 202, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .dashboard-welcome-section-mobile {
@@ -89,22 +90,23 @@
 }
 
 .dashboard-stat-card {
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 24px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   gap: 20px;
-  box-shadow: 0 4px 14px var(--shadow-color);
+  box-shadow: 0 4px 12px var(--shadow-color);
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
+  border-bottom: 3px solid transparent;
 }
 
 .dashboard-stat-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-5px);
   box-shadow: 0 12px 28px var(--shadow-strong);
-  border-color: var(--border-light);
+  border-bottom-color: var(--info-color);
 }
 
 .dashboard-stat-card-mobile {
@@ -180,6 +182,43 @@
 
 .dashboard-details-section {
   margin-bottom: 40px;
+}
+
+.dashboard-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dashboard-details-title {
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-refresh-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.dashboard-refresh-button:hover {
+  background-color: var(--info-color);
+  color: white;
+  transform: rotate(180deg);
 }
 
 .dashboard-section-title {
@@ -451,4 +490,324 @@
 .dashboard-task-title {
   color: var(--text-primary);
   font-size: 14px;
+}
+
+/* Progress bars for stats */
+.dashboard-progress-section {
+  margin-top: 20px;
+}
+
+.dashboard-progress-item {
+  margin-bottom: 16px;
+}
+
+.dashboard-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.dashboard-progress-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.dashboard-progress-value {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.dashboard-progress-bar-container {
+  height: 8px;
+  background-color: var(--bg-primary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.dashboard-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.dashboard-progress-bar-success {
+  background: linear-gradient(90deg, var(--success-color), #2ecc71);
+}
+
+.dashboard-progress-bar-info {
+  background: linear-gradient(90deg, var(--info-color), #5dade2);
+}
+
+.dashboard-progress-bar-warning {
+  background: linear-gradient(90deg, var(--warning-color), #f1c40f);
+}
+
+/* Activity section */
+.dashboard-activity-section {
+  background-color: var(--bg-card);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 15px var(--shadow-color);
+  border: 1px solid var(--border-color);
+}
+
+.dashboard-activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dashboard-activity-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.dashboard-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dashboard-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: var(--bg-primary);
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.dashboard-activity-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.dashboard-activity-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.dashboard-activity-icon-success {
+  background-color: rgba(39, 174, 96, 0.15);
+  color: var(--success-color);
+}
+
+.dashboard-activity-icon-info {
+  background-color: rgba(52, 152, 219, 0.15);
+  color: var(--info-color);
+}
+
+.dashboard-activity-icon-warning {
+  background-color: rgba(243, 156, 18, 0.15);
+  color: var(--warning-color);
+}
+
+.dashboard-activity-content {
+  flex: 1;
+}
+
+.dashboard-activity-text {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.dashboard-activity-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Quick stats summary */
+.dashboard-summary-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.dashboard-summary-card {
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px var(--shadow-color);
+  border: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.dashboard-summary-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin: 0 auto 12px;
+}
+
+.dashboard-summary-icon-primary {
+  background-color: rgba(124, 58, 237, 0.14);
+  color: #7c3aed;
+}
+
+.dashboard-summary-icon-success {
+  background-color: rgba(39, 174, 96, 0.14);
+  color: var(--success-color);
+}
+
+.dashboard-summary-icon-warning {
+  background-color: rgba(243, 156, 18, 0.14);
+  color: var(--warning-color);
+}
+
+.dashboard-summary-number {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.dashboard-summary-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Mobile responsive for new sections */
+@media screen and (max-width: 768px) {
+  .dashboard-summary-section {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .dashboard-summary-card {
+    padding: 16px;
+  }
+
+  .dashboard-summary-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .dashboard-summary-number {
+    font-size: 22px;
+  }
+
+  .dashboard-activity-section {
+    padding: 16px;
+  }
+
+  .dashboard-progress-section {
+    margin-top: 16px;
+  }
+}
+
+/* Calendar widget */
+.dashboard-calendar-section {
+  background-color: var(--bg-card);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 15px var(--shadow-color);
+  border: 1px solid var(--border-color);
+  margin-bottom: 30px;
+}
+
+.dashboard-calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dashboard-calendar-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-calendar {
+  width: 100%;
+}
+
+.dashboard-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.dashboard-calendar-weekday {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 8px 4px;
+  text-transform: uppercase;
+}
+
+.dashboard-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.dashboard-calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: default;
+  transition: all 0.2s ease;
+}
+
+.dashboard-calendar-day:hover {
+  background-color: var(--hover-bg);
+}
+
+.dashboard-calendar-day-disabled {
+  color: var(--text-muted);
+}
+
+.dashboard-calendar-day-today {
+  background: linear-gradient(135deg, var(--info-color), #5dade2);
+  color: white;
+  font-weight: 700;
+}
+
+@media screen and (max-width: 768px) {
+  .dashboard-calendar-section {
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .dashboard-calendar-day {
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .dashboard-calendar-weekday {
+    font-size: 10px;
+    padding: 4px 2px;
+  }
 }

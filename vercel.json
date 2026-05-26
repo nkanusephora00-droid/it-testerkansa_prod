@@ -35,6 +35,6 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://backend-java-s6d8.onrender.com"
+    "REACT_APP_API_URL": "https://backend-java-pkn3.onrender.com"
   }
 }

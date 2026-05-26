@@ -3,7 +3,7 @@ import axios from "axios";
 // Use relative URL in development (proxy handles it), full URL in production
 const API_URL = process.env.NODE_ENV === 'development'
   ? ''
-  : (process.env.REACT_APP_API_URL || "https://backend-java-pkn3.onrender.com");
+  : (process.env.REACT_APP_API_URL || "https://backend-java-s6d8.onrender.com");
 
 // TypeScript interfaces for API data
 export interface User {
@@ -68,6 +68,7 @@ export interface TestSession {
   nom_document?: string;
   date_creation: string;
   statut: string;
+  role?: string;
   created_by?: number;
   createdByUsername?: string;
   tests: Test[];
@@ -109,6 +110,18 @@ export interface Todo {
   priority: string;
   dueDate: string | null;
   createdAt: string;
+  createdByUsername?: string;
+}
+
+export interface UserWithTodos {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  profilePhoto: string;
+  createdAt: string;
+  todos: Todo[];
 }
 
 export interface Message {
@@ -120,6 +133,18 @@ export interface Message {
   content: string;
   timestamp: string;
   read: boolean;
+}
+
+export interface SystemNotification {
+  id: number;
+  title: string;
+  message: string;
+  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'SYSTEM';
+  read: boolean;
+  targetUserId?: number;
+  createdBy: number;
+  createdAt: string;
+  actionUrl?: string;
 }
 
 export const api = axios.create({
@@ -182,6 +207,17 @@ api.interceptors.response.use(
       window.location.href = '/login';
     }
     
+    // Handle 403 Forbidden - clear token and redirect to login
+    if (error.response?.status === 403) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("token_type");
+      localStorage.removeItem("user_role");
+      localStorage.removeItem("user_id");
+      localStorage.removeItem("username");
+      localStorage.removeItem("email");
+      window.location.href = '/login';
+    }
+    
     return Promise.reject(error);
   },
 );
@@ -189,7 +225,12 @@ api.interceptors.response.use(
 // Auth API
 export const authAPI = {
   login: async (username: string, password: string) => {
-    const response = await api.post("/auth/token", { username, password });
+    const params = new URLSearchParams();
+    params.append('username', username);
+    params.append('password', password);
+    const response = await api.post("/auth/token", params, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
     return response.data;
   },
   me: async () => {
@@ -208,12 +249,18 @@ export const authAPI = {
 
 // Users API
 export const usersAPI = {
-  getAll: async () => (await api.get<User[]>("/users")).data,
+  getAll: async () => {
+    const response = await api.get("/users", { 
+      params: { page: 0, size: 1000, sortBy: 'id', sortDir: 'asc' } 
+    });
+    return response.data.content || response.data;
+  },
   getAvailable: async () => (await api.get<User[]>("/users/available")).data,
   getById: async (id: number) => (await api.get<User>(`/users/${id}`)).data,
   create: async (data: Partial<User>) => (await api.post<User>("/users", data)).data,
   update: async (id: number, data: Partial<User>) => (await api.put<User>(`/users/${id}`, data)).data,
   delete: async (id: number) => (await api.delete(`/users/${id}`)).data,
+  toggleStatus: async (id: number) => (await api.patch<User>(`/users/${id}/toggle-status`)).data,
 };
 
 // Profile API
@@ -303,6 +350,7 @@ export const todosAPI = {
   update: async (id: number, data: Partial<Todo>) => (await api.put<Todo>(`/todos/${id}`, data)).data,
   delete: async (id: number) => (await api.delete(`/todos/${id}`)).data,
   toggle: async (id: number) => (await api.patch(`/todos/${id}/toggle`)).data,
+  getUsersWithTodos: async () => (await api.get<UserWithTodos[]>("/todos/users")).data,
 };
 
 // Messages API
@@ -313,6 +361,19 @@ export const messagesAPI = {
   markAsRead: async (messageId: number) => (await api.patch(`/messages/${messageId}/read`)).data,
   getUnreadCount: async () => (await api.get<number>("/messages/unread-count")).data,
   getUnreadByUser: async () => (await api.get<Record<number, number>>("/messages/unread-by-user")).data,
+};
+
+// System Notifications API
+export const systemNotificationsAPI = {
+  getAll: async () => (await api.get<SystemNotification[]>("/system-notifications")).data,
+  getUnread: async () => (await api.get<SystemNotification[]>("/system-notifications/unread")).data,
+  getUnreadCount: async () => (await api.get<number>("/system-notifications/unread-count")).data,
+  markAsRead: async (id: number) => (await api.patch<SystemNotification>(`/system-notifications/${id}/read`)).data,
+  markAllAsRead: async () => (await api.patch("/system-notifications/read-all")).data,
+  create: async (data: { title: string; message: string; type: SystemNotification['type']; targetUserId?: number; actionUrl?: string }) => 
+    (await api.post<SystemNotification>("/system-notifications", data)).data,
+  createGlobal: async (data: { title: string; message: string; type: SystemNotification['type']; actionUrl?: string }) => 
+    (await api.post<SystemNotification>("/system-notifications/global", data)).data,
 };
 
 export default api;

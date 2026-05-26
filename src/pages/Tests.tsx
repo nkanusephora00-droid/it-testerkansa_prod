@@ -1,10 +1,30 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { testsAPI, applicationsAPI, api, testSessionsAPI, Application, Test, TestSession } from '../services/api';
+import { testsAPI, testSessionsAPI, applicationsAPI, api, Test, TestSession, Application } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faEye, faFilePdf, faCheck, faTimes, faPlus, faEdit, faCompress, faExpand } from '@fortawesome/free-solid-svg-icons';
-import { consolidateSessionsByUser, consolidateAllSessions, ConsolidatedSession } from '../utils/sessionConsolidation';
+import { faPlus, faEdit, faTrash, faCheck, faTimes, faCompress, faExpand, faEye, faFilePdf, faFileWord } from '@fortawesome/free-solid-svg-icons';
+import { ConsolidatedSession, consolidateSessionsByUser, consolidateAllSessions } from '../utils/sessionConsolidation';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType } from 'docx';
+import '../styles/pages/Tests.css';
+
+// Hook pour détecter la taille d'écran
+const useResponsive = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // 768px est la limite commune pour mobile
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
 
 const Tests: React.FC = () => {
+  const isMobile = useResponsive(); // Utilisation du hook responsive
   const [tests, setTests] = useState<Test[]>([]);
   const [sessions, setSessions] = useState<TestSession[]>([]);
   const [allSessions, setAllSessions] = useState<TestSession[]>([]);
@@ -18,7 +38,7 @@ const Tests: React.FC = () => {
   const [consolidatedSessions, setConsolidatedSessions] = useState<ConsolidatedSession[]>([]);
   const [selectedSessions, setSelectedSessions] = useState<number[]>([]);
   const [selectionMode, setSelectionMode] = useState<boolean>(false);
-
+  
   // Récupérer le rôle de l'utilisateur
   const userRole = localStorage.getItem('user_role');
   const isAdmin = userRole === 'admin';
@@ -35,18 +55,20 @@ const Tests: React.FC = () => {
         return '#ffc107';
     }
   };
-
+  
   // Session form state
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [showTestForm, setShowTestForm] = useState(false);
   const [sessionForm, setSessionForm] = useState({ 
     nom: '', 
     description: '', 
-    nom_document: '',
     applicationId: 0,
+    environnement: '',
+    version: '',
+    nom_document: '',
     statut: 'En cours' 
   });
-
+  
   // Test form state
   const [formData, setFormData] = useState({
     sessionId: 0,
@@ -63,10 +85,23 @@ const Tests: React.FC = () => {
 
   // Image preview
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-
+  
   // Edit test states
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTest, setEditingTest] = useState<Test | null>(null);
+
+  // Edit session states
+  const [showEditSessionModal, setShowEditSessionModal] = useState(false);
+  const [editingSession, setEditingSession] = useState<TestSession | null>(null);
+  const [editSessionForm, setEditSessionForm] = useState({
+    nom: '',
+    description: '',
+    applicationId: 0,
+    environnement: '',
+    version: '',
+    nom_document: '',
+    statut: 'En cours'
+  });
 
   // Pré-remplir le formulaire avec les valeurs de la session sélectionnée
   useEffect(() => {
@@ -144,12 +179,12 @@ const Tests: React.FC = () => {
     const sessionsToConsolidate = selectedSessions.length > 0 
       ? allSessions.filter(s => selectedSessions.includes(s.id))
       : allSessions;
-
+    
     if (sessionsToConsolidate.length === 0) {
       setMessage({ type: 'error', text: 'Veuillez sélectionner au moins une session à consolider' });
       return;
     }
-
+    
     const consolidated = consolidateSessionsByUser(sessionsToConsolidate);
     setConsolidatedSessions(consolidated);
     setConsolidationMode('byUser');
@@ -162,12 +197,12 @@ const Tests: React.FC = () => {
     const sessionsToConsolidate = selectedSessions.length > 0 
       ? allSessions.filter(s => selectedSessions.includes(s.id))
       : allSessions;
-
+    
     if (sessionsToConsolidate.length === 0) {
       setMessage({ type: 'error', text: 'Veuillez sélectionner au moins une session à consolider' });
       return;
     }
-
+    
     const globalSession = consolidateAllSessions(sessionsToConsolidate);
     setConsolidatedSessions([globalSession]);
     setConsolidationMode('global');
@@ -220,10 +255,10 @@ const Tests: React.FC = () => {
       tests_bug: consolidated.tests_bug,
       tests_en_cours: consolidated.tests_en_cours
     };
-
+    
     setSelectedSession(consolidated.id);
     setView('tests');
-
+    
     // Stocker temporairement les données consolidées pour l'affichage
     (window as any).tempConsolidatedSession = tempSession;
   };
@@ -359,24 +394,177 @@ const Tests: React.FC = () => {
     }
   };
 
-  const handleCreateSession = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleExportConsolidatedWord = async (consolidated: ConsolidatedSession) => {
     try {
-      const sessionData = {
-        nom: sessionForm.nom,
-        description: sessionForm.description,
-        applicationId: sessionForm.applicationId || undefined,
-        nom_document: sessionForm.nom_document || undefined,
-        statut: sessionForm.statut
-      };
-      const newSession = await testSessionsAPI.create(sessionData);
-      setMessage({ type: 'success', text: 'Session créée avec succès!' });
-      setShowSessionModal(false);
-      setSessionForm({ nom: '', description: '', nom_document: '', applicationId: 0, statut: 'En cours' });
-      fetchSessions();
-      // Automatically select the newly created session
-      setSelectedSession(newSession.id);
-    } catch (err: unknown) {
+      const today = new Date();
+      const formattedDate = today.toLocaleDateString('fr-FR', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      });
+
+      // Créer les lignes du tableau pour les tests consolidés
+      const tableRows = [
+        // En-tête du tableau
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Fonction", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Précondition", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Étapes", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Résultat Attendu", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Résultat Obtenu", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Statut", bold: true })] })] })
+          ]
+        })
+      ];
+
+      // Ajouter chaque test consolidé comme une ligne du tableau
+      consolidated.consolidatedTests.forEach((test: Test) => {
+        tableRows.push(
+          new TableRow({
+            children: [
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.fonction || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.precondition || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.etapes || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.resultatAttendu || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.resultatObtenu || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.statut || '-' })] })] })
+            ]
+          })
+        );
+      });
+
+      // Créer le document Word pour les sessions consolidées
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            // En-tête
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Rapport de Tests Consolidés",
+                  bold: true,
+                  size: 32
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: consolidated.nom,
+                  italics: true,
+                  size: 20
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Informations de la session consolidée
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Utilisateur: ${consolidated.username}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `Date: ${new Date(consolidated.date_creation).toLocaleDateString('fr-FR')}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `Statut: ${consolidated.statut}` })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Statistiques
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Total: ${consolidated.total_tests}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `OK: ${consolidated.tests_ok}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `BUG: ${consolidated.tests_bug}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `En cours: ${consolidated.tests_en_cours}` })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Information de consolidation
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Information de Consolidation",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Cette session consolidée fusionne ${consolidated.originalSessions.length} session(s) originale(s)` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Sessions originales: ${consolidated.originalSessions.map(s => s.nom).join(', ')}` })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Tableau des tests consolidés
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: tableRows
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Pied de page
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Généré le ${formattedDate} - Session consolidée de ${consolidated.username}` })
+              ],
+              alignment: AlignmentType.CENTER
+            })
+          ]
+        }]
+      });
+
+      // Générer le blob et télécharger
+      const blob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rapport_Consolidated_${consolidated.nom.replace(/\s+/g, '_')}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setMessage({ type: 'success', text: 'Document Word consolidé généré avec succès!' });
+    } catch (err) {
+      console.error('Erreur détaillée lors de la génération Word consolidé:', err);
+      setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word consolidé' });
+    }
+  };
+
+   const handleCreateSession = async (e: React.FormEvent) => {
+     e.preventDefault();
+     try {
+       const sessionData = {
+         nom: sessionForm.nom,
+         description: sessionForm.description,
+         applicationId: sessionForm.applicationId || undefined,
+         environnement: sessionForm.environnement || undefined,
+         version: sessionForm.version || undefined,
+         nom_document: sessionForm.nom_document || undefined,
+         statut: sessionForm.statut
+       };
+       const newSession = await testSessionsAPI.create(sessionData);
+       setMessage({ type: 'success', text: 'Session créée avec succès!' });
+       setShowSessionModal(false);
+       setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nom_document: '', statut: 'En cours' });
+       fetchSessions();
+       // Automatically select the newly created session
+       setSelectedSession(newSession.id);
+     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string | unknown[] } } };
       const detail = error.response?.data?.detail;
       let errorText = 'Erreur lors de la création';
@@ -412,13 +600,13 @@ const Tests: React.FC = () => {
     }
   };
 
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       // Filter out 0/empty values for optional fields and prepare data
       const testData: Partial<Test> = {};
-
+      
       if (formData.sessionId) testData.sessionId = formData.sessionId;
       if (formData.applicationId) testData.applicationId = formData.applicationId;
       if (formData.fonction) testData.fonction = formData.fonction;
@@ -429,7 +617,7 @@ const Tests: React.FC = () => {
       if (formData.statut) testData.statut = formData.statut;
       if (formData.commentaires) testData.commentaires = formData.commentaires;
       if (formData.image) testData.image = formData.image;
-
+      
       await testsAPI.create(testData);
       setMessage({ type: 'success', text: 'Test ajouté avec succès!' });
       // Réinitialiser tous les champs du formulaire après la soumission
@@ -506,13 +694,265 @@ const Tests: React.FC = () => {
     setShowEditModal(true);
   };
 
+  const openEditSessionModal = (session: TestSession) => {
+    setEditingSession(session);
+    setEditSessionForm({
+      nom: session.nom,
+      description: session.description || '',
+      applicationId: session.applicationId || 0,
+      environnement: session.environnement || '',
+      version: session.version || '',
+      nom_document: session.nom_document || '',
+      statut: session.statut || 'En cours'
+    });
+    setShowEditSessionModal(true);
+  };
+
+  const handleUpdateSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSession) return;
+
+    try {
+      const sessionData = {
+        nom: editSessionForm.nom,
+        description: editSessionForm.description,
+        applicationId: editSessionForm.applicationId || undefined,
+        environnement: editSessionForm.environnement || undefined,
+        version: editSessionForm.version || undefined,
+        nom_document: editSessionForm.nom_document || undefined,
+        statut: editSessionForm.statut
+      };
+      await testSessionsAPI.update(editingSession.id, sessionData);
+      setMessage({ type: 'success', text: 'Session mise à jour!' });
+      setShowEditSessionModal(false);
+      setEditingSession(null);
+      fetchSessions();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erreur lors de la mise à jour' });
+    }
+  };
+
+  const handleGenerateTestWord = async (test: Test) => {
+    try {
+      console.log('Début de la génération Word pour le test:', test);
+      // Créer un vrai document Word avec la librairie docx
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "RAPPORT DE TEST INDIVIDUEL",
+                  bold: true,
+                  size: 32
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "============================",
+                  bold: true,
+                  size: 24
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "INFORMATIONS GÉNÉRALES",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "-------------------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `ID du test: ${test.id}` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Fonction: ${test.fonction || 'Non spécifiée'}` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Précondition: ${test.precondition || 'Non spécifiée'}` })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "DÉTAILS DU TEST",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "---------------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Étapes: ${test.etapes || 'Non spécifiées'}` })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "RÉSULTATS",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "----------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Résultat attendu: ${test.resultatAttendu || 'Non spécifié'}` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Résultat obtenu: ${test.resultatObtenu || 'Non spécifié'}` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Statut: ${test.statut || 'Non spécifié'}` })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "COMMENTAIRES",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "------------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: test.commentaires || 'Aucun commentaire' })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "MÉTADONNÉES",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "------------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Date de génération: ${new Date().toLocaleDateString('fr-FR')}` })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Heure de génération: ${new Date().toLocaleTimeString('fr-FR')}` })
+              ]
+            }),
+            new Paragraph({ text: "" }), // Espace
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "STATUT",
+                  bold: true,
+                  size: 24
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "------",
+                  bold: true
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: "Ce document a été généré automatiquement par IT Access Manager" })
+              ]
+            })
+          ]
+        }]
+      });
+
+      // Générer le blob et télécharger
+      const blob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Test_${test.id}_${test.fonction || 'test'}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
+    } catch (err) {
+      console.error('Erreur détaillée lors de la génération Word:', err);
+      setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
+    }
+  };
+
   const handleUpdateTest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTest) return;
-
+    
     try {
       const testData: Partial<Test> = {};
-
+      
       if (formData.sessionId) testData.sessionId = formData.sessionId;
       if (formData.applicationId) testData.applicationId = formData.applicationId;
       if (formData.fonction) testData.fonction = formData.fonction;
@@ -523,7 +963,7 @@ const Tests: React.FC = () => {
       if (formData.statut) testData.statut = formData.statut;
       if (formData.commentaires) testData.commentaires = formData.commentaires;
       if (formData.image) testData.image = formData.image;
-
+      
       await testsAPI.update(editingTest.id, testData);
       setMessage({ type: 'success', text: 'Test modifié avec succès!' });
       setShowEditModal(false);
@@ -565,18 +1005,145 @@ const Tests: React.FC = () => {
     if (tempConsolidated && tempConsolidated.id === sessionId) {
       return tempConsolidated.tests || [];
     }
-
+    
     // Sinon, retourner les tests normaux
     return tests.filter(t => t.sessionId === sessionId);
   };
 
-  const getStatutClass = (statut: string) => {
-    switch(statut) {
-      case 'OK': return styles.statutOk;
-      case 'BUG': return styles.statutBug;
-      case 'EN COURS': return styles.statutEnCours;
-      case 'BLOQUE': return styles.statutBloque;
-      default: return {};
+  const handleExportSessionWord = async (session: TestSession) => {
+    try {
+      const sessionTests = getSessionTests(session.id);
+      const today = new Date();
+      const formattedDate = today.toLocaleDateString('fr-FR', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      });
+
+      // Créer les lignes du tableau pour les tests
+      const tableRows = [
+        // En-tête du tableau
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "ID", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Fonction", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Précondition", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Étapes", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Résultat Attendu", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Résultat Obtenu", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Statut", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Commentaires", bold: true })] })] })
+          ]
+        })
+      ];
+
+      // Ajouter chaque test comme une ligne du tableau
+      sessionTests.forEach((test: Test) => {
+        tableRows.push(
+          new TableRow({
+            children: [
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${test.id}` })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.fonction || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.precondition || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.etapes || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.resultatAttendu || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.resultatObtenu || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.statut || '-' })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: test.commentaires || '-' })] })] })
+            ]
+          })
+        );
+      });
+
+      // Créer le document Word avec le même format que le PDF
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            // En-tête
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: session.applicationNom || session.nom,
+                  bold: true,
+                  size: 32
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: session.nom ? `Session: ${session.nom}` : '',
+                  italics: true,
+                  size: 20
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Informations de la session
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Date: ${formattedDate}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `Environnement: ${session.environnement || '-'}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `Version: ${session.version || '-'}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `Statut: ${session.statut}` })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Statistiques
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Total: ${sessionTests.length}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `OK: ${sessionTests.filter((t: Test) => t.statut === 'OK').length}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `BUG: ${sessionTests.filter((t: Test) => t.statut === 'BUG').length}` }),
+                new TextRun({ text: "\t" }),
+                new TextRun({ text: `EN COURS: ${sessionTests.filter((t: Test) => t.statut === 'EN COURS').length}` })
+              ],
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Tableau des tests
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: tableRows
+            }),
+            new Paragraph({ text: "" }), // Espace
+            
+            // Pied de page
+            new Paragraph({
+              children: [
+                new TextRun({ text: "IT Access Manager - Document de test" })
+              ],
+              alignment: AlignmentType.CENTER
+            })
+          ]
+        }]
+      });
+
+      // Générer le blob et télécharger
+      const blob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rapport_Tests_${session.nom.replace(/\s+/g, '_')}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setMessage({ type: 'success', text: 'Document Word généré avec succès!' });
+    } catch (err) {
+      console.error('Erreur détaillée lors de la génération Word session:', err);
+      setMessage({ type: 'error', text: 'Erreur lors de la génération du document Word' });
     }
   };
 
@@ -681,7 +1248,7 @@ const Tests: React.FC = () => {
       </body>
       </html>
     `;
-
+    
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(printContent);
@@ -690,216 +1257,218 @@ const Tests: React.FC = () => {
     }
   };
 
-  // Render Sessions List
-  const renderSessions = () => (
-    <div>
-      <div style={styles.sessionsHeader}>
-        <div style={styles.headerLeft}>
-          {isAdmin && (
-            <div style={styles.userFilter}>
-              <label style={styles.filterLabel}>Filtrer par utilisateur:</label>
-              <select 
-                value={selectedUser || ''} 
-                onChange={(e) => setSelectedUser(e.target.value ? Number(e.target.value) : null)}
-                style={styles.filterSelect}
-              >
-                <option value="">Tous les utilisateurs</option>
-                {(() => {
-                  console.log('Rendering users filter, users:', users);
-                  console.log('Users length:', users?.length);
-                  console.log('Is users array?', Array.isArray(users));
-
-                  // Test avec des données factices si le tableau est vide
-                  const usersToRender = Array.isArray(users) && users.length > 0 ? users : [
-                    { id: 1, username: 'Test User 1' },
-                    { id: 2, username: 'Test User 2' }
-                  ];
-
-                  return usersToRender.map(user => (
-                    <option key={user.id} value={user.id}>{user.username}</option>
-                  ));
-                })()}
-              </select>
-            </div>
-          )}
-          {isAdmin && (
-            <div style={styles.consolidationButtons}>
-              {consolidationMode === 'none' ? (
-                <>
-                  <button 
-                    style={{...styles.consolidationButton, backgroundColor: selectionMode ? '#dc3545' : '#6c757d'}} 
-                    onClick={handleToggleSelectionMode}
-                    title={selectionMode ? "Arrêter la sélection" : "Sélectionner des sessions"}
-                  >
-                    <FontAwesomeIcon icon={faCompress} /> {selectionMode ? 'Sélection active' : 'Sélectionner'}
-                  </button>
-                  {selectionMode && (
-                    <>
-                      <button 
-                        style={styles.consolidationButton} 
-                        onClick={handleSelectAllSessions}
-                        title="Tout sélectionner"
-                      >
-                        Tout
-                      </button>
-                      <button 
-                        style={styles.consolidationButton} 
-                        onClick={handleClearSelection}
-                        title="Effacer la sélection"
-                      >
-                        Effacer
-                      </button>
-                      <span style={styles.selectionInfo}>
-                        {selectedSessions.length} session(s) sélectionnée(s)
-                      </span>
-                    </>
-                  )}
-                  <button 
-                    style={styles.consolidationButton} 
-                    onClick={handleConsolidateByUser}
-                    title="Consolider par utilisateur"
-                    disabled={selectionMode && selectedSessions.length === 0}
-                  >
-                    <FontAwesomeIcon icon={faCompress} /> Par utilisateur
-                  </button>
-                  <button 
-                    style={styles.consolidationButton} 
-                    onClick={handleConsolidateGlobal}
-                    title="Consolider globalement"
-                    disabled={selectionMode && selectedSessions.length === 0}
-                  >
-                    <FontAwesomeIcon icon={faCompress} /> Global
-                  </button>
-                </>
-              ) : (
-                <button 
-                  style={styles.resetButton} 
-                  onClick={handleResetConsolidation}
-                  title="Réinitialiser la consolidation"
-                >
-                  <FontAwesomeIcon icon={faExpand} /> Réinitialiser
-                </button>
-              )}
-            </div>
-          )}
+   // Render Sessions List
+   const renderSessions = () => (
+     <div>
+       <div className="tests-sessions-header">
+         <div className="tests-header-left">
+           {isAdmin && (
+             <div className="tests-user-filter">
+               <label className="tests-filter-label">Filtrer par utilisateur:</label>
+               <select 
+                 value={selectedUser || ''} 
+                 onChange={(e) => setSelectedUser(e.target.value ? Number(e.target.value) : null)}
+                 className="tests-filter-select"
+               >
+                 <option value="">Tous les utilisateurs</option>
+                 {(() => {
+                   console.log('Rendering users filter, users:', users);
+                   console.log('Users length:', users?.length);
+                   console.log('Is users array?', Array.isArray(users));
+                   
+                   // Test avec des données factices si le tableau est vide
+                   const usersToRender = Array.isArray(users) && users.length > 0 ? users : [
+                     { id: 1, username: 'Test User 1' },
+                     { id: 2, username: 'Test User 2' }
+                   ];
+                   
+                   return usersToRender.map(user => (
+                     <option key={user.id} value={user.id}>{user.username}</option>
+                   ));
+                 })()}
+               </select>
+             </div>
+           )}
+         </div>
+         <div className="tests-header-right">
+           {isAdmin && (
+             <div className="tests-consolidation-buttons">
+               {consolidationMode === 'none' ? (
+                 <>
+                   <button 
+                     className={`tests-consolidation-button ${selectionMode ? 'tests-consolidation-button-active' : ''}`}
+                     onClick={handleToggleSelectionMode}
+                     title={selectionMode ? "Arrêter la sélection" : "Sélectionner des sessions"}
+                   >
+                     <FontAwesomeIcon icon={faCompress} />
+                   </button>
+                   {selectionMode && (
+                     <>
+                       <button 
+                         className="tests-consolidation-button"
+                         onClick={handleSelectAllSessions}
+                         title="Tout sélectionner"
+                       >
+                         Tout
+                       </button>
+                       <button 
+                         className="tests-consolidation-button"
+                         onClick={handleClearSelection}
+                         title="Effacer la sélection"
+                       >
+                         Effacer
+                       </button>
+                       <span className="tests-selection-info">
+                         {selectedSessions.length} session(s) sélectionnée(s)
+                       </span>
+                     </>
+                   )}
+                   <button 
+                     className="tests-consolidation-button"
+                     onClick={handleConsolidateByUser}
+                     title="Consolider par utilisateur"
+                     disabled={selectionMode && selectedSessions.length === 0}
+                   >
+                     <FontAwesomeIcon icon={faCompress} />
+                   </button>
+                   <button 
+                     className="tests-consolidation-button"
+                     onClick={handleConsolidateGlobal}
+                     title="Consolider globalement"
+                     disabled={selectionMode && selectedSessions.length === 0}
+                   >
+                     <FontAwesomeIcon icon={faCompress} />
+                   </button>
+                 </>
+               ) : (
+                 <button 
+                   className="tests-reset-button"
+                   onClick={handleResetConsolidation}
+                   title="Réinitialiser la consolidation"
+                 >
+                   <FontAwesomeIcon icon={faExpand} />
+                 </button>
+               )}
+             </div>
+            )}
+          </div>
         </div>
-        <button style={styles.newSessionButton} onClick={() => { setShowSessionModal(true); }}>
-          <FontAwesomeIcon icon={faPlus} /> Nouvelle Session
-        </button>
-      </div>
-      <div style={styles.sessionsGrid}>
+      <div className="tests-sessions-grid">
         {consolidationMode !== 'none' ? (
           consolidatedSessions.map(consolidated => (
-            <div key={consolidated.id} style={{...styles.sessionCard, border: '2px solid #007bff', backgroundColor: '#f8f9ff'}}>
-              <div style={styles.sessionHeader}>
-                <h3 style={styles.sessionTitle}>{consolidated.nom}</h3>
-                <span style={{...styles.statusBadge, backgroundColor: getStatusColor(consolidated.statut)}}>
+            <div key={consolidated.id} className="tests-session-card tests-session-card-consolidated">
+              <div className="tests-session-header">
+                <h3 className="tests-session-title">{consolidated.nom}</h3>
+                <span className="tests-status-badge" style={{ backgroundColor: getStatusColor(consolidated.statut) }}>
                   {consolidated.statut}
                 </span>
               </div>
-              <p style={styles.sessionDescription}>{consolidated.description}</p>
-              <div style={styles.sessionMeta}>
+              <p className="tests-session-description">{consolidated.description}</p>
+              <div className="tests-session-meta">
                 <span><strong>Utilisateur:</strong> {consolidated.username}</span>
                 <span><strong>Tests:</strong> {consolidated.total_tests}</span>
                 <span><strong>OK:</strong> {consolidated.tests_ok}</span>
                 <span><strong>BUG:</strong> {consolidated.tests_bug}</span>
                 <span><strong>En cours:</strong> {consolidated.tests_en_cours}</span>
               </div>
-              <div style={styles.sessionMeta}>
+              <div className="tests-session-meta">
                 <span><strong>Sessions originales:</strong> {consolidated.originalSessions.length}</span>
                 <span><strong>Créé le:</strong> {new Date(consolidated.date_creation).toLocaleDateString()}</span>
               </div>
-              <div style={styles.sessionActions}>
+              <div className="tests-session-actions">
                 <button 
-                  style={styles.viewButton}
+                  className="tests-view-button"
                   onClick={() => handleViewConsolidatedSession(consolidated)}
                   title="Voir les détails"
                 >
-                  <FontAwesomeIcon icon={faEye} /> Voir les tests
+                  <FontAwesomeIcon icon={faEye} />
                 </button>
                 <button 
-                  style={styles.exportButton}
+                  className="tests-export-button"
                   onClick={() => handleExportConsolidatedPDF(consolidated)}
                   title="Exporter en PDF"
                 >
-                  <FontAwesomeIcon icon={faFilePdf} /> PDF
+                  <FontAwesomeIcon icon={faFilePdf} />
+                </button>
+                <button 
+                  className="tests-export-button"
+                  onClick={() => handleExportConsolidatedWord(consolidated)}
+                  title="Exporter en Word"
+                >
+                  <FontAwesomeIcon icon={faFileWord} />
                 </button>
               </div>
             </div>
           ))
         ) : (
-          <div style={styles.sessionsGrid}>
+          <div className={window.innerWidth <= 768 ? 'tests-sessions-grid' : 'tests-sessions-grid-desktop'}>
             {sessions.map((session) => (
-            <div key={session.id} style={{
-              ...styles.sessionCard, 
-              ...(selectionMode && selectedSessions.includes(session.id) ? { border: '2px solid #007bff', backgroundColor: '#f8f9ff' } : {}),
-              ...(selectionMode ? { cursor: 'pointer' } : {})
-            }}>
+            <div key={session.id} className={`tests-session-card ${selectionMode && selectedSessions.includes(session.id) ? 'tests-session-card-selected' : ''} ${selectionMode ? 'tests-session-card-selectable' : ''}`}>
               {selectionMode && (
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  zIndex: 10,
-                  backgroundColor: 'white',
-                  borderRadius: '6px',
-                  padding: '4px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  border: '2px solid #e1e5e9'
-                }}>
+                <div className="tests-selection-checkbox">
                   <input 
                     type="checkbox"
                     checked={selectedSessions.includes(session.id)}
                     onChange={() => handleToggleSessionSelection(session.id)}
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      cursor: 'pointer',
-                      accentColor: '#3b82f6',
-                      margin: '0'
-                    }}
+                    className="tests-checkbox"
                   />
                 </div>
               )}
-              <div style={styles.sessionHeader}>
-                <h3 style={styles.sessionTitle}>{session.nom}</h3>
-                <span style={{...styles.statusBadge, backgroundColor: getStatusColor(session.statut)}}>
+              <div className="tests-session-header">
+                <h3 className="tests-session-title">{session.nom}</h3>
+                <span className="tests-status-badge" style={{ backgroundColor: getStatusColor(session.statut) }}>
                   {session.statut}
                 </span>
               </div>
               {session.createdByUsername && (
-                <p style={styles.sessionOwner}><i className="fas fa-user"></i> Créé par: {session.createdByUsername}</p>
+                <p className="tests-session-owner"><i className="fas fa-user"></i> Créé par: {session.createdByUsername}</p>
               )}
-              <p style={styles.sessionDesc}>{session.description || 'Aucune description'}</p>
+              <p className="tests-session-desc">{session.description || 'Aucune description'}</p>
               {session.nom_document && (
-                <p style={styles.sessionInfo}><i className="fas fa-file"></i> Document: {session.nom_document}</p>
+                <p className="tests-session-info"><i className="fas fa-file"></i> Document: {session.nom_document}</p>
               )}
-              <div style={styles.sessionStats}>
+              <div className="tests-session-stats">
                 <span>Total: {getSessionTests(session.id).length}</span>
-                <span style={styles.statOk}><FontAwesomeIcon icon={faCheck} /> {getSessionTests(session.id).filter((t: Test) => t.statut === 'OK').length}</span>
-                <span style={styles.statBug}><FontAwesomeIcon icon={faTimes} /> {getSessionTests(session.id).filter((t: Test) => t.statut === 'BUG').length}</span>
+                <span className="tests-stat-ok"><FontAwesomeIcon icon={faCheck} /> {getSessionTests(session.id).filter((t: Test) => t.statut === 'OK').length}</span>
+                <span className="tests-stat-bug"><FontAwesomeIcon icon={faTimes} /> {getSessionTests(session.id).filter((t: Test) => t.statut === 'BUG').length}</span>
               </div>
-              <div style={styles.sessionActions}>
-                <button 
-                  style={styles.viewButton} 
-                  onClick={() => {
-                    setSelectedSession(session.id);
-                    setView('tests');
-                  }}
-                >
-                  <FontAwesomeIcon icon={faEye} /> Voir les tests
-                </button>
-                <button 
-                  style={styles.exportButton} 
-                  onClick={() => {
-                    handleExportSessionPDF(session);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faFilePdf} /> PDF
-                </button>
-                {session.statut !== 'Terminé' && (
+               <div className="tests-session-actions">
+                 <button 
+                   className="tests-view-button"
+                   onClick={() => {
+                     setSelectedSession(session.id);
+                     setView('tests');
+                   }}
+                 >
+                   <FontAwesomeIcon icon={faEye} />
+                 </button>
+                 <button 
+                   className="tests-edit-button"
+                   onClick={() => openEditSessionModal(session)}
+                   title="Modifier la session"
+                   disabled={session.statut === 'Terminé'}
+                 >
+                   <FontAwesomeIcon icon={faEdit} />
+                 </button>
+                 <button 
+                   className="tests-export-button"
+                   onClick={() => {
+                     handleExportSessionPDF(session);
+                   }}
+                 >
+                   <FontAwesomeIcon icon={faFilePdf} />
+                 </button>
+                 <button 
+                   className="tests-export-button"
+                   onClick={() => {
+                     handleExportSessionWord(session);
+                   }}
+                 >
+                   <FontAwesomeIcon icon={faFileWord} />
+                 </button>
+                 {session.statut !== 'Terminé' && (
                   <button 
-                    style={{...styles.deleteButton, padding: '8px 12px', backgroundColor: 'transparent', color: '#ff6b6b', border: '1px solid #ff6b6b'}} 
+                    className="tests-delete-button tests-delete-button-outline"
                     onClick={() => {
                       handleDeleteSession(session.id);
                     }} 
@@ -917,28 +1486,30 @@ const Tests: React.FC = () => {
     </div>
   );
 
+  
+  
   // Render Tests for selected session
   const renderTests = () => {
     const sessionTests = selectedSession ? getSessionTests(selectedSession) : tests;
     const currentSession = sessions.find(s => s.id === selectedSession);
-
+    
     return (
       <div>
-        <button style={styles.backButton} onClick={() => { setSelectedSession(null); setView('sessions'); }}>
+        <button className="tests-back-button" onClick={() => { setSelectedSession(null); setView('sessions'); }}>
           <i className="fas fa-arrow-left"></i> Retour aux sessions
         </button>
-
+        
         {currentSession && (
-          <div style={styles.currentSessionInfo}>
+          <div className="tests-current-session-info">
             <h3><i className="fas fa-file-alt"></i> {currentSession.nom}</h3>
             <p>{currentSession.description}</p>
-            {currentSession.nom_document && <p style={styles.sessionInfo}><i className="fas fa-file"></i> Document: {currentSession.nom_document}</p>}
+            {currentSession.nom_document && <p className="tests-session-info"><i className="fas fa-file"></i> Document: {currentSession.nom_document}</p>}
           </div>
         )}
 
-        <div style={styles.formSection}>
+        <div className="tests-form-section">
           <button 
-            style={styles.addTestButton} 
+            className="tests-add-test-button"
             onClick={() => {
               // Pré-remplir le formulaire avec les infos de la session
               const currentSession = sessions.find(s => s.id === selectedSession);
@@ -959,75 +1530,171 @@ const Tests: React.FC = () => {
               setShowTestForm(true);
             }}
           >
-            <FontAwesomeIcon icon={faPlus} /> Ajouter un test
+            <FontAwesomeIcon icon={faPlus} />
           </button>
         </div>
 
-        <div style={styles.tableSection}>
-          <div style={styles.testsHeader}>
+        <div className="tests-table-section">
+          <div className="tests-tests-header">
             <div>
-              <h3 style={styles.sectionTitle}>Tests de la session</h3>
-              <p style={styles.testsSubtitle}>
+              <h3 className="tests-section-title">Tests de la session</h3>
+              <p className="tests-tests-subtitle">
                 {sessionTests.length === 0
                   ? 'Aucun test enregistré pour cette session.'
                   : `${sessionTests.length} test${sessionTests.length > 1 ? 's' : ''} au total.`}
               </p>
             </div>
           </div>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Fonction</th>
-                <th>Précondition</th>
-                <th>Étapes</th>
-                <th>Résultat Attendu</th>
-                <th>Résultat Obtenu</th>
-                <th>Statut</th>
-                <th>Commentaires</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sessionTests.map((test: Test) => (
-                <tr key={test.id}>
-                  <td>{test.id}</td>
-                  <td>{test.fonction}</td>
-                  <td>{test.precondition || '-'}</td>
-                  <td>{test.etapes || '-'}</td>
-                  <td>{test.resultatAttendu || '-'}</td>
-                  <td>{test.resultatObtenu || '-'}</td>
-                  <td><span style={getStatutClass(test.statut)}>{test.statut}</span></td>
-                  <td>{test.commentaires || '-'}</td>
-                  <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                    <button style={{...styles.editButton, padding: '6px', backgroundColor: 'transparent', color: '#4a90e2'}} onClick={() => handleEditTest(test)} title="Modifier">
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                    <button style={{...styles.deleteButton, padding: '6px', backgroundColor: 'transparent', color: '#ff6b6b'}} onClick={() => handleDeleteTest(test.id)} title="Supprimer">
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          
+          {/* Affichage en fonction de la taille d'écran */}
+          {isMobile ? (
+            /* Affichage en cartes pour mobile */
+            <div className="tests-mobile-cards">
+            {sessionTests.map((test: Test) => (
+              <div key={test.id} className="tests-test-card" style={{ border: `2px solid ${getStatusColor(test.statut)}` }}>
+                <div className="tests-session-header">
+                  <h4 className="tests-test-title">
+                    {test.fonction || 'Test sans fonction'}
+                  </h4>
+                  <span className="tests-status-badge" style={{ backgroundColor: getStatusColor(test.statut) }}>
+                    {test.statut}
+                  </span>
+                </div>
+                
+                <div className="tests-test-field">
+                  <strong>Précondition:</strong> {test.precondition || '-'}
+                </div>
+                
+                <div className="tests-test-field">
+                  <strong>Étapes:</strong> 
+                  <div className="tests-test-field-value">
+                    {test.etapes || '-'}
+                  </div>
+                </div>
+                
+                <div className="tests-test-field">
+                  <strong>Résultat Attendu:</strong>
+                  <div className="tests-test-field-value">
+                    {test.resultatAttendu || '-'}
+                  </div>
+                </div>
+                
+                <div className="tests-test-field">
+                  <strong>Résultat Obtenu:</strong>
+                  <div className="tests-test-field-value">
+                    {test.resultatObtenu || '-'}
+                  </div>
+                </div>
+                
+                {test.commentaires && (
+                  <div className="tests-test-field">
+                    <strong>Commentaires:</strong>
+                    <div className="tests-test-field-value">
+                      {test.commentaires}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="tests-session-actions">
+                  <button className="tests-edit-button tests-edit-button-compact" onClick={() => handleGenerateTestWord(test)} title="Générer Word">
+                    <FontAwesomeIcon icon={faFileWord} />
+                  </button>
+                  <button className="tests-edit-button tests-edit-button-compact" onClick={() => handleEditTest(test)} title="Modifier">
+                    <FontAwesomeIcon icon={faEdit} />
+                  </button>
+                  <button className="tests-delete-button tests-delete-button-compact" onClick={() => handleDeleteTest(test.id)} title="Supprimer">
+                    <FontAwesomeIcon icon={faTrash} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          ) : (
+            /* Affichage en tableau pour web/desktop */
+            <div className="tests-table-container">
+              <table className="tests-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fonction</th>
+                    <th>Précondition</th>
+                    <th>Étapes</th>
+                    <th>Résultat Attendu</th>
+                    <th>Résultat Obtenu</th>
+                    <th>Statut</th>
+                    <th>Commentaires</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessionTests.map((test: Test) => (
+                    <tr key={test.id}>
+                      <td>{test.id}</td>
+                      <td>{test.fonction || '-'}</td>
+                      <td>{test.precondition ? (test.precondition.length > 50 ? test.precondition.substring(0, 50) + '...' : test.precondition) : '-'}</td>
+                      <td>{test.etapes ? (test.etapes.length > 50 ? test.etapes.substring(0, 50) + '...' : test.etapes) : '-'}</td>
+                      <td>{test.resultatAttendu ? (test.resultatAttendu.length > 50 ? test.resultatAttendu.substring(0, 50) + '...' : test.resultatAttendu) : '-'}</td>
+                      <td>{test.resultatObtenu ? (test.resultatObtenu.length > 50 ? test.resultatObtenu.substring(0, 50) + '...' : test.resultatObtenu) : '-'}</td>
+                      <td>
+                        <span className="tests-status-badge" style={{ backgroundColor: getStatusColor(test.statut) }}>
+                          {test.statut}
+                        </span>
+                      </td>
+                      <td>{test.commentaires ? (test.commentaires.length > 30 ? test.commentaires.substring(0, 30) + '...' : test.commentaires) : '-'}</td>
+                      <td className="tests-table-actions">
+                        <button 
+                          className="tests-edit-button"
+                          onClick={() => handleEditTest(test)}
+                          title="Modifier"
+                        >
+                          <FontAwesomeIcon icon={faEdit} />
+                        </button>
+                        <button 
+                          className="tests-export-button"
+                          onClick={() => handleGenerateTestWord(test)}
+                          title="Exporter en Word"
+                        >
+                          <FontAwesomeIcon icon={faFileWord} />
+                        </button>
+                        <button 
+                          className="tests-delete-button tests-delete-button-outline"
+                          onClick={() => handleDeleteTest(test.id)}
+                          title="Supprimer"
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     );
   };
 
-  return (
-    <div style={styles.container}>
-      <main style={styles.main}>
-        <div style={styles.sessionsHeader}>
-          <div>
-            <h2 style={styles.pageTitle}><i className="fas fa-vial"></i> {isAdmin ? 'Gestion des Tests' : 'Mes Sessions de Test'}</h2>
-            <p style={styles.pageSubtitle}>{isAdmin ? 'Documents de Test - Planification et suivi des tests' : 'Vos sessions de test personnelles'}</p>
-          </div>
-        </div>
-
+   return (
+     <div className="tests-container">
+       <main className="tests-main">
+         <div className="tests-sessions-header">
+           <div>
+             <h2 className="tests-page-title"><i className="fas fa-vial"></i> {isAdmin ? 'Gestion des Tests' : 'Mes Sessions de Test'}</h2>
+             <p className="tests-page-subtitle">{isAdmin ? 'Documents de Test - Planification et suivi des tests' : 'Vos sessions de test personnelles'}</p>
+           </div>
+           <button
+             className="tests-new-session-button"
+             onClick={() => setShowSessionModal(true)}
+             title="Créer une nouvelle session"
+           >
+             <FontAwesomeIcon icon={faPlus} />
+             Nouvelle session
+           </button>
+         </div>
+        
         {message.text && (
-          <div style={message.type === 'success' ? styles.success : styles.error}>
+          <div className={message.type === 'success' ? 'tests-success' : 'tests-error'}>
             <i className={message.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'}></i>
             {message.text}
           </div>
@@ -1037,119 +1704,238 @@ const Tests: React.FC = () => {
       </main>
 
       {showSessionModal && (
-        <div style={styles.modal}>
-          <div style={{ ...styles.modalContent, ...styles.sessionModalContent }}>
-            <span style={styles.close} onClick={() => setShowSessionModal(false)}>&times;</span>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.sectionTitle}>Nouvelle session de test</h3>
-              <p style={styles.modalSubtitle}>
+        <div className="tests-modal">
+          <div className="tests-modal-content tests-session-modal-content">
+            <span className="tests-close" onClick={() => setShowSessionModal(false)}>&times;</span>
+            <div className="tests-modal-header">
+              <h3 className="tests-section-title">Nouvelle session</h3>
+              <p className="tests-modal-subtitle">
                 Créez une session pour regrouper vos cas de test et générer un export PDF.
               </p>
             </div>
-            <form onSubmit={handleCreateSession} style={styles.sessionForm}>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Nom de la session *</label>
-                  <input
-                    type="text"
-                    value={sessionForm.nom}
-                    onChange={(e) => setSessionForm({ ...sessionForm, nom: e.target.value })}
-                    style={styles.input}
-                    required
-                    placeholder="Ex: Test Release v1.0"
-                  />
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Application</label>
-                  <select
-                    value={sessionForm.applicationId || ''}
-                    onChange={(e) => setSessionForm({ ...sessionForm, applicationId: Number(e.target.value) })}
-                    style={styles.select}
-                  >
-                    <option value="">Sélectionner une application</option>
-                    {applications.map((app) => (
-                      <option key={app.id} value={app.id}>{app.nom}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Nom du document de test</label>
-                  <input
-                    type="text"
-                    value={sessionForm.nom_document}
-                    onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
-                    style={styles.input}
-                    placeholder="Ex: Plan de tests v1.0"
-                  />
-                </div>
-              </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Statut</label>
-                  <select
-                    value={sessionForm.statut}
-                    onChange={(e) => setSessionForm({ ...sessionForm, statut: e.target.value })}
-                    style={styles.select}
-                  >
-                    <option value="En cours">En cours</option>
-                    <option value="Terminé">Terminé</option>
-                  </select>
-                </div>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Description</label>
-                <textarea
-                  value={sessionForm.description}
-                  onChange={(e) => setSessionForm({ ...sessionForm, description: e.target.value })}
-                  style={{ ...styles.textarea, minHeight: '80px' }}
-                  placeholder="Description de la session de test..."
-                />
-              </div>
-              <div style={styles.formActions}>
+             <form onSubmit={handleCreateSession} className="tests-session-form">
+               <div className="tests-form-row">
+                 <div className="tests-form-group">
+                   <label className="tests-label">Nom de la session *</label>
+                   <input
+                     type="text"
+                     value={sessionForm.nom}
+                     onChange={(e) => setSessionForm({ ...sessionForm, nom: e.target.value })}
+                     className="tests-session-modal-input"
+                     required
+                     placeholder="Ex: Test Release v1.0"
+                   />
+                 </div>
+                 <div className="tests-form-group">
+                   <label className="tests-label">Application</label>
+                   <select
+                     value={sessionForm.applicationId || ''}
+                     onChange={(e) => setSessionForm({ ...sessionForm, applicationId: Number(e.target.value) })}
+                     className="tests-session-modal-select"
+                   >
+                     <option value="">Sélectionner une application</option>
+                     {applications.map((app) => (
+                       <option key={app.id} value={app.id}>{app.nom}</option>
+                     ))}
+                   </select>
+                 </div>
+               </div>
+               <div className="tests-form-row">
+                 <div className="tests-form-group">
+                   <label className="tests-label">Environnement</label>
+                   <input
+                     type="text"
+                     value={sessionForm.environnement}
+                     onChange={(e) => setSessionForm({ ...sessionForm, environnement: e.target.value })}
+                     className="tests-session-modal-input"
+                     placeholder="Ex: Production, Recette..."
+                   />
+                 </div>
+                 <div className="tests-form-group">
+                   <label className="tests-label">Version</label>
+                   <input
+                     type="text"
+                     value={sessionForm.version}
+                     onChange={(e) => setSessionForm({ ...sessionForm, version: e.target.value })}
+                     className="tests-session-modal-input"
+                     placeholder="Ex: v1.0.0"
+                   />
+                 </div>
+               </div>
+               <div className="tests-form-group">
+                 <label className="tests-label">Nom du document</label>
+                 <input
+                   type="text"
+                   value={sessionForm.nom_document}
+                   onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
+                   className="tests-session-modal-input"
+                   placeholder="Ex: Plan de Test - Application X"
+                 />
+               </div>
+               <div className="tests-form-group">
+                 <label className="tests-label">Description</label>
+                 <textarea
+                   value={sessionForm.description}
+                   onChange={(e) => setSessionForm({ ...sessionForm, description: e.target.value })}
+                   className="tests-session-modal-textarea"
+                   placeholder="Description de la session..."
+                   rows={3}
+                 />
+               </div>
+              <div className="tests-form-actions">
+                <button type="button" className="tests-cancel-button" onClick={() => setShowSessionModal(false)}>Annuler</button>
+                <button type="submit" className="tests-submit-button">Créer</button>
                 <button
                   type="button"
                   onClick={() => setShowSessionModal(false)}
-                  style={styles.secondaryButton}
+                  className="tests-secondary-button"
                 >
                   Annuler
                 </button>
-                <button type="submit" style={styles.primaryButton}>
+                <button type="submit" className="tests-primary-button">
                   Créer la session
                 </button>
               </div>
             </form>
           </div>
         </div>
-      )}
+       )}
 
-      {showTestForm && (
-        <div style={styles.modal}>
-          <div style={{ ...styles.modalContent, ...styles.testModalContent }}>
-            <span style={styles.close} onClick={() => setShowTestForm(false)}>&times;</span>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.sectionTitle}>Nouveau test</h3>
+       {showEditSessionModal && (
+         <div className="tests-modal">
+           <div className="tests-modal-content tests-session-modal-content">
+             <span className="tests-close" onClick={() => setShowEditSessionModal(false)}>&times;</span>
+             <div className="tests-modal-header">
+               <h3 className="tests-section-title">Modifier la session</h3>
+               <p className="tests-modal-subtitle">
+                 Modifiez les informations de la session.
+               </p>
+             </div>
+             <form onSubmit={handleUpdateSession} className="tests-session-form">
+               <div className="tests-form-row">
+                 <div className="tests-form-group">
+                   <label className="tests-label">Nom de la session *</label>
+                   <input
+                     type="text"
+                     value={editSessionForm.nom}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, nom: e.target.value })}
+                     className="tests-session-modal-input"
+                     required
+                     placeholder="Ex: Test Release v1.0"
+                   />
+                 </div>
+                 <div className="tests-form-group">
+                   <label className="tests-label">Application</label>
+                   <select
+                     value={editSessionForm.applicationId || ''}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, applicationId: Number(e.target.value) })}
+                     className="tests-session-modal-select"
+                   >
+                     <option value="">Sélectionner une application</option>
+                     {applications.map((app) => (
+                       <option key={app.id} value={app.id}>{app.nom}</option>
+                     ))}
+                   </select>
+                 </div>
+               </div>
+               <div className="tests-form-row">
+                 <div className="tests-form-group">
+                   <label className="tests-label">Nom du document de test</label>
+                   <input
+                     type="text"
+                     value={editSessionForm.nom_document}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, nom_document: e.target.value })}
+                     className="tests-session-modal-input"
+                     placeholder="Ex: Plan de tests v1.0"
+                   />
+                 </div>
+                 <div className="tests-form-group">
+                   <label className="tests-label">Statut</label>
+                   <select
+                     value={editSessionForm.statut}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, statut: e.target.value })}
+                     className="tests-session-modal-select"
+                   >
+                     <option value="En cours">En cours</option>
+                     <option value="Terminé">Terminé</option>
+                     <option value="Bloquée">Bloquée</option>
+                   </select>
+                 </div>
+               </div>
+               <div className="tests-form-row">
+                 <div className="tests-form-group">
+                   <label className="tests-label">Environnement</label>
+                   <input
+                     type="text"
+                     value={editSessionForm.environnement}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, environnement: e.target.value })}
+                     className="tests-session-modal-input"
+                     placeholder="Ex: Production"
+                   />
+                 </div>
+                 <div className="tests-form-group">
+                   <label className="tests-label">Version</label>
+                   <input
+                     type="text"
+                     value={editSessionForm.version}
+                     onChange={(e) => setEditSessionForm({ ...editSessionForm, version: e.target.value })}
+                     className="tests-session-modal-input"
+                     placeholder="Ex: 1.0.0"
+                   />
+                 </div>
+               </div>
+               <div className="tests-form-group">
+                 <label className="tests-label">Description</label>
+                 <textarea
+                   value={editSessionForm.description}
+                   onChange={(e) => setEditSessionForm({ ...editSessionForm, description: e.target.value })}
+                   className="tests-session-modal-textarea"
+                   placeholder="Description de la session de test..."
+                 />
+               </div>
+               <div className="tests-form-actions">
+                 <button
+                   type="button"
+                   onClick={() => setShowEditSessionModal(false)}
+                   className="tests-secondary-button"
+                 >
+                   Annuler
+                 </button>
+                 <button type="submit" className="tests-primary-button">
+                   Enregistrer
+                 </button>
+               </div>
+             </form>
+           </div>
+         </div>
+       )}
+
+       {showTestForm && (
+        <div className="tests-modal">
+          <div className="tests-modal-content tests-test-modal-content">
+            <span className="tests-close" onClick={() => setShowTestForm(false)}>&times;</span>
+            <div className="tests-modal-header">
+              <h3 className="tests-section-title">Nouveau test</h3>
             </div>
-            <form onSubmit={handleSubmit} style={styles.testForm}>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Fonction *</label>
+            <form onSubmit={handleSubmit} className="tests-test-form">
+              <div className="tests-form-row">
+                <div className="tests-form-group">
+                  <label className="tests-label">Fonction *</label>
                   <input
                     type="text"
                     placeholder="Fonction"
                     value={formData.fonction}
                     onChange={(e) => setFormData({ ...formData, fonction: e.target.value })}
-                    style={styles.input}
+                    className="tests-input"
                     required
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Statut *</label>
+                <div className="tests-form-group">
+                  <label className="tests-label">Statut *</label>
                   <select
                     value={formData.statut}
                     onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
-                    style={styles.select}
+                    className="tests-select"
                     required
                   >
                     <option value="">Sélectionner...</option>
@@ -1160,64 +1946,64 @@ const Tests: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Précondition</label>
+              <div className="tests-form-row">
+                <div className="tests-form-group">
+                  <label className="tests-label">Précondition</label>
                   <textarea
                     placeholder="Précondition"
                     value={formData.precondition}
                     onChange={(e) => setFormData({ ...formData, precondition: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Étapes</label>
+                <div className="tests-form-group">
+                  <label className="tests-label">Étapes</label>
                   <textarea
                     placeholder="Étapes"
                     value={formData.etapes}
                     onChange={(e) => setFormData({ ...formData, etapes: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
               </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Résultat attendu</label>
+              <div className="tests-form-row">
+                <div className="tests-form-group">
+                  <label className="tests-label">Résultat attendu</label>
                   <textarea
                     placeholder="Résultat Attendu"
                     value={formData.resultatAttendu}
                     onChange={(e) => setFormData({ ...formData, resultatAttendu: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Résultat obtenu</label>
+                <div className="tests-form-group">
+                  <label className="tests-label">Résultat obtenu</label>
                   <textarea
                     placeholder="Résultat Obtenu"
                     value={formData.resultatObtenu}
                     onChange={(e) => setFormData({ ...formData, resultatObtenu: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Commentaires</label>
+              <div className="tests-form-group">
+                <label className="tests-label">Commentaires</label>
                 <textarea
                   placeholder="Commentaires"
                   value={formData.commentaires}
                   onChange={(e) => setFormData({ ...formData, commentaires: e.target.value })}
-                  style={styles.textarea}
+                  className="tests-textarea"
                 />
               </div>
-              <div style={styles.formActions}>
+              <div className="tests-form-actions">
                 <button
                   type="button"
                   onClick={() => setShowTestForm(false)}
-                  style={styles.secondaryButton}
+                  className="tests-secondary-button"
                 >
                   Annuler
                 </button>
-                <button type="submit" style={styles.primaryButton}>
+                <button type="submit" className="tests-primary-button">
                   Ajouter
                 </button>
               </div>
@@ -1227,35 +2013,35 @@ const Tests: React.FC = () => {
       )}
 
       {showEditModal && (
-        <div style={styles.modal}>
-          <div style={{ ...styles.modalContent, ...styles.sessionModalContent }}>
-            <span style={styles.close} onClick={() => { setShowEditModal(false); setEditingTest(null); }}>&times;</span>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.sectionTitle}>Modifier le test</h3>
+        <div className="tests-modal">
+          <div className="tests-modal-content tests-session-modal-content">
+            <span className="tests-close" onClick={() => { setShowEditModal(false); setEditingTest(null); }}>&times;</span>
+            <div className="tests-modal-header">
+              <h3 className="tests-section-title">Modifier le test</h3>
             </div>
-            <form onSubmit={handleUpdateTest} style={styles.sessionForm}>
+            <form onSubmit={handleUpdateTest} className="tests-session-form">
               <input
                 type="hidden"
                 value={formData.sessionId}
               />
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Fonction *</label>
+              <div className="tests-form-row">
+                <div className="tests-form-group">
+                  <label className="tests-label">Fonction *</label>
                   <input
                     type="text"
                     placeholder="Fonction"
                     value={formData.fonction}
                     onChange={(e) => setFormData({ ...formData, fonction: e.target.value })}
-                    style={styles.input}
+                    className="tests-input"
                     required
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Statut *</label>
+                <div className="tests-form-group">
+                  <label className="tests-label">Statut *</label>
                   <select
                     value={formData.statut}
                     onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
-                    style={styles.select}
+                    className="tests-select"
                     required
                   >
                     <option value="">Sélectionner...</option>
@@ -1266,55 +2052,55 @@ const Tests: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Précondition</label>
+              <div className="tests-form-group">
+                <label className="tests-label">Précondition</label>
                 <textarea
                   placeholder="Précondition"
                   value={formData.precondition}
                   onChange={(e) => setFormData({ ...formData, precondition: e.target.value })}
-                  style={styles.textarea}
+                  className="tests-textarea"
                 />
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Étapes</label>
+              <div className="tests-form-group">
+                <label className="tests-label">Étapes</label>
                 <textarea
                   placeholder="Étapes"
                   value={formData.etapes}
                   onChange={(e) => setFormData({ ...formData, etapes: e.target.value })}
-                  style={styles.textarea}
+                  className="tests-textarea"
                 />
               </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Résultat attendu</label>
+              <div className="tests-form-row">
+                <div className="tests-form-group">
+                  <label className="tests-label">Résultat attendu</label>
                   <textarea
                     placeholder="Résultat Attendu"
                     value={formData.resultatAttendu}
                     onChange={(e) => setFormData({ ...formData, resultatAttendu: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Résultat obtenu</label>
+                <div className="tests-form-group">
+                  <label className="tests-label">Résultat obtenu</label>
                   <textarea
                     placeholder="Résultat Obtenu"
                     value={formData.resultatObtenu}
                     onChange={(e) => setFormData({ ...formData, resultatObtenu: e.target.value })}
-                    style={styles.textarea}
+                    className="tests-textarea"
                   />
                 </div>
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Commentaires</label>
+              <div className="tests-form-group">
+                <label className="tests-label">Commentaires</label>
                 <textarea
                   placeholder="Commentaires"
                   value={formData.commentaires}
                   onChange={(e) => setFormData({ ...formData, commentaires: e.target.value })}
-                  style={styles.textarea}
+                  className="tests-textarea"
                 />
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Image (capture d'écran)</label>
+              <div className="tests-form-group">
+                <label className="tests-label">Image (capture d'écran)</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -1329,30 +2115,30 @@ const Tests: React.FC = () => {
                       reader.readAsDataURL(file);
                     }
                   }}
-                  style={styles.fileInput}
+                  className="tests-file-input"
                 />
                 {imagePreview && (
-                  <div style={styles.imagePreview}>
-                    <img src={imagePreview} alt="Preview" style={styles.previewImg} />
+                  <div className="tests-image-preview">
+                    <img src={imagePreview} alt="Preview" className="tests-preview-img" />
                     <button 
                       type="button" 
                       onClick={() => { setFormData({ ...formData, image: '' }); setImagePreview(null); }}
-                      style={styles.removeImageBtn}
+                      className="tests-remove-image-btn"
                     >
                       ×
                     </button>
                   </div>
                 )}
               </div>
-              <div style={styles.formActions}>
+              <div className="tests-form-actions">
                 <button
                   type="button"
                   onClick={() => { setShowEditModal(false); setEditingTest(null); }}
-                  style={styles.secondaryButton}
+                  className="tests-secondary-button"
                 >
                   Annuler
                 </button>
-                <button type="submit" style={styles.primaryButton}>
+                <button type="submit" className="tests-primary-button">
                   Modifier le test
                 </button>
               </div>
@@ -1362,105 +2148,6 @@ const Tests: React.FC = () => {
       )}
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: { backgroundColor: 'var(--bg-primary)', minHeight: '100vh' },
-  main: { padding: '20px', maxWidth: '1400px', margin: '0 auto', minHeight: 'calc(100vh - 70px)' },
-  pageTitle: { fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' },
-  pageSubtitle: { fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', fontWeight: '400' },
-  formSection: { backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '10px', marginBottom: '16px', boxShadow: '0 2px 8px var(--shadow-color)', border: '1px solid var(--border-light)' },
-  tableSection: { backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '10px', boxShadow: '0 2px 8px var(--shadow-color)', border: '1px solid var(--border-light)' },
-  sectionTitle: { fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '12px', paddingBottom: '8px', borderBottom: '2px solid var(--border-light)' },
-  form: { display: 'flex', gap: '12px', flexWrap: 'wrap' as const },
-input: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', maxWidth: '100%', transition: 'border-color 0.2s, box-shadow 0.2s' },
-  textarea: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', minHeight: '35px', maxHeight: '50px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', resize: 'vertical' as const, width: '100%', overflow: 'auto', transition: 'border-color 0.2s, box-shadow 0.2s' },
-  select: { padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '3px', flex: '1 1 100px', fontSize: '11px', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', cursor: 'pointer', transition: 'border-color 0.2s' },
-  label: { display: 'block', marginBottom: '2px', fontSize: '10px', fontWeight: '600', color: 'var(--text-secondary)' },
-  fileInput: { padding: '4px', border: '1px solid var(--border-color)', borderRadius: '3px', width: '100%', fontSize: '11px', backgroundColor: 'var(--bg-card)' },
-  imagePreview: { position: 'relative', marginTop: '10px', display: 'inline-block' },
-  previewImg: { maxWidth: '150px', maxHeight: '100px', borderRadius: '6px', border: '2px solid var(--info-color)' },
-  removeImageBtn: { position: 'absolute', top: '-8px', right: '-8px', backgroundColor: 'var(--danger-color)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '14px', lineHeight: '1' },
-  formActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' },
-  primaryButton: { padding: '5px 10px', backgroundColor: 'var(--success-color)', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer', fontWeight: '600', fontSize: '11px' },
-  secondaryButton: { padding: '5px 8px', backgroundColor: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '3px', cursor: 'pointer', fontWeight: '600', fontSize: '11px' },
-  deleteButton: { padding: '8px 14px', backgroundColor: 'var(--danger-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', transition: 'opacity 0.2s' },
-  table: { width: '100%', borderCollapse: 'collapse' as const, borderRadius: '8px', overflow: 'hidden' },
-  success: { padding: '14px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' },
-  error: { padding: '14px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' },
-  statutOk: { padding: '6px 12px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' },
-  statutBug: { padding: '6px 12px', backgroundColor: 'var(--danger-color)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' },
-  statutEnCours: { padding: '6px 12px', backgroundColor: 'var(--warning-color)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' },
-  statutBloque: { padding: '6px 12px', backgroundColor: 'var(--text-muted)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' },
-  testsHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '12px' },
-  testsSubtitle: { fontSize: '13px', color: 'var(--text-secondary)' },
-  sessionInfo: { fontSize: '13px', color: 'var(--text-secondary)', margin: '5px 0' },
-  modal: { position: 'fixed' as const, top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', zIndex: 9999, paddingTop: '40px', overflowY: 'auto' as const, backdropFilter: 'blur(4px)' },
-  modalContent: { backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '16px', width: '95%', maxWidth: '600px', position: 'relative' as const, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', marginBottom: '40px', border: '1px solid var(--border-light)' },
-  modal: { position: 'fixed' as const, top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, overflowY: 'auto' as const, backdropFilter: 'blur(8px)' },
-  modalContent: { backgroundColor: 'var(--bg-card)', padding: '30px', borderRadius: '16px', width: '95%', maxWidth: '600px', position: 'relative' as const, boxShadow: '0 20px 60px rgba(0,0,0,0.5)', border: '2px solid var(--primary-color)', transform: 'translateY(0)' },
-  sessionModalContent: { maxWidth: '500px', padding: '16px' },
-  testModalContent: { maxWidth: '420px', padding: '10px' },
-  close: { position: 'absolute' as const, top: '6px', right: '10px', fontSize: '20px', cursor: 'pointer', color: 'var(--text-muted)', transition: 'color 0.2s', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' },
-  modalHeader: { marginBottom: '6px' },
-  modalSubtitle: { fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' },
-  formGroup: { marginBottom: '6px', flex: '1 1 100%' as const, minWidth: '100%' },
-  formGroupHalf: { marginBottom: '6px', flex: '1 1 160px' as const, minWidth: '140px' },
-  formRow: { display: 'flex', gap: '6px', flexWrap: 'wrap' as const, width: '100%' },
-  sessionForm: { display: 'flex', flexDirection: 'column' as const, gap: '6px', width: '100%', maxWidth: '400px', margin: '0 auto' },
-  testForm: { display: 'flex', flexDirection: 'column' as const, gap: '6px', width: '100%', maxWidth: '400px', margin: '0 auto' },
-    sessionsHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' as const, gap: '12px' },
-  headerLeft: { display: 'flex', alignItems: 'center', gap: '12px', flex: 1 },
-  userFilter: { display: 'flex', alignItems: 'center', gap: '8px' },
-  filterLabel: { fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' },
-  filterSelect: { padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '13px', minWidth: '200px' },
-  newSessionButton: { padding: '10px 18px', backgroundColor: 'var(--info-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', transition: 'background-color 0.2s, transform 0.1s' },
-  consolidationButtons: { display: 'flex', gap: '8px', alignItems: 'center' },
-  consolidationButton: { padding: '8px 12px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', transition: 'background-color 0.2s' },
-  resetButton: { padding: '8px 12px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', transition: 'background-color 0.2s' },
-  selectionInfo: { padding: '6px 10px', backgroundColor: '#e9ecef', color: '#495057', borderRadius: '4px', fontSize: '12px', fontWeight: '500' },
-  selectionCheckbox: { 
-  position: 'absolute' as const, 
-  top: '10px', 
-  right: '10px', 
-  zIndex: 10,
-  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-  padding: '4px',
-  borderRadius: '6px',
-  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-},
-  sessionsGrid: { 
-  display: 'grid', 
-  gridTemplateColumns: 'repeat(3, 1fr)', 
-  gap: '16px',
-  padding: '0 20px',
-  width: '100%'
-},
-sessionCard: {
-  backgroundColor: '#ffffff',
-  borderRadius: '8px',
-  padding: '24px',
-  border: '1px solid #e1e5e9',
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04)',
-  transition: 'all 0.3s ease',
-  position: 'relative' as const,
-  minHeight: '280px',
-  display: 'flex',
-  flexDirection: 'column',
-  cursor: 'pointer'
-},
-  sessionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', gap: '8px' },
-  sessionTitle: { margin: 0, color: '#1a1a1a', fontSize: '18px', fontWeight: '700', flex: 1, lineHeight: '1.3' },
-  statusBadge: { padding: '6px 12px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', color: 'white', textTransform: 'uppercase' as const, letterSpacing: '0.5px' },
-  sessionOwner: { color: '#6b7280', fontSize: '13px', marginBottom: '8px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' },
-  sessionDesc: { color: '#6b7280', fontSize: '14px', marginBottom: '16px', lineHeight: '1.5', minHeight: '40px', flex: 1 },
-  sessionStats: { display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '16px', fontSize: '13px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' },
-  sessionActions: { display: 'flex', gap: '8px', marginTop: 'auto' },
-  viewButton: { padding: '10px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', flex: 1, fontWeight: '600', fontSize: '13px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)' },
-  exportButton: { padding: '10px 16px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)' },
-  backButton: { padding: '10px 16px', backgroundColor: 'var(--text-muted)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', marginBottom: '12px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', transition: 'opacity 0.2s' },
-  currentSessionInfo: { backgroundColor: 'var(--bg-card)', padding: '16px', borderRadius: '10px', marginBottom: '14px', boxShadow: '0 2px 8px var(--shadow-color)', border: '1px solid var(--border-light)' },
-  statutTermine: { padding: '6px 12px', backgroundColor: 'var(--success-color)', color: 'white', borderRadius: '20px', fontSize: '12px', fontWeight: '500' },
 };
 
 export default Tests;

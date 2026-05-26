@@ -373,8 +373,10 @@
 }
 
 .comptes-compte-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px var(--shadow-color);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  border-color: var(--info-color);
+  background-color: rgba(52, 152, 219, 0.02);
 }
 
 .comptes-compte-card-header {
@@ -382,12 +384,14 @@
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid var(--border-light);
+  background-color: var(--hover-bg);
+  border-radius: 16px 16px 0 0;
 }
 
 .comptes-compte-icon {
   width: 50px;
   height: 50px;
-  border-radius: 10px;
+  border-radius: 12px;
   background-color: var(--info-color);
   display: flex;
   align-items: center;
