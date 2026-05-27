@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { testsAPI, applicationsAPI, comptesAPI, usersAPI, todosAPI, Application } from '../services/api';
+import { testsAPI, applicationsAPI, comptesAPI, usersAPI, todosAPI, Application, Test, User, Todo, Compte } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartBar, faCheckCircle, faTimesCircle, faClock, faChartPie } from '@fortawesome/free-solid-svg-icons';
 import '../styles/pages/Reports.css';
@@ -23,6 +23,7 @@ const Reports: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
+  const [testsParApp, setTestsParApp] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetchStats();
@@ -32,77 +33,32 @@ const Reports: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // Faire les requêtes séquentiellement pour éviter les erreurs 429
-      let apps: Application[] = [];
-      let comptes: import('../services/api').Compte[] = [];
-      let tests: import('../services/api').Test[] = [];
-      let users: import('../services/api').User[] = [];
-      let todos: import('../services/api').Todo[] = [];
+      // Récupération en parallèle sécurisée grâce à l'intercepteur 429 dans api.ts
+      // On demande une grande taille pour éviter que les stats ne soient basées que sur la première page
+      const [apps, comptes, tests, users, todos] = await Promise.all([
+        applicationsAPI.getAll(0, 1000),
+        comptesAPI.getAll(0, 1000),
+        testsAPI.getAll(),
+        usersAPI.getAvailable(),
+        todosAPI.getAll()
+      ]);
 
-      try {
-        apps = await applicationsAPI.getAll();
-      } catch (e: any) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error fetching apps:', e);
-        }
-        if (e?.response?.status === 429) {
-          setError('Trop de requêtes. Veuillez réessayer dans quelques secondes.');
-        }
-      }
-
-      try {
-        comptes = await comptesAPI.getAll();
-      } catch (e: any) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error fetching comptes:', e);
-        }
-        if (e?.response?.status === 429) {
-          setError('Trop de requêtes. Veuillez réessayer dans quelques secondes.');
-        }
-      }
-
-      try {
-        tests = await testsAPI.getAll();
-      } catch (e: any) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error fetching tests:', e);
-        }
-        if (e?.response?.status === 429) {
-          setError('Trop de requêtes. Veuillez réessayer dans quelques secondes.');
-        }
-      }
-
-      try {
-        users = await usersAPI.getAvailable();
-      } catch (e: any) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error fetching users:', e);
-        }
-        if (e?.response?.status === 429) {
-          setError('Trop de requêtes. Veuillez réessayer dans quelques secondes.');
-        }
-      }
-
-      try {
-        todos = await todosAPI.getAll();
-      } catch (e: any) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error fetching todos:', e);
-        }
-        if (e?.response?.status === 429) {
-          setError('Trop de requêtes. Veuillez réessayer dans quelques secondes.');
-        }
-      }
-
-      const testsOK = tests.filter((t: import('../services/api').Test) => t.statut === 'OK').length;
-      const testsBug = tests.filter((t: import('../services/api').Test) => t.statut === 'BUG').length;
-      const testsEnCours = tests.filter((t: import('../services/api').Test) => t.statut === 'EN COURS').length;
+      const testsOK = tests.filter((t: Test) => t.statut === 'OK').length;
+      const testsBug = tests.filter((t: Test) => t.statut === 'BUG').length;
+      const testsEnCours = tests.filter((t: Test) => t.statut === 'EN COURS').length;
       const totalTests = tests.length;
       const tauxReussite = totalTests > 0 ? Math.round((testsOK / totalTests) * 100) : 0;
 
-      const usersActifs = users.filter((u: any) => u.isActive).length;
-      const pendingTodos = todos.filter((t: import('../services/api').Todo) => !t.completed).length;
-      const completedTodos = todos.filter((t: import('../services/api').Todo) => t.completed).length;
+      const usersActifs = users.filter((u: User) => u.isActive).length;
+      const pendingTodos = todos.filter((t: Todo) => !t.completed).length;
+      const completedTodos = todos.filter((t: Todo) => t.completed).length;
+
+      // Calcul de la répartition par application
+      const distribution = tests.reduce((acc: Record<string, number>, t: Test) => {
+        const appNom = t.applicationNom || 'Autre';
+        acc[appNom] = (acc[appNom] || 0) + 1;
+        return acc;
+      }, {});
 
       setStats({
         totalTests,
@@ -117,11 +73,16 @@ const Reports: React.FC = () => {
         pendingTodos,
         completedTodos
       });
-    } catch (err) {
+      setTestsParApp(distribution);
+    } catch (err: any) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Error fetching stats:', err);
       }
-      setError('Erreur lors du chargement des statistiques. Veuillez réessayer.');
+      if (err?.response?.status === 429) {
+        setError('Trop de requêtes. Veuillez réessayer dans quelques secondes.');
+      } else {
+        setError('Erreur lors du chargement des statistiques. Veuillez réessayer.');
+      }
     } finally {
       setLoading(false);
     }
@@ -221,10 +182,29 @@ const Reports: React.FC = () => {
         <div className="reports-charts-section">
           <h3 className="reports-section-title">Répartition par application</h3>
           <div className="reports-chart-container">
-            <div className="reports-chart-placeholder">
-              <FontAwesomeIcon icon={faChartBar} className="reports-chart-icon" />
-              <p>Graphique à implémenter</p>
-            </div>
+            {Object.keys(testsParApp).length > 0 ? (
+              <div className="reports-app-distribution">
+                {Object.entries(testsParApp).map(([name, count]) => (
+                  <div key={name} className="reports-app-bar-item">
+                    <div className="reports-app-info">
+                      <span className="reports-app-name">{name}</span>
+                      <span className="reports-app-count">{count} tests</span>
+                    </div>
+                    <div className="reports-app-bar-bg">
+                      <div 
+                        className="reports-app-bar-fill" 
+                        style={{ width: `${(count / stats.totalTests) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="reports-chart-placeholder">
+                <FontAwesomeIcon icon={faChartBar} className="reports-chart-icon" />
+                <p>Aucune donnée de test disponible</p>
+              </div>
+            )}
           </div>
         </div>
 

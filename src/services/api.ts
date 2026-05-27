@@ -166,6 +166,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+const clearAuthAndRedirect = () => {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("token_type");
+  localStorage.removeItem("user_role");
+  localStorage.removeItem("user_id");
+  localStorage.removeItem("username");
+  localStorage.removeItem("email");
+  window.location.href = '/login';
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -198,24 +208,12 @@ api.interceptors.response.use(
     
     // Handle 401 Unauthorized - redirect to login
     if (error.response?.status === 401) {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("token_type");
-      localStorage.removeItem("user_role");
-      localStorage.removeItem("user_id");
-      localStorage.removeItem("username");
-      localStorage.removeItem("email");
-      window.location.href = '/login';
+      clearAuthAndRedirect();
     }
     
     // Handle 403 Forbidden - clear token and redirect to login
     if (error.response?.status === 403) {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("token_type");
-      localStorage.removeItem("user_role");
-      localStorage.removeItem("user_id");
-      localStorage.removeItem("username");
-      localStorage.removeItem("email");
-      window.location.href = '/login';
+      clearAuthAndRedirect();
     }
     
     return Promise.reject(error);

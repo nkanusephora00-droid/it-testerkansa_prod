@@ -205,6 +205,47 @@
   font-weight: 600;
 }
 
+.reports-app-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.reports-app-bar-item {
+  width: 100%;
+}
+
+.reports-app-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.reports-app-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.reports-app-count {
+  color: var(--text-secondary);
+}
+
+.reports-app-bar-bg {
+  height: 8px;
+  background-color: var(--bg-primary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.reports-app-bar-fill {
+  height: 100%;
+  background-color: var(--info-color);
+  border-radius: 4px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .reports-charts-section {
   margin-bottom: 30px;
 }
