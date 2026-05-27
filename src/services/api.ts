@@ -22,6 +22,7 @@ export interface Application {
   environnement?: string;
   dateCreation?: string;
   createdBy?: number;
+  createdAt?: string;
 }
 
 export interface ApplicationInfoDTO {
@@ -38,6 +39,7 @@ export interface Compte {
   commentaire?: string;
   createdBy?: number;
   application?: ApplicationInfoDTO;
+  createdAt?: string;
 }
 
 export interface Test {
@@ -55,6 +57,7 @@ export interface Test {
   statut: string;
   commentaires: string;
   image?: string;
+  createdAt?: string;
 }
 
 export interface TestSession {

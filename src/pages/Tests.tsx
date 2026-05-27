@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { testsAPI, testSessionsAPI, applicationsAPI, api, Test, TestSession, Application } from '../services/api';
+import { testsAPI, testSessionsAPI, applicationsAPI, usersAPI, Test, TestSession, Application, User } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faCheck, faTimes, faCompress, faExpand, faEye, faFilePdf, faFileWord } from '@fortawesome/free-solid-svg-icons';
 import { ConsolidatedSession, consolidateSessionsByUser, consolidateAllSessions } from '../utils/sessionConsolidation';
@@ -162,14 +162,11 @@ const Tests: React.FC = () => {
 
   async function fetchUsers() {
     try {
-      console.log('Fetching users...');
-      const response = await api.get('/users');
-      console.log('Users API response:', response.data);
-      setUsers(Array.isArray(response.data) ? response.data : []);
-      console.log('Users set:', Array.isArray(response.data) ? response.data.length : 'not an array');
+      const data = await usersAPI.getAll();
+      setUsers(data);
     } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error fetching users:', err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Error fetching users:", err);
       }
       setUsers([]);
     }
@@ -1271,21 +1268,9 @@ const Tests: React.FC = () => {
                  className="tests-filter-select"
                >
                  <option value="">Tous les utilisateurs</option>
-                 {(() => {
-                   console.log('Rendering users filter, users:', users);
-                   console.log('Users length:', users?.length);
-                   console.log('Is users array?', Array.isArray(users));
-                   
-                   // Test avec des données factices si le tableau est vide
-                   const usersToRender = Array.isArray(users) && users.length > 0 ? users : [
-                     { id: 1, username: 'Test User 1' },
-                     { id: 2, username: 'Test User 2' }
-                   ];
-                   
-                   return usersToRender.map(user => (
-                     <option key={user.id} value={user.id}>{user.username}</option>
-                   ));
-                 })()}
+                 {users.map((user: User) => (
+                   <option key={user.id} value={user.id}>{user.username}</option>
+                 ))}
                </select>
              </div>
            )}
@@ -1783,8 +1768,6 @@ const Tests: React.FC = () => {
                  />
                </div>
               <div className="tests-form-actions">
-                <button type="button" className="tests-cancel-button" onClick={() => setShowSessionModal(false)}>Annuler</button>
-                <button type="submit" className="tests-submit-button">Créer</button>
                 <button
                   type="button"
                   onClick={() => setShowSessionModal(false)}

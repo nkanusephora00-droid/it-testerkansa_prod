@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { testsAPI, applicationsAPI, comptesAPI, usersAPI, todosAPI, Application, Test, User, Todo, Compte } from '../services/api';
+import { testsAPI, applicationsAPI, comptesAPI, usersAPI, todosAPI, Test, User, Todo } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartBar, faCheckCircle, faTimesCircle, faClock, faChartPie } from '@fortawesome/free-solid-svg-icons';
 import '../styles/pages/Reports.css';

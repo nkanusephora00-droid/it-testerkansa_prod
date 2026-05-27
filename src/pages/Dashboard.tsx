@@ -71,8 +71,8 @@ const Dashboard: React.FC = () => {
       }
 
       // Calculer les statistiques des tests
-      const testsReussis = tests.filter((t: Test) => t.statut === 'Réussi' || t.statut === 'réussi' || t.statut === 'OK').length;
-      const testsEchoues = tests.filter((t: Test) => t.statut === 'Échoué' || t.statut === 'echoué' || t.statut === 'Failed').length;
+      const testsReussis = tests.filter((t: Test) => t.statut === 'OK').length;
+      const testsEchoues = tests.filter((t: Test) => t.statut === 'BUG').length;
 
       setStats({
         applications: apps.length,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { testsAPI, todosAPI } from '../services/api';
+import { testsAPI, todosAPI, Todo, Test } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faCheck, faExclamationTriangle, faInfo, faCheckCircle, faBug } from '@fortawesome/free-solid-svg-icons';
 import '../styles/pages/Notifications.css';
@@ -32,7 +32,7 @@ const Notifications: React.FC = () => {
 
       const notifs: Notification[] = [];
 
-      todos.filter((t: import('../services/api').Todo) => !t.completed).forEach((todo: import('../services/api').Todo) => {
+      todos.filter((t: Todo) => !t.completed).forEach((todo: Todo) => {
         notifs.push({
           id: `todo_${todo.id}`,
           type: 'info',
@@ -44,26 +44,26 @@ const Notifications: React.FC = () => {
         });
       });
 
-      tests.filter((t: import('../services/api').Test) => t.statut === 'BUG').forEach((test: any) => {
+      tests.filter((t: Test) => t.statut === 'BUG').forEach((test: Test) => {
         notifs.push({
           id: `bug_${test.id}`,
           type: 'error',
           title: 'Nouveau BUG détecté',
           message: `Test "${test.fonction}" - Statut: BUG`,
           read: false,
-          createdAt: (test as any).createdAt || new Date().toISOString(),
+          createdAt: test.createdAt || new Date().toISOString(),
           link: '/tests'
         });
       });
 
-      tests.filter((t: import('../services/api').Test) => t.statut === 'EN COURS').forEach((test: any) => {
+      tests.filter((t: Test) => t.statut === 'EN COURS').forEach((test: Test) => {
         notifs.push({
           id: `progress_${test.id}`,
           type: 'warning',
           title: 'Test en cours',
           message: `Test "${test.fonction}" - En cours de vérification`,
           read: false,
-          createdAt: (test as any).createdAt || new Date().toISOString(),
+          createdAt: test.createdAt || new Date().toISOString(),
           link: '/tests'
         });
       });

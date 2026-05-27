@@ -625,26 +625,6 @@ const TestSessions: React.FC = () => {
                 </div>
               </div>
               <div className="test-sessions-form-row">
-                <div className="test-sessions-form-group">
-                  <label className="test-sessions-label">Environnement</label>
-                  <input
-                    type="text"
-                    value={editFormData.environnement}
-                    onChange={(e) => setEditFormData({ ...editFormData, environnement: e.target.value })}
-                    className="test-sessions-input"
-                  />
-                </div>
-                <div className="test-sessions-form-group">
-                  <label className="test-sessions-label">Version</label>
-                  <input
-                    type="text"
-                    value={editFormData.version}
-                    onChange={(e) => setEditFormData({ ...editFormData, version: e.target.value })}
-                    className="test-sessions-input"
-                  />
-                </div>
-               </div>
-               <div className="test-sessions-form-row">
                  <div className="test-sessions-form-group">
                    <label className="test-sessions-label">Environnement</label>
                    <input
