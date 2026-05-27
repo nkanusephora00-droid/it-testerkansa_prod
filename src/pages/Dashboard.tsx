@@ -63,7 +63,7 @@ const Dashboard: React.FC = () => {
       try {
         const users = await usersAPI.getAll();
         usersCount = users.length;
-        usersActiveCount = users.filter((u: any) => u.isActive).length;
+        usersActiveCount = users.filter((u: User) => u.isActive).length;
       } catch (e) {
         if (process.env.NODE_ENV === 'development') {
           console.log('Users list not accessible');

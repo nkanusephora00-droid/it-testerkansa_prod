@@ -29,7 +29,7 @@ const Tests: React.FC = () => {
   const [sessions, setSessions] = useState<TestSession[]>([]);
   const [allSessions, setAllSessions] = useState<TestSession[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [view, setView] = useState<'sessions' | 'tests'>('sessions');
   const [selectedSession, setSelectedSession] = useState<number | null>(null);
