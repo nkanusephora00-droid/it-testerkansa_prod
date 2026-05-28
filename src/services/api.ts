@@ -57,7 +57,40 @@ export interface Test {
   statut: string;
   commentaires: string;
   image?: string;
+  testNumber?: number;
+  createdBy?: number;
   createdAt?: string;
+}
+
+export interface Bug {
+  id: number;
+  testStepId?: number;
+  title: string;
+  severity?: string;
+  priority?: string;
+  reproducibility?: string;
+  status: string;
+  assignedTo?: number;
+  createdAt?: string;
+}
+
+export interface Attachment {
+  id: number;
+  fileName: string;
+  originalFileName: string;
+  filePath: string;
+  fileSize?: number;
+  contentType?: string;
+  bugId?: number;
+  testStepId?: number;
+  createdBy?: number;
+  createdAt?: string;
+}
+
+export interface Habilitation {
+  id: number;
+  compteId: number;
+  permission: string;
 }
 
 export interface TestSession {
@@ -324,22 +357,61 @@ export const apkAPI = {
   delete: async (id: number) => (await api.delete(`/apk/${id}`)).data,
 };
 
-// Tests API
+// Tests API (étapes de test / TestStep côté backend)
 export const testsAPI = {
   getAll: async (sessionId?: number) => {
     const params = sessionId ? { sessionId } : {};
     return (await api.get<Test[]>("/tests", { params })).data;
   },
+  getById: async (id: number) => (await api.get<Test>(`/tests/${id}`)).data,
   create: async (data: Partial<Test>) => (await api.post<Test>("/tests", data)).data,
   update: async (id: number, data: Partial<Test>) => (await api.put<Test>(`/tests/${id}`, data)).data,
   delete: async (id: number) => (await api.delete(`/tests/${id}`)).data,
 };
 
+// Bugs API
+export const bugsAPI = {
+  getAll: async () => (await api.get<Bug[]>("/bugs")).data,
+  getByTestStep: async (testStepId: number) =>
+    (await api.get<Bug[]>(`/bugs/step/${testStepId}`)).data,
+  create: async (data: Partial<Bug>) => (await api.post<Bug>("/bugs", data)).data,
+  updateStatus: async (id: number, status: string) =>
+    (await api.patch<Bug>(`/bugs/${id}/status`, null, { params: { status } })).data,
+};
+
+// Attachments API
+export const attachmentsAPI = {
+  upload: async (file: File, options?: { bugId?: number; testStepId?: number }) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    if (options?.bugId) formData.append("bugId", options.bugId.toString());
+    if (options?.testStepId) formData.append("testStepId", options.testStepId.toString());
+    const response = await api.post<Attachment>("/attachments/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+  download: async (id: number) => {
+    const response = await api.get(`/attachments/download/${id}`, { responseType: "blob" });
+    return response.data;
+  },
+};
+
+// Habilitations API
+export const habilitationsAPI = {
+  getAll: async () => (await api.get<Habilitation[]>("/habilitations")).data,
+  create: async (data: Partial<Habilitation>) =>
+    (await api.post<Habilitation>("/habilitations", data)).data,
+  delete: async (id: number) => (await api.delete(`/habilitations/${id}`)).data,
+};
+
 // Test Sessions API
 export const testSessionsAPI = {
   getAll: async () => (await api.get<TestSession[]>("/test-sessions")).data,
+  getById: async (id: number) => (await api.get<TestSession>(`/test-sessions/${id}`)).data,
   create: async (data: Partial<TestSession>) => (await api.post<TestSession>("/test-sessions", data)).data,
-  update: async (id: number, data: Partial<TestSession>) => (await api.put<TestSession>(`/test-sessions/${id}`, data)).data,
+  update: async (id: number, data: Partial<TestSession>) =>
+    (await api.put<TestSession>(`/test-sessions/${id}`, data)).data,
   delete: async (id: number) => (await api.delete(`/test-sessions/${id}`)).data,
 };
 
@@ -362,6 +434,7 @@ export const messagesAPI = {
   markAsRead: async (messageId: number) => (await api.patch(`/messages/${messageId}/read`)).data,
   getUnreadCount: async () => (await api.get<number>("/messages/unread-count")).data,
   getUnreadByUser: async () => (await api.get<Record<number, number>>("/messages/unread-by-user")).data,
+  delete: async (id: number) => (await api.delete(`/messages/${id}`)).data,
 };
 
 // System Notifications API
@@ -375,6 +448,7 @@ export const systemNotificationsAPI = {
     (await api.post<SystemNotification>("/system-notifications", data)).data,
   createGlobal: async (data: { title: string; message: string; type: SystemNotification['type']; actionUrl?: string }) => 
     (await api.post<SystemNotification>("/system-notifications/global", data)).data,
+  delete: async (id: number) => (await api.delete(`/system-notifications/${id}`)).data,
 };
 
 export default api;

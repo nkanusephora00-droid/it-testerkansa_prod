@@ -574,3 +574,66 @@
   background-color: var(--hover-bg);
   color: var(--text-primary);
 }
+
+.test-sessions-steps-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color, #eee);
+}
+
+.test-sessions-steps-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.test-sessions-steps-header h4 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.test-sessions-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.test-sessions-step-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--bg-secondary, #f8f9fa);
+  border: 1px solid var(--border-color, #eee);
+}
+
+.test-sessions-step-title {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.test-sessions-step-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.test-sessions-test-form {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px dashed var(--border-color, #ccc);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.test-sessions-test-form h5 {
+  margin: 0 0 8px;
+}

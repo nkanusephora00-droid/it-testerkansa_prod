@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { testSessionsAPI, applicationsAPI, Application } from '../services/api';
+import { testSessionsAPI, applicationsAPI, testsAPI, bugsAPI, Application, Test } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faUser, faBug } from '@fortawesome/free-solid-svg-icons';
+import { useNavigate } from 'react-router-dom';
 import '../styles/pages/TestSessions.css';
 
 interface TestSession {
@@ -23,7 +24,18 @@ interface TestSession {
   tests_bug?: number;
 }
 
+const emptyTestForm = () => ({
+  fonction: '',
+  precondition: '',
+  etapes: '',
+  resultatAttendu: '',
+  resultatObtenu: '',
+  statut: 'EN COURS',
+  commentaires: '',
+});
+
 const TestSessions: React.FC = () => {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<TestSession[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +44,11 @@ const TestSessions: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingSession, setEditingSession] = useState<TestSession | null>(null);
   const [selectedSession, setSelectedSession] = useState<TestSession | null>(null);
+  const [sessionTests, setSessionTests] = useState<Test[]>([]);
+  const [testsLoading, setTestsLoading] = useState(false);
+  const [showTestForm, setShowTestForm] = useState(false);
+  const [editingTest, setEditingTest] = useState<Test | null>(null);
+  const [testForm, setTestForm] = useState(emptyTestForm());
 
   const [sessionForm, setSessionForm] = useState({ 
     nom: '', 
@@ -99,6 +116,29 @@ const TestSessions: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const loadSessionTests = useCallback(async (session: TestSession) => {
+    setTestsLoading(true);
+    try {
+      const tests = await testsAPI.getAll(session.id);
+      setSessionTests(tests);
+    } catch {
+      setMessage({ type: 'error', text: 'Erreur chargement des étapes de test' });
+      setSessionTests([]);
+    } finally {
+      setTestsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedSession) {
+      loadSessionTests(selectedSession);
+    } else {
+      setSessionTests([]);
+      setShowTestForm(false);
+      setEditingTest(null);
+    }
+  }, [selectedSession, loadSessionTests]);
 
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,6 +221,84 @@ const TestSessions: React.FC = () => {
     if (!appId) return 'Aucune';
     const app = applications.find(a => a.id === appId);
     return app ? app.nom : 'Application inconnue';
+  };
+
+  const handleSaveTest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSession) return;
+    const app = applications.find((a) => a.id === selectedSession.applicationId);
+    const payload = {
+      sessionId: selectedSession.id,
+      applicationId: selectedSession.applicationId,
+      applicationNom: app?.nom || selectedSession.applicationNom,
+      version: selectedSession.version,
+      environnement: selectedSession.environnement,
+      ...testForm,
+    };
+    try {
+      if (editingTest) {
+        await testsAPI.update(editingTest.id, payload);
+        setMessage({ type: 'success', text: 'Étape mise à jour' });
+      } else {
+        await testsAPI.create(payload);
+        setMessage({ type: 'success', text: 'Étape ajoutée' });
+      }
+      setShowTestForm(false);
+      setEditingTest(null);
+      setTestForm(emptyTestForm());
+      await loadSessionTests(selectedSession);
+      fetchData();
+    } catch {
+      setMessage({ type: 'error', text: 'Erreur lors de l\'enregistrement de l\'étape' });
+    }
+  };
+
+  const handleDeleteTest = async (testId: number) => {
+    if (!selectedSession || !window.confirm('Supprimer cette étape de test ?')) return;
+    try {
+      await testsAPI.delete(testId);
+      setMessage({ type: 'success', text: 'Étape supprimée' });
+      await loadSessionTests(selectedSession);
+      fetchData();
+    } catch {
+      setMessage({ type: 'error', text: 'Suppression impossible' });
+    }
+  };
+
+  const handleDeclareBug = async (test: Test) => {
+    const title = window.prompt('Titre du bug', `Bug sur: ${test.fonction}`);
+    if (!title) return;
+    try {
+      await bugsAPI.create({
+        testStepId: test.id,
+        title,
+        severity: 'MAJOR',
+        priority: 'HIGH',
+        status: 'OPEN',
+      });
+      if (test.statut !== 'BUG') {
+        await testsAPI.update(test.id, { ...test, statut: 'BUG', sessionId: test.sessionId });
+      }
+      setMessage({ type: 'success', text: 'Bug déclaré — voir menu Bugs' });
+      if (selectedSession) await loadSessionTests(selectedSession);
+      fetchData();
+    } catch {
+      setMessage({ type: 'error', text: 'Impossible de déclarer le bug' });
+    }
+  };
+
+  const openEditTest = (test: Test) => {
+    setEditingTest(test);
+    setTestForm({
+      fonction: test.fonction,
+      precondition: test.precondition || '',
+      etapes: test.etapes || '',
+      resultatAttendu: test.resultatAttendu || '',
+      resultatObtenu: test.resultatObtenu || '',
+      statut: test.statut,
+      commentaires: test.commentaires || '',
+    });
+    setShowTestForm(true);
   };
 
   const handleExportWord = async (session: TestSession) => {
@@ -366,6 +484,136 @@ const TestSessions: React.FC = () => {
                   <span style={{ maxWidth: '400px' }}>{selectedSession.description}</span>
                 </div>
               )}
+
+              <div className="test-sessions-steps-section">
+                <div className="test-sessions-steps-header">
+                  <h4>Étapes de test</h4>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="test-sessions-new-button"
+                      style={{ padding: '8px 12px', fontSize: '13px' }}
+                      onClick={() => {
+                        setEditingTest(null);
+                        setTestForm(emptyTestForm());
+                        setShowTestForm(true);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faPlus} /> Ajouter une étape
+                    </button>
+                    <button
+                      type="button"
+                      className="test-sessions-view-button"
+                      style={{ padding: '8px 12px', fontSize: '13px' }}
+                      onClick={() => navigate('/bugs')}
+                    >
+                      <FontAwesomeIcon icon={faBug} /> Voir tous les bugs
+                    </button>
+                  </div>
+                </div>
+
+                {testsLoading ? (
+                  <p className="test-sessions-card-meta">Chargement des étapes...</p>
+                ) : sessionTests.length === 0 ? (
+                  <p className="test-sessions-card-meta">Aucune étape pour cette session.</p>
+                ) : (
+                  <div className="test-sessions-steps-list">
+                    {sessionTests.map((test) => (
+                      <div key={test.id} className="test-sessions-step-card">
+                        <div className="test-sessions-step-title">
+                          <strong>#{test.testNumber ?? test.id}</strong> — {test.fonction}
+                          <span
+                            className="test-sessions-status-badge"
+                            style={{
+                              marginLeft: '8px',
+                              backgroundColor:
+                                test.statut === 'OK' ? '#27ae60' : test.statut === 'BUG' ? '#e74c3c' : '#ffc107',
+                            }}
+                          >
+                            {test.statut}
+                          </span>
+                        </div>
+                        <div className="test-sessions-step-actions">
+                          <button type="button" className="test-sessions-edit-button" onClick={() => openEditTest(test)}>
+                            <FontAwesomeIcon icon={faEdit} />
+                          </button>
+                          <button type="button" className="test-sessions-delete-button" onClick={() => handleDeleteTest(test.id)}>
+                            <FontAwesomeIcon icon={faTrash} />
+                          </button>
+                          <button type="button" className="test-sessions-view-button" onClick={() => handleDeclareBug(test)}>
+                            <FontAwesomeIcon icon={faBug} /> Bug
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {showTestForm && (
+                  <form className="test-sessions-test-form" onSubmit={handleSaveTest}>
+                    <h5>{editingTest ? 'Modifier l\'étape' : 'Nouvelle étape'}</h5>
+                    <input
+                      className="test-sessions-input"
+                      placeholder="Fonction *"
+                      required
+                      value={testForm.fonction}
+                      onChange={(e) => setTestForm({ ...testForm, fonction: e.target.value })}
+                    />
+                    <textarea
+                      className="test-sessions-textarea"
+                      placeholder="Précondition"
+                      rows={2}
+                      value={testForm.precondition}
+                      onChange={(e) => setTestForm({ ...testForm, precondition: e.target.value })}
+                    />
+                    <textarea
+                      className="test-sessions-textarea"
+                      placeholder="Étapes"
+                      rows={2}
+                      value={testForm.etapes}
+                      onChange={(e) => setTestForm({ ...testForm, etapes: e.target.value })}
+                    />
+                    <input
+                      className="test-sessions-input"
+                      placeholder="Résultat attendu"
+                      value={testForm.resultatAttendu}
+                      onChange={(e) => setTestForm({ ...testForm, resultatAttendu: e.target.value })}
+                    />
+                    <input
+                      className="test-sessions-input"
+                      placeholder="Résultat obtenu"
+                      value={testForm.resultatObtenu}
+                      onChange={(e) => setTestForm({ ...testForm, resultatObtenu: e.target.value })}
+                    />
+                    <select
+                      className="test-sessions-select"
+                      value={testForm.statut}
+                      onChange={(e) => setTestForm({ ...testForm, statut: e.target.value })}
+                    >
+                      <option value="EN COURS">EN COURS</option>
+                      <option value="OK">OK</option>
+                      <option value="BUG">BUG</option>
+                      <option value="PASS">PASS</option>
+                    </select>
+                    <textarea
+                      className="test-sessions-textarea"
+                      placeholder="Commentaires"
+                      rows={2}
+                      value={testForm.commentaires}
+                      onChange={(e) => setTestForm({ ...testForm, commentaires: e.target.value })}
+                    />
+                    <div className="test-sessions-form-actions">
+                      <button type="button" className="test-sessions-cancel-button" onClick={() => setShowTestForm(false)}>
+                        Annuler
+                      </button>
+                      <button type="submit" className="test-sessions-submit-button">
+                        {editingTest ? 'Mettre à jour' : 'Ajouter'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
               <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
                 <button
                   className="test-sessions-export-pdf-button"
