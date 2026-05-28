@@ -18,19 +18,21 @@ export const useAuth = () => {
     try {
       const data = await authAPI.login(username, password);
       
-      // Store token and user info
+      // Store token (user info fetched via /auth/me)
       localStorage.setItem('access_token', data.accessToken);
       localStorage.setItem('token_type', data.tokenType);
-      localStorage.setItem('user_role', data.userRole || '');
-      localStorage.setItem('user_id', data.userId || '');
-      localStorage.setItem('username', data.username || '');
-      localStorage.setItem('email', data.email || '');
-      
+
+      const me = await authAPI.me();
+      localStorage.setItem('user_role', me.role || '');
+      localStorage.setItem('user_id', String(me.id ?? ''));
+      localStorage.setItem('username', me.username || '');
+      localStorage.setItem('email', me.email || '');
+
       setUser({
-        id: data.userId || 0,
-        username: data.username || '',
-        email: data.email || '',
-        role: data.userRole || '',
+        id: me.id,
+        username: me.username,
+        email: me.email,
+        role: me.role,
       });
       
       return { success: true };

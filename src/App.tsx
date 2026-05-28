@@ -11,7 +11,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Users = lazy(() => import('./pages/Users'));
 const Applications = lazy(() => import('./pages/Applications'));
 const Comptes = lazy(() => import('./pages/Comptes'));
-const Tests = lazy(() => import('./pages/Tests'));
+const Tests = lazy(() => import('./pages/TestSessions'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Todos = lazy(() => import('./pages/Todos'));
 const Reports = lazy(() => import('./pages/Reports'));

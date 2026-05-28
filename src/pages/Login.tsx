@@ -26,11 +26,13 @@ const Login: React.FC = () => {
        }
        localStorage.setItem('access_token', data.accessToken);
        localStorage.setItem('token_type', data.tokenType);
-       // Store user info for Layout component
-       localStorage.setItem('user_role', data.userRole || '');
-       localStorage.setItem('user_id', data.userId || '');
-       localStorage.setItem('username', data.username || '');
-       localStorage.setItem('email', data.email || '');
+
+       // Fetch user info for Layout component (/auth/me)
+       const me = await authAPI.me();
+       localStorage.setItem('user_role', me.role || '');
+       localStorage.setItem('user_id', String(me.id ?? ''));
+       localStorage.setItem('username', me.username || '');
+       localStorage.setItem('email', me.email || '');
        if (process.env.NODE_ENV === 'development') {
         console.log("Login: Token stored in localStorage");
         console.log("Login: Navigating to dashboard");
