@@ -1,8 +1,17 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { comptesAPI, applicationsAPI, Compte } from '../services/api';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { comptesAPI, applicationsAPI, habilitationsAPI, Compte, Habilitation } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTrash, faEye, faEyeSlash, faKey, faPlus } from '@fortawesome/free-solid-svg-icons';
 import '../styles/pages/Comptes.css';
+
+const PERMISSION_PRESETS = [
+  'LECTURE',
+  'ECRITURE',
+  'ADMIN',
+  'EXECUTION',
+  'SUPPRESSION',
+  'CONFIGURATION',
+];
 
 const Comptes: React.FC = () => {
   const [comptes, setComptes] = useState<Compte[]>([]);
@@ -21,6 +30,25 @@ const Comptes: React.FC = () => {
   
   const [formData, setFormData] = useState({ applicationId: 0, username: '', code: '', role: '', commentaire: '' });
   const [editFormData, setEditFormData] = useState({ applicationId: 0, username: '', code: '', role: '', commentaire: '' });
+  const [habilitations, setHabilitations] = useState<Habilitation[]>([]);
+  const [newPermission, setNewPermission] = useState('');
+  const [customPermission, setCustomPermission] = useState('');
+  const [habilitationSaving, setHabilitationSaving] = useState(false);
+
+  const habilitationsByCompte = useMemo(() => {
+    const map = new Map<number, Habilitation[]>();
+    habilitations.forEach((h) => {
+      const list = map.get(h.compteId) ?? [];
+      list.push(h);
+      map.set(h.compteId, list);
+    });
+    return map;
+  }, [habilitations]);
+
+  const viewingHabilitations = useMemo(
+    () => (viewingCompte ? habilitationsByCompte.get(viewingCompte.id) ?? [] : []),
+    [viewingCompte, habilitationsByCompte]
+  );
 
   const getAppName = useCallback((appId: number) => {
     const app = applications.find(a => a.id === appId);
@@ -52,9 +80,10 @@ const Comptes: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [comptesData, appsData] = await Promise.all([
+      const [comptesData, appsData, habData] = await Promise.all([
         comptesAPI.getAll(),
         applicationsAPI.getAll(),
+        habilitationsAPI.getAll(),
       ]);
       // Gérer à la fois les réponses tableau direct et PageResponse
       const comptes: any = comptesData;
@@ -63,6 +92,7 @@ const Comptes: React.FC = () => {
       setComptes(comptesList);
       setFilteredComptes(comptesList);
       setApplications(Array.isArray(apps) ? apps : (apps?.content || []));
+      setHabilitations(Array.isArray(habData) ? habData : []);
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.error(err);
@@ -137,6 +167,74 @@ const Comptes: React.FC = () => {
     setShowModal(true);
   };
 
+  const openViewModal = (compte: Compte) => {
+    setViewingCompte(compte);
+    setShowPassword(false);
+    setNewPermission('');
+    setCustomPermission('');
+    setShowViewModal(true);
+  };
+
+  const handleAddHabilitation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!viewingCompte) return;
+    const permission = (newPermission === '__custom__' ? customPermission : newPermission).trim();
+    if (!permission) {
+      setMessage({ type: 'error', text: 'Indiquez une permission' });
+      return;
+    }
+    setHabilitationSaving(true);
+    try {
+      const created = await habilitationsAPI.create({
+        compteId: viewingCompte.id,
+        permission: permission.toUpperCase(),
+      });
+      setHabilitations((prev) => [...prev, created]);
+      setNewPermission('');
+      setCustomPermission('');
+      setMessage({ type: 'success', text: 'Habilitation ajoutée' });
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string; detail?: string } } };
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || error.response?.data?.detail || 'Erreur lors de l\'ajout de l\'habilitation',
+      });
+    } finally {
+      setHabilitationSaving(false);
+    }
+  };
+
+  const handleDeleteHabilitation = async (id: number) => {
+    if (!window.confirm('Supprimer cette habilitation ?')) return;
+    try {
+      await habilitationsAPI.delete(id);
+      setHabilitations((prev) => prev.filter((h) => h.id !== id));
+      setMessage({ type: 'success', text: 'Habilitation supprimée' });
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setMessage({ type: 'error', text: error.response?.data?.detail || 'Suppression impossible' });
+    }
+  };
+
+  const renderHabilitationBadges = (compteId: number) => {
+    const list = habilitationsByCompte.get(compteId) ?? [];
+    if (list.length === 0) {
+      return <span className="comptes-hab-empty">—</span>;
+    }
+    return (
+      <div className="comptes-hab-badges">
+        {list.slice(0, 3).map((h) => (
+          <span key={h.id} className="comptes-hab-badge" title={h.permission}>
+            {h.permission}
+          </span>
+        ))}
+        {list.length > 3 && (
+          <span className="comptes-hab-badge comptes-hab-more">+{list.length - 3}</span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="comptes-container">
       <main className="comptes-main">
@@ -198,9 +296,15 @@ const Comptes: React.FC = () => {
                     {compte.commentaire && (
                       <p className="comptes-compte-commentaire">{compte.commentaire}</p>
                     )}
+                    <div className="comptes-compte-detail">
+                      <span className="comptes-detail-label">
+                        <FontAwesomeIcon icon={faKey} /> Habilitations:
+                      </span>
+                      {renderHabilitationBadges(compte.id)}
+                    </div>
                   </div>
                   <div className="comptes-compte-card-actions">
-                    <button className="comptes-icon-button" onClick={() => { setViewingCompte(compte); setShowViewModal(true); }} title="Voir">
+                    <button className="comptes-icon-button" onClick={() => openViewModal(compte)} title="Voir / habilitations">
                       <FontAwesomeIcon icon={faEye} />
                     </button>
                     <button className="comptes-icon-button" onClick={() => openEditModal(compte)} title="Modifier">
@@ -223,6 +327,7 @@ const Comptes: React.FC = () => {
                     <th className="comptes-table-th">Application</th>
                     <th className="comptes-table-th">Rôle</th>
                     <th className="comptes-table-th">Commentaire</th>
+                    <th className="comptes-table-th">Habilitations</th>
                     <th className="comptes-table-th">Actions</th>
                   </tr>
                 </thead>
@@ -234,8 +339,9 @@ const Comptes: React.FC = () => {
                       <td className="comptes-table-td">{getAppName(compte.applicationId)}</td>
                       <td className="comptes-table-td">{compte.role || '-'}</td>
                       <td className="comptes-table-td">{compte.commentaire || '-'}</td>
+                      <td className="comptes-table-td">{renderHabilitationBadges(compte.id)}</td>
                       <td className="comptes-table-td">
-                        <button className="comptes-icon-button" onClick={() => { setViewingCompte(compte); setShowViewModal(true); }} title="Voir">
+                        <button className="comptes-icon-button" onClick={() => openViewModal(compte)} title="Voir / habilitations">
                           <FontAwesomeIcon icon={faEye} />
                         </button>
                         <button className="comptes-icon-button" onClick={() => openEditModal(compte)} title="Modifier">
@@ -334,20 +440,21 @@ const Comptes: React.FC = () => {
       {/* View Modal */}
       {showViewModal && viewingCompte && (
         <div className="comptes-modal">
-          <div className="comptes-modal-content">
+          <div className="comptes-modal-content comptes-modal-content-wide">
             <span className="comptes-close" onClick={() => setShowViewModal(false)}>&times;</span>
             <h3 className="comptes-section-title">Détails du compte</h3>
-            <div style={{ marginTop: '20px' }}>
+            <div className="comptes-view-details">
               <p><strong>ID:</strong> {viewingCompte.id}</p>
               <p><strong>Application:</strong> {getAppName(viewingCompte.applicationId)}</p>
-              <p><strong>Nom d'utilisateur:</strong> {viewingCompte.username}</p>
+              <p><strong>Nom d&apos;utilisateur:</strong> {viewingCompte.username}</p>
               <p>
-                <strong>Code:</strong> {' '}
-                <span style={{ fontFamily: 'monospace', backgroundColor: '#f0f0f0', padding: '2px 6px', borderRadius: '4px' }}>
+                <strong>Code:</strong>{' '}
+                <span className="comptes-code-mask">
                   {showPassword ? (viewingCompte.code || '---') : '********'}
                 </span>
-                <button 
-                  onClick={() => setShowPassword(!showPassword)} 
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
                   className="comptes-icon-button"
                   style={{ marginLeft: '8px' }}
                   title={showPassword ? 'Masquer' : 'Afficher'}
@@ -358,6 +465,71 @@ const Comptes: React.FC = () => {
               <p><strong>Rôle:</strong> {viewingCompte.role || 'Non défini'}</p>
               <p><strong>Commentaire:</strong> {viewingCompte.commentaire || 'Aucun'}</p>
             </div>
+
+            <section className="comptes-hab-section">
+              <h4 className="comptes-hab-title">
+                <FontAwesomeIcon icon={faKey} /> Habilitations (permissions)
+              </h4>
+              {viewingHabilitations.length === 0 ? (
+                <p className="comptes-hab-empty-msg">Aucune habilitation pour ce compte.</p>
+              ) : (
+                <ul className="comptes-hab-list">
+                  {viewingHabilitations.map((h) => (
+                    <li key={h.id} className="comptes-hab-list-item">
+                      <span className="comptes-hab-badge">{h.permission}</span>
+                      <button
+                        type="button"
+                        className="comptes-icon-button comptes-hab-delete"
+                        onClick={() => handleDeleteHabilitation(h.id)}
+                        title="Supprimer"
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <form onSubmit={handleAddHabilitation} className="comptes-hab-form">
+                <div className="comptes-form-row">
+                  <div className="comptes-form-group" style={{ flex: 1 }}>
+                    <label className="comptes-label">Nouvelle permission</label>
+                    <select
+                      value={newPermission}
+                      onChange={(e) => setNewPermission(e.target.value)}
+                      className="comptes-select"
+                    >
+                      <option value="">Choisir…</option>
+                      {PERMISSION_PRESETS.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                      <option value="__custom__">Autre (saisie libre)</option>
+                    </select>
+                  </div>
+                  {newPermission === '__custom__' && (
+                    <div className="comptes-form-group" style={{ flex: 1 }}>
+                      <label className="comptes-label">Permission personnalisée</label>
+                      <input
+                        type="text"
+                        value={customPermission}
+                        onChange={(e) => setCustomPermission(e.target.value)}
+                        className="comptes-input"
+                        placeholder="Ex: EXPORT_DONNEES"
+                        maxLength={100}
+                      />
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="comptes-primary-button"
+                  disabled={habilitationSaving || (!newPermission || (newPermission === '__custom__' && !customPermission.trim()))}
+                >
+                  <FontAwesomeIcon icon={faPlus} /> {habilitationSaving ? 'Ajout…' : 'Ajouter l\'habilitation'}
+                </button>
+              </form>
+            </section>
+
             <div className="comptes-form-actions">
               <button type="button" className="comptes-secondary-button" onClick={() => setShowViewModal(false)}>Fermer</button>
             </div>

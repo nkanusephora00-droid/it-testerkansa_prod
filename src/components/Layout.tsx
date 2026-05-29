@@ -97,8 +97,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: "/dashboard", label: "Tableau de bord", icon: "fa-home" },
     { path: "/applications", label: "Applications", icon: "fa-mobile-alt" },
     { path: "/comptes", label: "Comptes", icon: "fa-user" },
-    { path: "/tests", label: "Tests", icon: "fa-check-square" },
-    { path: "/bugs", label: "Bugs", icon: "fa-bug" },
+    { path: "/test-sessions", label: "Sessions de test", icon: "fa-check-square" },
+    { path: "/bugs", label: "Bugs QA", icon: "fa-bug" },
     { path: "/todos", label: "Tâches", icon: "fa-tasks" },
     { path: "/messages", label: "Messages", icon: "fa-comments" },
     { path: "/reports", label: "Rapports", icon: "fa-chart-bar" },
@@ -153,13 +153,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         <nav style={styles.nav}>
-          {mainMenuItems.map((item) => (
+          {mainMenuItems.map((item) => {
+            const isActive =
+              currentPath === item.path ||
+              (item.path === '/test-sessions' && currentPath === '/tests');
+            return (
             <button
               key={item.path}
               onClick={() => handleNavClick(item.path)}
               style={{
                 ...styles.navItem,
-                ...(currentPath === item.path ? styles.navItemActive : {}),
+                ...(isActive ? styles.navItemActive : {}),
               }}
             >
               <span style={styles.navIcon}>
@@ -167,7 +171,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </span>
               <span>{item.label}</span>
             </button>
-          ))}
+          );
+          })}
         </nav>
 
         <div style={styles.sidebarFooter}>
@@ -270,14 +275,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <span>Applications</span>
           </button>
           <button
-            onClick={() => handleNavClick('/tests')}
+            onClick={() => handleNavClick('/test-sessions')}
             style={{
               ...styles.bottomNavItem,
-              ...(currentPath === '/tests' ? styles.bottomNavItemActive : {}),
+              ...(currentPath === '/test-sessions' || currentPath === '/tests' ? styles.bottomNavItemActive : {}),
             }}
           >
             <i className="fas fa-check-square"></i>
-            <span>Tests</span>
+            <span>Sessions</span>
+          </button>
+          <button
+            onClick={() => handleNavClick('/bugs')}
+            style={{
+              ...styles.bottomNavItem,
+              ...(currentPath === '/bugs' ? styles.bottomNavItemActive : {}),
+            }}
+          >
+            <i className="fas fa-bug"></i>
+            <span>Bugs</span>
           </button>
           <button
             onClick={() => handleNavClick('/messages')}

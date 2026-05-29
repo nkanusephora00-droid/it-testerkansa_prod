@@ -400,7 +400,11 @@ export const attachmentsAPI = {
 // Habilitations API
 export const habilitationsAPI = {
   getAll: async () => (await api.get<Habilitation[]>("/habilitations")).data,
-  create: async (data: Partial<Habilitation>) =>
+  getByCompte: async (compteId: number) => {
+    const all = await habilitationsAPI.getAll();
+    return all.filter((h) => h.compteId === compteId);
+  },
+  create: async (data: { compteId: number; permission: string }) =>
     (await api.post<Habilitation>("/habilitations", data)).data,
   delete: async (id: number) => (await api.delete(`/habilitations/${id}`)).data,
 };

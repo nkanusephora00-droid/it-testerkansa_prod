@@ -38,6 +38,7 @@ function App() {
           <Route path="/applications" element={<PrivateRoute><Layout><Applications /></Layout></PrivateRoute>} />
           <Route path="/comptes" element={<PrivateRoute><Layout><Comptes /></Layout></PrivateRoute>} />
           <Route path="/tests" element={<PrivateRoute><Layout><Tests /></Layout></PrivateRoute>} />
+          <Route path="/test-sessions" element={<PrivateRoute><Layout><Tests /></Layout></PrivateRoute>} />
           <Route path="/bugs" element={<PrivateRoute><Layout><Bugs /></Layout></PrivateRoute>} />
           <Route path="/todos" element={<PrivateRoute><Layout><Todos /></Layout></PrivateRoute>} />
           <Route path="/messages" element={<PrivateRoute><Layout><Messages /></Layout></PrivateRoute>} />
