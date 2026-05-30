@@ -1,28 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { testSessionsAPI, applicationsAPI, testsAPI, bugsAPI, Application, Test } from '../services/api';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { testSessionsAPI, applicationsAPI, testsAPI, bugsAPI, Application, Test, TestSession } from '../services/api';
+import { consolidateSessionsByUser, consolidateAllSessions, ConsolidatedSession } from '../utils/sessionConsolidation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faUser, faBug } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import '../styles/pages/TestSessions.css';
 
-interface TestSession {
-  id: number;
-  nom: string;
-  description?: string;
-  applicationId?: number;
-  applicationNom?: string;
-  environnement?: string;
-  version?: string;
-  nom_document?: string;
-  date_creation: string;
-  statut: string;
-  role?: string;
-  created_by?: number;
-  createdByUsername?: string;
-  total_tests?: number;
-  tests_ok?: number;
-  tests_bug?: number;
-}
 
 const emptyTestForm = () => ({
   fonction: '',
@@ -44,6 +27,7 @@ const TestSessions: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingSession, setEditingSession] = useState<TestSession | null>(null);
   const [selectedSession, setSelectedSession] = useState<TestSession | null>(null);
+  const [viewMode, setViewMode] = useState<'all' | 'user' | 'global'>('all');
   const [sessionTests, setSessionTests] = useState<Test[]>([]);
   const [testsLoading, setTestsLoading] = useState(false);
   const [showTestForm, setShowTestForm] = useState(false);
@@ -117,6 +101,22 @@ const TestSessions: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
+  const consolidatedByUser = useMemo<ConsolidatedSession[]>(() => {
+    return consolidateSessionsByUser(sessions);
+  }, [sessions]);
+
+  const consolidatedGlobal = useMemo<ConsolidatedSession[]>(() => {
+    // wrap single global consolidated session into array for uniform rendering
+    if (sessions.length === 0) return [];
+    return [consolidateAllSessions(sessions)];
+  }, [sessions]);
+
+  const sessionsToDisplay: any[] = useMemo(() => {
+    if (viewMode === 'all') return sessions;
+    if (viewMode === 'user') return consolidatedByUser;
+    return consolidatedGlobal;
+  }, [viewMode, sessions, consolidatedByUser, consolidatedGlobal]);
+
   const loadSessionTests = useCallback(async (session: TestSession) => {
     setTestsLoading(true);
     try {
@@ -186,7 +186,7 @@ const TestSessions: React.FC = () => {
       applicationId: session.applicationId || 0,
       environnement: session.environnement || '',
       version: session.version || '',
-      nom_document: session.nom_document || '',
+      nom_document: session.nomDocument || '',
       statut: session.statut || 'En cours',
       role: session.role || ''
     };
@@ -314,7 +314,7 @@ const TestSessions: React.FC = () => {
         ${session.environnement ? `Environnement: ${session.environnement}` : ''}
         ${session.version ? `Version: ${session.version}` : ''}
         Statut: ${session.statut}
-        Date de création: ${new Date(session.date_creation).toLocaleDateString('fr-FR')}
+        Date de création: ${new Date(session.dateCreation).toLocaleDateString('fr-FR')}
         
         DESCRIPTION
         -----------
@@ -322,7 +322,7 @@ const TestSessions: React.FC = () => {
         
         PROGRESSION DES TESTS
         --------------------
-        ${session.total_tests ? `Tests complétés: ${session.tests_ok || 0} / ${session.total_tests}` : 'Aucun test associé'}
+        ${session.totalTests ? `Tests complétés: ${session.testsOk || 0} / ${session.totalTests}` : 'Aucun test associé'}
         
         STATUT
         ------
@@ -375,16 +375,16 @@ const TestSessions: React.FC = () => {
           <h1>${session.applicationNom || session.nom}</h1>
           ${session.nom ? `<div class="session-name">Session: ${session.nom}</div>` : ''}
           <div class="session-info">
-            <div class="info-item"><div class="info-label">Date</div><div class="info-value">${new Date(session.date_creation).toLocaleDateString('fr-FR')}</div></div>
+            <div class="info-item"><div class="info-label">Date</div><div class="info-value">${new Date(session.dateCreation).toLocaleDateString('fr-FR')}</div></div>
             ${session.environnement ? `<div class="info-item"><div class="info-label">Environnement</div><div class="info-value">${session.environnement}</div></div>` : ''}
             ${session.version ? `<div class="info-item"><div class="info-label">Version</div><div class="info-value">${session.version}</div></div>` : ''}
             <div class="info-item"><div class="info-label">Statut</div><div class="info-value">${session.statut}</div></div>
           </div>
         </div>
         <div class="stats">
-          <div class="stat-box stat-total"><strong>${session.total_tests || 0}</strong><br/>Total</div>
-          <div class="stat-box stat-ok"><strong>${session.tests_ok || 0}</strong><br/>OK</div>
-          <div class="stat-box stat-bug"><strong>${session.tests_bug || 0}</strong><br/>BUG</div>
+          <div class="stat-box stat-total"><strong>${session.totalTests || 0}</strong><br/>Total</div>
+          <div class="stat-box stat-ok"><strong>${session.testsOk || 0}</strong><br/>OK</div>
+          <div class="stat-box stat-bug"><strong>${session.testsBug || 0}</strong><br/>BUG</div>
         </div>
         ${session.description ? `<div style="margin: 15px 0;"><strong>Description:</strong> ${session.description}</div>` : ''}
         <div class="footer">IT Access Manager - Document de test</div>
@@ -395,6 +395,59 @@ const TestSessions: React.FC = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.onload = () => printWindow.print();
+    }
+  };
+
+  const handleExportConsolidatedWord = async (consolidated: ConsolidatedSession[]) => {
+    try {
+      let content = `RAPPORT CONSOLIDÉ DES SESSIONS\n================================\n\n`;
+      consolidated.forEach((c) => {
+        content += `Utilisateur: ${c.username} (${c.userId})\n`;
+        content += `Nom: ${c.nom}\n`;
+        content += `Sessions consolidées: ${c.originalSessions?.length || 0}\n`;
+        content += `Total tests: ${c.totalTests || 0} — OK: ${c.testsOk || 0} — BUG: ${c.testsBug || 0}\n`;
+        content += `Description: ${c.description || ''}\n\n`;
+      });
+
+      const blob = new Blob([content], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rapport_Consolide_Sessions_${new Date().toISOString().split('T')[0]}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setMessage({ type: 'success', text: 'Rapport consolidé (Word) généré.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de la génération du rapport consolidé' });
+    }
+  };
+
+  const handleExportConsolidatedPDF = (consolidated: ConsolidatedSession[]) => {
+    const rows = consolidated.map(c => `
+      <tr>
+        <td style="padding:8px;border:1px solid #ddd">${c.username} (${c.userId})</td>
+        <td style="padding:8px;border:1px solid #ddd">${c.nom}</td>
+        <td style="padding:8px;border:1px solid #ddd">${c.originalSessions?.length || 0}</td>
+        <td style="padding:8px;border:1px solid #ddd">${c.totalTests || 0}</td>
+        <td style="padding:8px;border:1px solid #ddd">${c.testsOk || 0}</td>
+        <td style="padding:8px;border:1px solid #ddd">${c.testsBug || 0}</td>
+      </tr>
+    `).join('');
+
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Rapport consolidé</title>
+      <style>table{border-collapse:collapse;width:100%;font-family:Arial,Helvetica,sans-serif}th,td{padding:10px;text-align:left;border:1px solid #ddd}th{background:#f6f8fa}</style>
+      </head><body>
+      <h2>Rapport consolidé des sessions</h2>
+      <table><thead><tr><th>Utilisateur</th><th>Nom consolidé</th><th>Sessions</th><th>Total</th><th>OK</th><th>BUG</th></tr></thead><tbody>${rows}</tbody></table>
+      </body></html>`;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
       printWindow.document.close();
       printWindow.onload = () => printWindow.print();
     }
@@ -412,8 +465,54 @@ const TestSessions: React.FC = () => {
             <div>
               <h2 className="test-sessions-page-title">Gestion des Sessions</h2>
               <p className="test-sessions-page-subtitle">
-                {sessions.length} session{sessions.length !== 1 ? 's' : ''} · {sessions.reduce((acc, s) => acc + (s.total_tests || 0), 0)} tests au total
+                {sessionsToDisplay.length} session{sessionsToDisplay.length !== 1 ? 's' : ''} · {sessionsToDisplay.reduce((acc, s) => acc + (s.totalTests || 0), 0)} tests au total
               </p>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  className={viewMode === 'all' ? 'test-sessions-new-button' : 'test-sessions-view-button'}
+                  onClick={() => setViewMode('all')}
+                >
+                  Toutes les sessions
+                </button>
+                <button
+                  type="button"
+                  className={viewMode === 'user' ? 'test-sessions-new-button' : 'test-sessions-view-button'}
+                  onClick={() => setViewMode('user')}
+                >
+                  Consolider par utilisateur
+                </button>
+                <button
+                  type="button"
+                  className={viewMode === 'global' ? 'test-sessions-new-button' : 'test-sessions-view-button'}
+                  onClick={() => setViewMode('global')}
+                >
+                  Consolidation globale
+                </button>
+              </div>
+              {viewMode !== 'all' && (
+                <>
+                  <p className="test-sessions-card-meta" style={{ marginTop: '8px' }}>
+                    {viewMode === 'user' ? 'Affichage consolidé par utilisateur. Les sessions sont regroupées pour visualiser les résultats globaux.' : 'Vue globale consolidée de toutes les sessions.'}
+                  </p>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                    <button
+                      type="button"
+                      className="test-sessions-export-pdf-button"
+                      onClick={() => handleExportConsolidatedPDF(viewMode === 'user' ? consolidatedByUser : consolidatedGlobal)}
+                    >
+                      <FontAwesomeIcon icon={faFilePdf} /> Exporter consolidation (PDF)
+                    </button>
+                    <button
+                      type="button"
+                      className="test-sessions-export-word-button"
+                      onClick={() => handleExportConsolidatedWord(viewMode === 'user' ? consolidatedByUser : consolidatedGlobal)}
+                    >
+                      <FontAwesomeIcon icon={faFileWord} /> Exporter consolidation (Word)
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <button
@@ -426,7 +525,11 @@ const TestSessions: React.FC = () => {
         </div>
 
         {message.text && (
-          <div className={message.type === 'success' ? 'test-sessions-success' : 'test-sessions-error'}>
+          <div
+            role="status"
+            aria-live="polite"
+            className={message.type === 'success' ? 'test-sessions-success' : 'test-sessions-error'}
+          >
             {message.text}
           </div>
         )}
@@ -438,11 +541,16 @@ const TestSessions: React.FC = () => {
               <button className="test-sessions-close-detail-button" onClick={() => setSelectedSession(null)}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
-            </div>
-            <div className="test-sessions-session-details-content">
-              <div className="test-sessions-detail-row">
-                <span className="test-sessions-detail-label">Statut:</span>
-                <span style={getStatusBadge(selectedSession.statut)}>{selectedSession.statut}</span>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                <button
+                  type="button"
+                  aria-pressed={viewMode === 'all'}
+                  aria-label="Afficher toutes les sessions"
+                  className={viewMode === 'all' ? 'test-sessions-new-button' : 'test-sessions-view-button'}
+                  onClick={() => setViewMode('all')}
+                >
+                  Toutes les sessions
+                </button>
               </div>
               <div className="test-sessions-detail-row">
                 <span className="test-sessions-detail-label">Application:</span>
@@ -460,23 +568,23 @@ const TestSessions: React.FC = () => {
                   <span>{selectedSession.version}</span>
                 </div>
               )}
-              {selectedSession.nom_document && (
+              {selectedSession.nomDocument && (
                 <div className="test-sessions-detail-row">
                   <span className="test-sessions-detail-label">Document:</span>
-                  <span>{selectedSession.nom_document}</span>
+                  <span>{selectedSession.nomDocument}</span>
                 </div>
               )}
               <div className="test-sessions-detail-row">
                 <span className="test-sessions-detail-label">Total tests:</span>
-                <span>{selectedSession.total_tests || 0}</span>
+                <span>{selectedSession.totalTests || 0}</span>
               </div>
               <div className="test-sessions-detail-row">
                 <span className="test-sessions-detail-label">Tests OK:</span>
-                <span style={{ color: '#27ae60', fontWeight: 600 }}>{selectedSession.tests_ok || 0}</span>
+                <span style={{ color: '#27ae60', fontWeight: 600 }}>{selectedSession.testsOk || 0}</span>
               </div>
               <div className="test-sessions-detail-row">
                 <span className="test-sessions-detail-label">Tests BUG:</span>
-                <span style={{ color: '#dc3545', fontWeight: 600 }}>{selectedSession.tests_bug || 0}</span>
+                <span style={{ color: '#dc3545', fontWeight: 600 }}>{selectedSession.testsBug || 0}</span>
               </div>
               {selectedSession.description && (
                 <div className="test-sessions-detail-row">
@@ -503,18 +611,27 @@ const TestSessions: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      className="test-sessions-view-button"
-                      style={{ padding: '8px 12px', fontSize: '13px' }}
-                      onClick={() => navigate('/bugs')}
+                      aria-pressed={viewMode === 'user'}
+                      aria-label="Consolider les sessions par utilisateur"
+                      className={viewMode === 'user' ? 'test-sessions-new-button' : 'test-sessions-view-button'}
+                      onClick={() => setViewMode('user')}
                     >
+                      Consolider par utilisateur
+                    </button>
+                    <button
+                      type="button"
+                      className={viewMode === 'global' ? 'test-sessions-new-button' : 'test-sessions-view-button'}
+                      onClick={() => setViewMode('global')}
+                    >
+                      Consolidation globale
+                    </button>
+                    <button type="button" className="test-sessions-view-button" onClick={() => navigate('/bugs')}>
                       <FontAwesomeIcon icon={faBug} /> Voir tous les bugs
                     </button>
                   </div>
                 </div>
 
-                {testsLoading ? (
-                  <p className="test-sessions-card-meta">Chargement des étapes...</p>
-                ) : sessionTests.length === 0 ? (
+                {sessionTests.length === 0 ? (
                   <p className="test-sessions-card-meta">Aucune étape pour cette session.</p>
                 ) : (
                   <div className="test-sessions-steps-list">
@@ -632,7 +749,7 @@ const TestSessions: React.FC = () => {
           </div>
         )}
 
-        {sessions.length === 0 ? (
+        {sessionsToDisplay.length === 0 ? (
           <div className="test-sessions-empty-state">
             <div className="test-sessions-empty-icon">
               <FontAwesomeIcon icon={faPlus} />
@@ -644,11 +761,13 @@ const TestSessions: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="sessions-grid test-sessions-grid">
-            {sessions.map((session) => (
+          <div role="list" className="sessions-grid test-sessions-grid">
+            {sessionsToDisplay.map((session) => (
               <div
+                role="listitem"
+                tabIndex={0}
                 key={session.id}
-                className="test-sessions-card"
+                className={`test-sessions-card ${viewMode !== 'all' ? 'test-sessions-card-consolidated' : ''}`}
                 style={{
                   borderColor: getStatusColor(session.statut),
                   borderWidth: '2px',
@@ -657,9 +776,16 @@ const TestSessions: React.FC = () => {
               >
                 <div className="test-sessions-card-header">
                   <h3 className="test-sessions-card-title">{session.nom}</h3>
-                  <span className="test-sessions-status-badge" style={{ backgroundColor: getStatusColor(session.statut) }}>
-                    {session.statut}
-                  </span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {viewMode !== 'all' && (
+                      <span className="test-sessions-card-meta" style={{ fontSize: '0.78rem', padding: '4px 8px', backgroundColor: '#f0f3f5', color: '#3c4858', borderRadius: '999px' }}>
+                        {session.username || 'Consolidé'}
+                      </span>
+                    )}
+                    <span className="test-sessions-status-badge" style={{ backgroundColor: getStatusColor(session.statut) }}>
+                      {session.statut}
+                    </span>
+                  </div>
                 </div>
                  {session.createdByUsername && (
                    <p className="test-sessions-card-owner">
@@ -680,39 +806,49 @@ const TestSessions: React.FC = () => {
                   {session.version && <span><i className="fas fa-code-branch"></i> v{session.version}</span>}
                 </div>
                 <div className="test-sessions-card-stats">
-                  <span>Total: <strong>{session.total_tests || 0}</strong></span>
-                  <span style={{ color: '#27ae60' }}>OK: <strong>{session.tests_ok || 0}</strong></span>
-                  <span style={{ color: '#dc3545' }}>BUG: <strong>{session.tests_bug || 0}</strong></span>
+                  <span>Total: <strong>{session.totalTests || 0}</strong></span>
+                  <span style={{ color: '#27ae60' }}>OK: <strong>{session.testsOk || 0}</strong></span>
+                  <span style={{ color: '#dc3545' }}>BUG: <strong>{session.testsBug || 0}</strong></span>
                 </div>
-                <div className="test-sessions-card-actions">
-                  <button
-                    className="test-sessions-view-button"
-                    onClick={() => setSelectedSession(session)}
-                    title="Voir détails"
-                  >
-                    <FontAwesomeIcon icon={faEye} /> Détails
-                  </button>
-                  <button
-                    className="test-sessions-edit-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEditModal(session);
-                    }}
-                    title="Modifier"
-                  >
-                    <FontAwesomeIcon icon={faEdit} /> Modifier
-                  </button>
-                  <button
-                    className="test-sessions-delete-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(session.id);
-                    }}
-                    title="Supprimer"
-                  >
-                    <FontAwesomeIcon icon={faTrash} /> Supprimer
-                  </button>
-                </div>
+                {viewMode === 'all' ? (
+                  <div className="test-sessions-card-actions">
+                    <button
+                      className="test-sessions-view-button"
+                      onClick={() => setSelectedSession(session)}
+                      title="Voir détails"
+                    >
+                      <FontAwesomeIcon icon={faEye} /> Détails
+                    </button>
+                    <button
+                      className="test-sessions-edit-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditModal(session);
+                      }}
+                      title="Modifier"
+                    >
+                      <FontAwesomeIcon icon={faEdit} /> Modifier
+                    </button>
+                    <button
+                      className="test-sessions-delete-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(session.id);
+                      }}
+                      title="Supprimer"
+                    >
+                      <FontAwesomeIcon icon={faTrash} /> Supprimer
+                    </button>
+                  </div>
+                ) : (
+                  <div className="test-sessions-card-actions" style={{ justifyContent: 'flex-start' }}>
+                    <span className="test-sessions-card-meta" style={{ marginTop: '8px' }}>
+                      {Array.isArray((session as ConsolidatedSession).originalSessions)
+                        ? `${(session as ConsolidatedSession).originalSessions.length} sessions consolidées`
+                        : 'Groupement utilisateur'}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -721,10 +857,10 @@ const TestSessions: React.FC = () => {
 
       {/* Modal création */}
       {showCreateModal && (
-        <div className="test-sessions-modal">
+        <div className="test-sessions-modal" role="dialog" aria-modal="true" aria-labelledby="create-session-title">
           <div className="test-sessions-modal-content">
             <span className="test-sessions-modal-close-button" onClick={() => setShowCreateModal(false)}>&times;</span>
-            <h3 className="test-sessions-modal-title">Nouvelle session</h3>
+            <h3 id="create-session-title" className="test-sessions-modal-title">Nouvelle session</h3>
             <p className="test-sessions-modal-subtitle">Créez une session pour regrouper vos cas de test.</p>
             <form onSubmit={handleCreateSession} className="test-sessions-modal-form">
               <div className="test-sessions-form-group">
@@ -828,10 +964,10 @@ const TestSessions: React.FC = () => {
 
       {/* Modal édition */}
       {showModal && (
-        <div className="test-sessions-modal">
+        <div className="test-sessions-modal" role="dialog" aria-modal="true" aria-labelledby="edit-session-title">
           <div className="test-sessions-modal-content">
             <span className="test-sessions-modal-close-button" onClick={() => setShowModal(false)}>&times;</span>
-            <h3 className="test-sessions-modal-title">Modifier la session</h3>
+            <h3 id="edit-session-title" className="test-sessions-modal-title">Modifier la session</h3>
             <form onSubmit={handleUpdateSession} className="test-sessions-modal-form">
               <div className="test-sessions-form-group">
                 <label className="test-sessions-label">Nom *</label>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { authAPI } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
 import NotificationBell from "./NotificationBell";
 import "./Layout.css";
 
@@ -30,67 +30,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMobile = useResponsive();
+  const { user, logout } = useAuth();
 
   const currentPath = location.pathname;
-
-  // Vérifier le token au chargement
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Layout: Checking token on load");
-      console.log("Layout: Token in localStorage:", token ? token.substring(0, 20) + "..." : "NO TOKEN");
-    }
-    if (!token) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Layout: No token found, redirecting to login");
-      }
-      navigate("/login");
-      return;
-    }
-
-    // Vérifier si le token est valide
-    const validateToken = async () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Layout: Validating token with /auth/me");
-      }
-      try {
-        const response = await authAPI.me();
-        if (process.env.NODE_ENV === 'development') {
-          console.log("Layout: Token validation successful:", response);
-        }
-      } catch (error: unknown) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error("Layout: Token validation error:", error);
-          console.error("Layout: Token validation response:", (error as { response?: { status?: number; data?: unknown } })?.response?.status, (error as { response?: { data?: unknown } })?.response?.data);
-        }
-        
-        // Ne déconnecter que si c'est une vraie erreur 401 (token invalide/expiré)
-        // Ne pas déconnecter pour 429 (rate limiting) ou autres erreurs temporaires
-        const err = error as { response?: { status?: number } };
-        if (err?.response?.status === 401) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log("Layout: Token invalid (401), redirecting to login");
-          }
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("token_type");
-          localStorage.removeItem("user_role");
-          localStorage.removeItem("user_id");
-          localStorage.removeItem("username");
-          localStorage.removeItem("email");
-          navigate("/login");
-        } else {
-          if (process.env.NODE_ENV === 'development') {
-            console.log("Layout: Token validation failed but not 401, keeping user logged in");
-          }
-        }
-      }
-    };
-
-    validateToken();
-  }, [navigate]);
-
-  // Récupérer le rôle de l'utilisateur depuis le localStorage
-  const userRole = localStorage.getItem("user_role");
+  const userRole = user?.role || localStorage.getItem("user_role") || '';
   const isAdmin = userRole === "admin";
 
   const mainMenuItems = [
@@ -109,13 +52,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("token_type");
-    localStorage.removeItem("user_role");
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("username");
-    localStorage.removeItem("email");
-    navigate("/login");
+    logout();
   };
 
   const toggleMobileMenu = () => {

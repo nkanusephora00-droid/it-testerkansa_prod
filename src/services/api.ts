@@ -1,9 +1,7 @@
 import axios from "axios";
 
-// Use relative URL in development (proxy handles it), full URL in production
-const API_URL = process.env.NODE_ENV === 'development'
-  ? ''
-  : (process.env.REACT_APP_API_URL || "https://backend-java-s6d8.onrender.com");
+// Use REACT_APP_API_URL when provided; otherwise use proxy in development and remote backend in production
+const API_URL = process.env.REACT_APP_API_URL?.trim() || (process.env.NODE_ENV === 'development' ? '' : "https://backend-java-s6d8.onrender.com");
 
 // TypeScript interfaces for API data
 export interface User {
@@ -101,17 +99,28 @@ export interface TestSession {
   applicationNom?: string;
   environnement?: string;
   version?: string;
-  nom_document?: string;
-  date_creation: string;
+  nomDocument?: string;
+  dateCreation: string;
   statut: string;
   role?: string;
-  created_by?: number;
+  createdBy?: number;
   createdByUsername?: string;
   tests: Test[];
-  total_tests: number;
-  tests_ok: number;
-  tests_bug: number;
-  tests_en_cours: number;
+  totalTests: number;
+  testsOk: number;
+  testsBug: number;
+  testsEnCours: number;
+}
+
+export interface TestSessionRequest {
+  nom: string;
+  description?: string;
+  applicationId?: number;
+  environnement?: string;
+  version?: string;
+  nom_document?: string;
+  statut?: string;
+  role?: string;
 }
 
 export interface PageResponse<T> {
@@ -193,11 +202,14 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("access_token");
+  const tokenType = localStorage.getItem("token_type") || 'Bearer';
+  const normalizedTokenType = tokenType.charAt(0).toUpperCase() + tokenType.slice(1).toLowerCase();
+
   if (process.env.NODE_ENV === 'development') {
     console.log("API Request:", config.method?.toUpperCase(), config.url);
   }
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `${normalizedTokenType} ${token}`;
   }
   return config;
 });
@@ -413,8 +425,8 @@ export const habilitationsAPI = {
 export const testSessionsAPI = {
   getAll: async () => (await api.get<TestSession[]>("/test-sessions")).data,
   getById: async (id: number) => (await api.get<TestSession>(`/test-sessions/${id}`)).data,
-  create: async (data: Partial<TestSession>) => (await api.post<TestSession>("/test-sessions", data)).data,
-  update: async (id: number, data: Partial<TestSession>) =>
+  create: async (data: Partial<TestSessionRequest>) => (await api.post<TestSession>("/test-sessions", data)).data,
+  update: async (id: number, data: Partial<TestSessionRequest>) =>
     (await api.put<TestSession>(`/test-sessions/${id}`, data)).data,
   delete: async (id: number) => (await api.delete(`/test-sessions/${id}`)).data,
 };

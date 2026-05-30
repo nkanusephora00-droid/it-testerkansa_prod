@@ -6,20 +6,20 @@ export interface ConsolidatedSession {
   username: string;
   nom: string;
   description: string;
-  date_creation: string;
+  dateCreation: string;
   statut: string;
   originalSessions: TestSession[];
   consolidatedTests: Test[];
-  total_tests: number;
-  tests_ok: number;
-  tests_bug: number;
-  tests_en_cours: number;
+  totalTests: number;
+  testsOk: number;
+  testsBug: number;
+  testsEnCours: number;
 }
 
 export function consolidateSessionsByUser(sessions: TestSession[]): ConsolidatedSession[] {
   // Grouper les sessions par utilisateur
   const sessionsByUser = sessions.reduce((acc, session) => {
-    const userId = session.created_by || 0;
+    const userId = session.createdBy || 0;
     const username = session.createdByUsername || 'Utilisateur inconnu';
     
     if (!acc[userId]) {
@@ -60,14 +60,14 @@ export function consolidateSessionsByUser(sessions: TestSession[]): Consolidated
       username: userGroup.username,
       nom: `Session consolidée - ${userGroup.username}`,
       description: `Consolidation de ${userGroup.originalSessions.length} session(s) avec ${totalTests} test(s) au total`,
-      date_creation: userGroup.originalSessions[0]?.date_creation || new Date().toISOString(),
+      dateCreation: userGroup.originalSessions[0]?.dateCreation || new Date().toISOString(),
       statut: globalStatut,
       originalSessions: userGroup.originalSessions,
       consolidatedTests: allTests,
-      total_tests: totalTests,
-      tests_ok: testsOk,
-      tests_bug: testsBug,
-      tests_en_cours: testsEnCours
+      totalTests: totalTests,
+      testsOk: testsOk,
+      testsBug: testsBug,
+      testsEnCours: testsEnCours
     } as ConsolidatedSession;
   });
 }
@@ -94,13 +94,13 @@ export function consolidateAllSessions(sessions: TestSession[]): ConsolidatedSes
     username: 'Global',
     nom: 'Session Globale Consolidée',
     description: `Consolidation de ${sessions.length} session(s) avec ${totalTests} test(s) au total`,
-    date_creation: sessions[0]?.date_creation || new Date().toISOString(),
+    dateCreation: sessions[0]?.dateCreation || new Date().toISOString(),
     statut: globalStatut,
     originalSessions: sessions,
     consolidatedTests: allTests,
-    total_tests: totalTests,
-    tests_ok: testsOk,
-    tests_bug: testsBug,
-    tests_en_cours: testsEnCours
+    totalTests: totalTests,
+    testsOk: testsOk,
+    testsBug: testsBug,
+    testsEnCours: testsEnCours
   };
 }

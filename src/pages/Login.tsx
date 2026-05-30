@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
 import '../styles/pages/Login.css';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,25 +20,13 @@ const Login: React.FC = () => {
       if (process.env.NODE_ENV === 'development') {
         console.log("Login: Attempting login with:", username);
       }
-       const data = await authAPI.login(username, password);
-       if (process.env.NODE_ENV === 'development') {
-        console.log("Login: Login response:", data);
-        console.log("Login: Storing token:", data.accessToken ? data.accessToken.substring(0, 20) + "..." : "NO TOKEN");
-       }
-       localStorage.setItem('access_token', data.accessToken);
-       localStorage.setItem('token_type', data.tokenType);
 
-       // Fetch user info for Layout component (/auth/me)
-       const me = await authAPI.me();
-       localStorage.setItem('user_role', me.role || '');
-       localStorage.setItem('user_id', String(me.id ?? ''));
-       localStorage.setItem('username', me.username || '');
-       localStorage.setItem('email', me.email || '');
-       if (process.env.NODE_ENV === 'development') {
-        console.log("Login: Token stored in localStorage");
-        console.log("Login: Navigating to dashboard");
-       }
-       navigate('/dashboard');
+      const response = await login(username, password);
+      if (!response.success) {
+        setError(response.error || 'Erreur de connexion');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: unknown) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Login: Erreur de connexion:', err);

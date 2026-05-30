@@ -147,6 +147,21 @@
   border: 1px solid var(--border-color);
 }
 
+.test-sessions-card-consolidated {
+  background: linear-gradient(135deg, #fbfdff 0%, #f6f9fc 100%);
+  border: 1px solid rgba(60,72,88,0.08);
+  box-shadow: 0 6px 18px rgba(16,24,40,0.04);
+}
+
+.test-sessions-consolidated-badge {
+  font-size: 12px;
+  padding: 6px 10px;
+  background: #eef6ff;
+  color: #1f6feb;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
 .test-sessions-stat-item {
   display: flex;
   flex-direction: column;

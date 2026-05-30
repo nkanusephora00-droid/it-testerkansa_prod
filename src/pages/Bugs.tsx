@@ -29,10 +29,21 @@ const Bugs: React.FC = () => {
 
   const fetchBugs = useCallback(async () => {
     try {
-      const data = await bugsAPI.getAll();
-      setBugs(data);
-    } catch {
-      setMessage({ type: "error", text: "Erreur lors du chargement des bugs" });
+      const data: any = await bugsAPI.getAll();
+      // backend may return a paged response { content: [...] } or a raw array
+      const list = Array.isArray(data) ? data : (data?.content || []);
+      setBugs(list);
+    } catch (err: any) {
+      // Log detailed error information to help diagnose 500 responses from backend
+      console.error('Failed to fetch bugs:', err?.response ?? err);
+      const status = err?.response?.status;
+      const respData = err?.response?.data;
+      setMessage({
+        type: "error",
+        text: status ? `Erreur ${status} lors du chargement des bugs` : "Erreur lors du chargement des bugs",
+      });
+      // provide more info in console for debugging (not shown to users)
+      if (respData) console.debug('Response data:', respData);
     } finally {
       setLoading(false);
     }
