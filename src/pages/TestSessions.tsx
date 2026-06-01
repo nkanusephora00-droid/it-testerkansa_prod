@@ -68,17 +68,6 @@ const TestSessions: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (statut: string) => ({
-    padding: '4px 10px',
-    borderRadius: '12px',
-    fontSize: '11px',
-    fontWeight: 600,
-    backgroundColor: getStatusColor(statut),
-    color: 'white',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px'
-  });
-
   const fetchData = useCallback(async () => {
     try {
       const [sessionsData, appsData] = await Promise.all([
@@ -631,7 +620,9 @@ const TestSessions: React.FC = () => {
                   </div>
                 </div>
 
-                {sessionTests.length === 0 ? (
+                {testsLoading ? (
+                  <p className="test-sessions-card-meta">Chargement des étapes...</p>
+                ) : sessionTests.length === 0 ? (
                   <p className="test-sessions-card-meta">Aucune étape pour cette session.</p>
                 ) : (
                   <div className="test-sessions-steps-list">
