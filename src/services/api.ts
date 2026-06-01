@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Use REACT_APP_API_URL when provided; otherwise use proxy in development and remote backend in production
-const API_URL = process.env.REACT_APP_API_URL?.trim() || (process.env.NODE_ENV === 'development' ? '' : "https://backend-java-s6d8.onrender.com");
+const API_URL = process.env.REACT_APP_API_URL?.trim() || (process.env.NODE_ENV === 'development' ? '' : "https://backend-java-s6d8.onrender.com/api");
 
 // TypeScript interfaces for API data
 export interface User {
