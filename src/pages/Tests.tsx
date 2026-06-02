@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faCheck, faTimes, faCompress, faExpand, faEye, faFilePdf, faFileWord } from '@fortawesome/free-solid-svg-icons';
 import { ConsolidatedSession, consolidateSessionsByUser, consolidateAllSessions } from '../utils/sessionConsolidation';
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType } from 'docx';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/pages/Tests.css';
 
 // Hook pour détecter la taille d'écran
@@ -25,6 +26,8 @@ const useResponsive = () => {
 
 const Tests: React.FC = () => {
   const isMobile = useResponsive(); // Utilisation du hook responsive
+  const location = useLocation();
+  const navigate = useNavigate();
   const [tests, setTests] = useState<Test[]>([]);
   const [sessions, setSessions] = useState<TestSession[]>([]);
   const [allSessions, setAllSessions] = useState<TestSession[]>([]);
@@ -138,6 +141,14 @@ const Tests: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Gérer la navigation avec un sessionId dans le state
+  useEffect(() => {
+    if (location.state && location.state.sessionId) {
+      setSelectedSession(location.state.sessionId);
+      setView('tests');
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (selectedUser !== null) {
@@ -1480,7 +1491,17 @@ const Tests: React.FC = () => {
     
     return (
       <div>
-        <button className="tests-back-button" onClick={() => { setSelectedSession(null); setView('sessions'); }}>
+        <button 
+          className="tests-back-button" 
+          onClick={() => { 
+            if (location.state?.sessionId) {
+              navigate('/test-sessions');
+            } else {
+              setSelectedSession(null); 
+              setView('sessions'); 
+            }
+          }}
+        >
           <i className="fas fa-arrow-left"></i> Retour aux sessions
         </button>
         

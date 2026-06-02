@@ -1,21 +1,10 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { testSessionsAPI, applicationsAPI, testsAPI, bugsAPI, Application, Test, TestSession } from '../services/api';
+import { testSessionsAPI, applicationsAPI, Application, TestSession } from '../services/api';
 import { consolidateSessionsByUser, consolidateAllSessions, ConsolidatedSession } from '../utils/sessionConsolidation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faTimes, faUser, faBug } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faUser, faChartLine } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import '../styles/pages/TestSessions.css';
-
-
-const emptyTestForm = () => ({
-  fonction: '',
-  precondition: '',
-  etapes: '',
-  resultatAttendu: '',
-  resultatObtenu: '',
-  statut: 'EN COURS',
-  commentaires: '',
-});
 
 const TestSessions: React.FC = () => {
   const navigate = useNavigate();
@@ -26,13 +15,7 @@ const TestSessions: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingSession, setEditingSession] = useState<TestSession | null>(null);
-  const [selectedSession, setSelectedSession] = useState<TestSession | null>(null);
   const [viewMode, setViewMode] = useState<'all' | 'user' | 'global'>('all');
-  const [sessionTests, setSessionTests] = useState<Test[]>([]);
-  const [testsLoading, setTestsLoading] = useState(false);
-  const [showTestForm, setShowTestForm] = useState(false);
-  const [editingTest, setEditingTest] = useState<Test | null>(null);
-  const [testForm, setTestForm] = useState(emptyTestForm());
 
   const [sessionForm, setSessionForm] = useState({ 
     nom: '', 
@@ -74,11 +57,11 @@ const TestSessions: React.FC = () => {
         testSessionsAPI.getAll(),
         applicationsAPI.getAll()
       ]);
-      const sessions: any = sessionsData;
-      const apps: any = appsData;
-      const sessionsList = Array.isArray(sessions) ? sessions : (sessions?.content || []);
+      const sessionsList = Array.isArray(sessionsData) ? sessionsData : ((sessionsData as any)?.content || []);
+      const appsList = Array.isArray(appsData) ? appsData : ((appsData as any)?.content || []);
+      
       setSessions(sessionsList);
-      setApplications(Array.isArray(apps) ? apps : (apps?.content || []));
+      setApplications(appsList);
     } catch (err) {
       setMessage({ type: 'error', text: 'Erreur de chargement' });
     } finally {
@@ -106,29 +89,6 @@ const TestSessions: React.FC = () => {
     return consolidatedGlobal;
   }, [viewMode, sessions, consolidatedByUser, consolidatedGlobal]);
 
-  const loadSessionTests = useCallback(async (session: TestSession) => {
-    setTestsLoading(true);
-    try {
-      const tests = await testsAPI.getAll(session.id);
-      setSessionTests(tests);
-    } catch {
-      setMessage({ type: 'error', text: 'Erreur chargement des étapes de test' });
-      setSessionTests([]);
-    } finally {
-      setTestsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (selectedSession) {
-      loadSessionTests(selectedSession);
-    } else {
-      setSessionTests([]);
-      setShowTestForm(false);
-      setEditingTest(null);
-    }
-  }, [selectedSession, loadSessionTests]);
-
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -146,9 +106,6 @@ const TestSessions: React.FC = () => {
       setMessage({ type: 'success', text: 'Session créée avec succès!' });
       setShowCreateModal(false);
       setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nom_document: '', statut: 'En cours', role: '' });
-      setEditingTest(null);
-      setShowTestForm(false);
-      setSelectedSession(createdSession);
       fetchData();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
@@ -213,84 +170,6 @@ const TestSessions: React.FC = () => {
     if (!appId) return 'Aucune';
     const app = applications.find(a => a.id === appId);
     return app ? app.nom : 'Application inconnue';
-  };
-
-  const handleSaveTest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedSession) return;
-    const app = applications.find((a) => a.id === selectedSession.applicationId);
-    const payload = {
-      sessionId: selectedSession.id,
-      applicationId: selectedSession.applicationId,
-      applicationNom: app?.nom || selectedSession.applicationNom,
-      version: selectedSession.version,
-      environnement: selectedSession.environnement,
-      ...testForm,
-    };
-    try {
-      if (editingTest) {
-        await testsAPI.update(editingTest.id, payload);
-        setMessage({ type: 'success', text: 'Étape mise à jour' });
-      } else {
-        await testsAPI.create(payload);
-        setMessage({ type: 'success', text: 'Étape ajoutée' });
-      }
-      setShowTestForm(false);
-      setEditingTest(null);
-      setTestForm(emptyTestForm());
-      await loadSessionTests(selectedSession);
-      fetchData();
-    } catch {
-      setMessage({ type: 'error', text: 'Erreur lors de l\'enregistrement de l\'étape' });
-    }
-  };
-
-  const handleDeleteTest = async (testId: number) => {
-    if (!selectedSession || !window.confirm('Supprimer cette étape de test ?')) return;
-    try {
-      await testsAPI.delete(testId);
-      setMessage({ type: 'success', text: 'Étape supprimée' });
-      await loadSessionTests(selectedSession);
-      fetchData();
-    } catch {
-      setMessage({ type: 'error', text: 'Suppression impossible' });
-    }
-  };
-
-  const handleDeclareBug = async (test: Test) => {
-    const title = window.prompt('Titre du bug', `Bug sur: ${test.fonction}`);
-    if (!title) return;
-    try {
-      await bugsAPI.create({
-        testStepId: test.id,
-        title,
-        severity: 'MAJOR',
-        priority: 'HIGH',
-        status: 'OPEN',
-      });
-      if (test.statut !== 'BUG') {
-        await testsAPI.update(test.id, { ...test, statut: 'BUG', sessionId: test.sessionId });
-      }
-      setMessage({ type: 'success', text: 'Bug déclaré — voir menu Bugs' });
-      if (selectedSession) await loadSessionTests(selectedSession);
-      fetchData();
-    } catch {
-      setMessage({ type: 'error', text: 'Impossible de déclarer le bug' });
-    }
-  };
-
-  const openEditTest = (test: Test) => {
-    setEditingTest(test);
-    setTestForm({
-      fonction: test.fonction,
-      precondition: test.precondition || '',
-      etapes: test.etapes || '',
-      resultatAttendu: test.resultatAttendu || '',
-      resultatObtenu: test.resultatObtenu || '',
-      statut: test.statut,
-      commentaires: test.commentaires || '',
-    });
-    setShowTestForm(true);
   };
 
   const handleExportWord = async (session: TestSession) => {
@@ -811,7 +690,7 @@ const TestSessions: React.FC = () => {
                   <div className="test-sessions-card-actions">
                     <button
                       className="test-sessions-view-button"
-                      onClick={() => setSelectedSession(session)}
+                      onClick={() => navigate('/tests', { state: { sessionId: session.id } })}
                       title="Voir les tests"
                     >
                       <FontAwesomeIcon icon={faEye} /> Voir les tests

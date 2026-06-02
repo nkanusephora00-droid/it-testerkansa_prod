@@ -86,9 +86,9 @@ const Comptes: React.FC = () => {
         habilitationsAPI.getAll(),
       ]);
       // Gérer à la fois les réponses tableau direct et PageResponse
-      const comptes: any = comptesData;
+      const rawComptes: any = comptesData;
       const apps: any = appsData;
-      const comptesList = Array.isArray(comptes) ? comptes : (comptes?.content || []);
+      const comptesList = Array.isArray(rawComptes) ? rawComptes : (rawComptes?.content || []);
       setComptes(comptesList);
       setFilteredComptes(comptesList);
       setApplications(Array.isArray(apps) ? apps : (apps?.content || []));
