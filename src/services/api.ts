@@ -1,7 +1,11 @@
 import axios from "axios";
 
+const normalizeApiUrl = (url: string) => url.replace(/\/api\/?$/, '').replace(/\/$/, '');
+
 // Use REACT_APP_API_URL when provided; otherwise use proxy in development and remote backend in production
-const API_URL = process.env.REACT_APP_API_URL?.trim() || (process.env.NODE_ENV === 'development' ? '' : "https://backend-java-s6d8.onrender.com/api");
+const API_URL = process.env.REACT_APP_API_URL?.trim()
+  ? normalizeApiUrl(process.env.REACT_APP_API_URL.trim())
+  : (process.env.NODE_ENV === 'development' ? '' : "https://backend-java-s6d8.onrender.com");
 
 // TypeScript interfaces for API data
 export interface User {
@@ -274,8 +278,16 @@ export const authAPI = {
     const params = new URLSearchParams();
     params.append('username', username);
     params.append('password', password);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('authAPI.login: posting to', api.defaults.baseURL + '/auth/token', 'payload:', params.toString());
+    }
     const response = await api.post("/auth/token", params, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    }).catch(err => {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('authAPI.login: request failed', err?.response?.status, err?.response?.data || err.message);
+      }
+      throw err;
     });
     return response.data;
   },

@@ -51,10 +51,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (process.env.NODE_ENV === 'development') {
         console.error('AuthProvider: login error', err);
       }
-      const error = err as { response?: { data?: { detail?: string } }; message?: string };
+      const error = err as { response?: { data?: any }; message?: string };
+      const responseData = error.response?.data;
+      const backendMessage = typeof responseData === 'string'
+        ? responseData
+        : responseData?.detail || responseData?.accessToken || responseData?.message;
       return {
         success: false,
-        error: error.response?.data?.detail || error.message || 'Erreur de connexion',
+        error: backendMessage || error.message || 'Erreur de connexion',
       };
     }
   }, []);

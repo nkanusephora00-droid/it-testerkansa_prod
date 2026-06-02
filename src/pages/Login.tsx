@@ -31,9 +31,12 @@ const Login: React.FC = () => {
       if (process.env.NODE_ENV === 'development') {
         console.error('Login: Erreur de connexion:', err);
       }
-      const error = err as { response?: { data?: { detail?: string; accessToken?: string } }; message?: string };
-      const errorMessage = error.response?.data?.detail || error.response?.data?.accessToken || error.message || 'Erreur de connexion';
-      setError(errorMessage);
+      const error = err as { response?: { data?: any }; message?: string };
+      const responseData = error.response?.data;
+      const errorMessage = typeof responseData === 'string'
+        ? responseData
+        : responseData?.detail || responseData?.accessToken || responseData?.message || error.message;
+      setError(errorMessage || 'Erreur de connexion');
     } finally {
       setLoading(false);
     }
