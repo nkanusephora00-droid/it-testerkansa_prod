@@ -142,10 +142,13 @@ const TestSessions: React.FC = () => {
         statut: sessionForm.statut,
         role: sessionForm.role || undefined
       };
-      await testSessionsAPI.create(sessionData);
+      const createdSession = await testSessionsAPI.create(sessionData);
       setMessage({ type: 'success', text: 'Session créée avec succès!' });
       setShowCreateModal(false);
       setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nom_document: '', statut: 'En cours', role: '' });
+      setEditingTest(null);
+      setShowTestForm(false);
+      setSelectedSession(createdSession);
       fetchData();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
@@ -623,7 +626,10 @@ const TestSessions: React.FC = () => {
                 {testsLoading ? (
                   <p className="test-sessions-card-meta">Chargement des étapes...</p>
                 ) : sessionTests.length === 0 ? (
-                  <p className="test-sessions-card-meta">Aucune étape pour cette session.</p>
+                  <div className="test-sessions-empty-state" style={{ marginTop: '12px', textAlign: 'left' }}>
+                    <h4>Aucun test pour cette session</h4>
+                    <p>La session est prête. Cliquez sur « Ajouter une étape » pour créer votre premier test.</p>
+                  </div>
                 ) : (
                   <div className="test-sessions-steps-list">
                     {sessionTests.map((test) => (
@@ -806,9 +812,9 @@ const TestSessions: React.FC = () => {
                     <button
                       className="test-sessions-view-button"
                       onClick={() => setSelectedSession(session)}
-                      title="Voir détails"
+                      title="Voir les tests"
                     >
-                      <FontAwesomeIcon icon={faEye} /> Détails
+                      <FontAwesomeIcon icon={faEye} /> Voir les tests
                     </button>
                     <button
                       className="test-sessions-edit-button"
