@@ -652,3 +652,177 @@
 .test-sessions-test-form h5 {
   margin: 0 0 8px;
 }
+
+/* Responsive improvements */
+@media (max-width: 1024px) {
+  .test-sessions-main {
+    padding: 16px;
+  }
+
+  .test-sessions-header {
+    align-items: stretch;
+  }
+
+  .test-sessions-header-left {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .test-sessions-page-title {
+    font-size: 20px;
+  }
+
+  .test-sessions-page-subtitle {
+    font-size: 13px;
+  }
+
+  .test-sessions-card-stats,
+  .test-sessions-card-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .test-sessions-card-actions button,
+  .test-sessions-card-actions .test-sessions-view-button,
+  .test-sessions-card-actions .test-sessions-edit-button,
+  .test-sessions-card-actions .test-sessions-delete-button {
+    width: 100%;
+  }
+
+  .test-sessions-form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .test-sessions-form-actions button {
+    width: 100%;
+  }
+
+  .test-sessions-steps-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .test-sessions-step-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .test-sessions-main {
+    padding: 12px;
+  }
+
+  .test-sessions-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .test-sessions-header-left {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .test-sessions-header-left > div {
+    width: 100%;
+  }
+
+  .test-sessions-card {
+    padding: 18px;
+  }
+
+  .test-sessions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .test-sessions-session-details,
+  .test-sessions-modal-content {
+    padding: 18px;
+  }
+
+  .test-sessions-modal-content {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 12px 24px;
+    border-radius: 14px;
+  }
+
+  .test-sessions-detail-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .test-sessions-detail-label {
+    min-width: auto;
+  }
+
+  .test-sessions-card-owner,
+  .test-sessions-card-meta,
+  .test-sessions-card-stats {
+    font-size: 12px;
+  }
+
+  .test-sessions-card-title {
+    font-size: 17px;
+  }
+
+  .test-sessions-export-pdf-button,
+  .test-sessions-export-word-button,
+  .test-sessions-new-button,
+  .test-sessions-view-button,
+  .test-sessions-edit-button,
+  .test-sessions-delete-button,
+  .test-sessions-empty-button {
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  .test-sessions-new-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .test-sessions-header-left .test-sessions-new-button,
+  .test-sessions-card-actions button {
+    min-width: 140px;
+  }
+
+  .test-sessions-form-group {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .test-sessions-header,
+  .test-sessions-card-header,
+  .test-sessions-steps-header,
+  .test-sessions-card-actions,
+  .test-sessions-form-actions,
+  .test-sessions-step-actions {
+    gap: 10px;
+  }
+
+  .test-sessions-header-left,
+  .test-sessions-card-header,
+  .test-sessions-steps-header {
+    align-items: stretch;
+  }
+
+  .test-sessions-status-badge,
+  .test-sessions-card-owner,
+  .test-sessions-card-meta,
+  .test-sessions-card-stats {
+    width: 100%;
+  }
+
+  .test-sessions-card-stats {
+    padding: 14px;
+  }
+
+  .test-sessions-card {
+    min-height: auto;
+  }
+}
+
