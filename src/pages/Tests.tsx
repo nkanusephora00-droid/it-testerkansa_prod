@@ -152,7 +152,7 @@ const Tests: React.FC = () => {
 
   useEffect(() => {
     if (selectedUser !== null) {
-      const filteredSessions = allSessions.filter(session => session.created_by === selectedUser);
+      const filteredSessions = allSessions.filter(session => session.createdBy === selectedUser);
       setSessions(filteredSessions);
     } else {
       setSessions(allSessions);
@@ -253,15 +253,15 @@ const Tests: React.FC = () => {
       id: consolidated.id,
       nom: consolidated.nom,
       description: consolidated.description,
-      date_creation: consolidated.date_creation,
+      dateCreation: consolidated.date_creation,
       statut: consolidated.statut,
-      created_by: consolidated.userId,
+      createdBy: consolidated.userId,
       createdByUsername: consolidated.username,
       tests: consolidated.consolidatedTests,
-      total_tests: consolidated.total_tests,
-      tests_ok: consolidated.tests_ok,
-      tests_bug: consolidated.tests_bug,
-      tests_en_cours: consolidated.tests_en_cours
+      totalTests: consolidated.total_tests,
+      testsOk: consolidated.tests_ok,
+      testsBug: consolidated.tests_bug,
+      testsEnCours: consolidated.tests_en_cours
     };
     
     setSelectedSession(consolidated.id);
