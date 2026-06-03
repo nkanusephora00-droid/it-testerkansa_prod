@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { testSessionsAPI, applicationsAPI, Application, TestSession } from '../services/api';
 import { consolidateSessionsByUser, consolidateAllSessions, ConsolidatedSession } from '../utils/sessionConsolidation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faUser, faChartLine } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faUser, faChartLine, faTimes, faBug } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import '../styles/pages/TestSessions.css';
 
