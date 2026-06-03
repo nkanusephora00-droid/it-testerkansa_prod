@@ -68,7 +68,7 @@ const Tests: React.FC = () => {
     applicationId: 0,
     environnement: '',
     version: '',
-    nom_document: '',
+    nomDocument: '',
     statut: 'En cours' 
   });
   
@@ -102,7 +102,7 @@ const Tests: React.FC = () => {
     applicationId: 0,
     environnement: '',
     version: '',
-    nom_document: '',
+    nomDocument: '',
     statut: 'En cours'
   });
 
@@ -1772,8 +1772,8 @@ const Tests: React.FC = () => {
                  <label className="tests-label">Nom du document</label>
                  <input
                    type="text"
-                   value={sessionForm.nom_document}
-                   onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
+                   value={sessionForm.nomDocument}
+                   onChange={(e) => setSessionForm({ ...sessionForm, nomDocument: e.target.value })}
                    className="tests-session-modal-input"
                    placeholder="Ex: Plan de Test - Application X"
                  />

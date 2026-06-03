@@ -105,7 +105,7 @@ const TestSessions: React.FC = () => {
       await testSessionsAPI.create(sessionData);
       setMessage({ type: 'success', text: 'Session créée avec succès!' });
       setShowCreateModal(false);
-      setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nom_document: '', statut: 'En cours', role: '' });
+      setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nomDocument: '', statut: 'En cours', role: '' });
       fetchData();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
