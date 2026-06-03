@@ -29,21 +29,24 @@
   display: flex !important;
   align-items: center !important;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 16px;
   margin-left: auto;
-  padding: 0 16px;
+  padding: 0 20px;
 }
 
 .notification-btn, .logout-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px; /* Zone tactile minimale pour mobile */
-  min-height: 44px;
+  min-width: 40px;
+  min-height: 40px;
   padding: 8px;
   cursor: pointer;
   background: transparent;
   border: none;
+  color: inherit;
+  border-radius: 50%;
+  transition: background-color 0.2s;
 }
 
 .App-link {
@@ -55,11 +58,22 @@
 }
 
 @media (max-width: 768px) {
-  .header-right-actions {
-    gap: 0.5rem;
+  .nav-menu {
+    display: none;
   }
+  
+  .header-right-actions {
+    gap: 8px;
+    padding: 0 10px;
+  }
+  
   .logout-btn span {
-    display: none; /* Cache le texte sur mobile pour économiser l'espace */
+    display: none;
+  }
+  
+  .notification-btn, .logout-btn {
+    min-width: 44px; /* Standard d'accessibilité mobile */
+    min-height: 44px;
   }
 }
 
