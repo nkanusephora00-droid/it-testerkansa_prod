@@ -15,6 +15,7 @@ const TestSessions: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingSession, setEditingSession] = useState<TestSession | null>(null);
+  const [selectedSession, setSelectedSession] = useState<TestSession | null>(null);
   const [viewMode, setViewMode] = useState<'all' | 'user' | 'global'>('all');
 
   const [sessionForm, setSessionForm] = useState({ 
@@ -610,13 +611,13 @@ const TestSessions: React.FC = () => {
               <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
                 <button
                   className="test-sessions-export-pdf-button"
-                  onClick={() => handleExportPDF(selectedSession)}
+                  onClick={() => selectedSession && handleExportPDF(selectedSession)}
                 >
                   <FontAwesomeIcon icon={faFilePdf} /> Exporter PDF
                 </button>
                 <button
                   className="test-sessions-export-word-button"
-                  onClick={() => handleExportWord(selectedSession)}
+                  onClick={() => selectedSession && handleExportWord(selectedSession)}
                 >
                   <FontAwesomeIcon icon={faFileWord} /> Exporter Word
                 </button>
