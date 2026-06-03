@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { testSessionsAPI, applicationsAPI, Application, TestSession } from '../services/api';
+import { testSessionsAPI, applicationsAPI, Application, TestSession, Test } from '../services/api';
 import { consolidateSessionsByUser, consolidateAllSessions, ConsolidatedSession } from '../utils/sessionConsolidation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faUser, faChartLine, faTimes, faBug } from '@fortawesome/free-solid-svg-icons';
@@ -16,6 +16,22 @@ const TestSessions: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingSession, setEditingSession] = useState<TestSession | null>(null);
   const [selectedSession, setSelectedSession] = useState<TestSession | null>(null);
+  const [testsLoading, setTestsLoading] = useState(false);
+  const [showTestForm, setShowTestForm] = useState(false);
+  const [editingTest, setEditingTest] = useState<Test | null>(null);
+  const [testForm, setTestForm] = useState<Test>({
+    id: 0,
+    sessionId: 0,
+    applicationId: 0,
+    fonction: '',
+    precondition: '',
+    etapes: '',
+    resultatAttendu: '',
+    resultatObtenu: '',
+    statut: '',
+    commentaires: '',
+    image: '',
+  });
   const [viewMode, setViewMode] = useState<'all' | 'user' | 'global'>('all');
 
   const [sessionForm, setSessionForm] = useState({ 
@@ -89,6 +105,45 @@ const TestSessions: React.FC = () => {
     if (viewMode === 'user') return consolidatedByUser;
     return consolidatedGlobal;
   }, [viewMode, sessions, consolidatedByUser, consolidatedGlobal]);
+
+  const emptyTestForm = (): Test => ({
+    id: 0,
+    sessionId: selectedSession?.id || 0,
+    applicationId: selectedSession?.applicationId || 0,
+    fonction: '',
+    precondition: '',
+    etapes: '',
+    resultatAttendu: '',
+    resultatObtenu: '',
+    statut: '',
+    commentaires: '',
+    image: '',
+  });
+
+  const sessionTests: Test[] = selectedSession?.tests || [];
+
+  const openEditTest = (test: Test) => {
+    setEditingTest(test);
+    setTestForm(test);
+    setShowTestForm(true);
+  };
+
+  const handleDeleteTest = (testId: number) => {
+    setMessage({ type: 'info', text: 'Suppression de l\'étape non implémentée pour le moment.' });
+  };
+
+  const handleDeclareBug = (test: Test) => {
+    setMessage({ type: 'info', text: 'Déclaration de bug non implémentée pour le moment.' });
+  };
+
+  const handleSaveTest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSession) return;
+    setMessage({ type: 'success', text: editingTest ? 'Étape mise à jour.' : 'Nouvelle étape ajoutée.' });
+    setShowTestForm(false);
+    setEditingTest(null);
+    setTestForm(emptyTestForm());
+  };
 
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
