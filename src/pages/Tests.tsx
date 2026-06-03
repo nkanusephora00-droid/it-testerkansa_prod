@@ -710,7 +710,7 @@ const Tests: React.FC = () => {
       applicationId: session.applicationId || 0,
       environnement: session.environnement || '',
       version: session.version || '',
-      nom_document: session.nom_document || '',
+      nom_document: session.nomDocument || '',
       statut: session.statut || 'En cours'
     });
     setShowEditSessionModal(true);
@@ -1420,8 +1420,8 @@ const Tests: React.FC = () => {
                 <p className="tests-session-owner"><i className="fas fa-user"></i> Créé par: {session.createdByUsername}</p>
               )}
               <p className="tests-session-desc">{session.description || 'Aucune description'}</p>
-              {session.nom_document && (
-                <p className="tests-session-info"><i className="fas fa-file"></i> Document: {session.nom_document}</p>
+              {session.nomDocument && (
+                <p className="tests-session-info"><i className="fas fa-file"></i> Document: {session.nomDocument}</p>
               )}
               <div className="tests-session-stats">
                 <span>Total: {getSessionTests(session.id).length}</span>
@@ -1509,7 +1509,7 @@ const Tests: React.FC = () => {
           <div className="tests-current-session-info">
             <h3><i className="fas fa-file-alt"></i> {currentSession.nom}</h3>
             <p>{currentSession.description}</p>
-            {currentSession.nom_document && <p className="tests-session-info"><i className="fas fa-file"></i> Document: {currentSession.nom_document}</p>}
+            {currentSession.nomDocument && <p className="tests-session-info"><i className="fas fa-file"></i> Document: {currentSession.nomDocument}</p>}
           </div>
         )}
 
