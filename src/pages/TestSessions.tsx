@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { testSessionsAPI, applicationsAPI, Application, TestSession, Test } from '../services/api';
 import { consolidateSessionsByUser, consolidateAllSessions, ConsolidatedSession } from '../utils/sessionConsolidation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faUser, faChartLine, faTimes, faBug } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faFilePdf, faFileWord, faEye, faUser, faTimes, faBug } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import '../styles/pages/TestSessions.css';
 
@@ -16,7 +16,7 @@ const TestSessions: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingSession, setEditingSession] = useState<TestSession | null>(null);
   const [selectedSession, setSelectedSession] = useState<TestSession | null>(null);
-  const [testsLoading, setTestsLoading] = useState(false);
+  const [testsLoading] = useState(false);
   const [showTestForm, setShowTestForm] = useState(false);
   const [editingTest, setEditingTest] = useState<Test | null>(null);
   const [testForm, setTestForm] = useState<Test>({
@@ -158,7 +158,7 @@ const TestSessions: React.FC = () => {
         statut: sessionForm.statut,
         role: sessionForm.role || undefined
       };
-      const createdSession = await testSessionsAPI.create(sessionData);
+      await testSessionsAPI.create(sessionData);
       setMessage({ type: 'success', text: 'Session créée avec succès!' });
       setShowCreateModal(false);
       setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nom_document: '', statut: 'En cours', role: '' });
