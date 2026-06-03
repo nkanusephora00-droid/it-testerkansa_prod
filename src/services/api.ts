@@ -119,11 +119,11 @@ export interface TestSession {
 export interface TestSessionRequest {
   nom: string;
   description?: string;
-  applicationId?: number;
+  applicationId: number;
   environnement?: string;
   version?: string;
   nomDocument?: string;
-  statut?: string;
+  statut: string;
   role?: string;
 }
 
@@ -384,9 +384,15 @@ export const apkAPI = {
 // Tests API (étapes de test / TestStep côté backend)
 export const testsAPI = {
   getAll: async (sessionId?: number) => {
-    const params = sessionId ? { sessionId } : {};
-    const response = await api.get<any>("/tests", { params });
-    // Supporte à la fois le tableau direct et l'objet PageResponse (content)
+    const response = await api.get<any>("/tests", { 
+      params: sessionId ? { sessionId } : {} 
+    });
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Fetching tests for session ${sessionId}:`, response.data);
+    }
+
+    // Sécurité supplémentaire : s'assure de toujours retourner un tableau
     return response.data.content || response.data;
   },
   getById: async (id: number) => (await api.get<Test>(`/tests/${id}`)).data,
