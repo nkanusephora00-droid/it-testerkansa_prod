@@ -103,8 +103,8 @@ export interface TestSession {
   applicationNom?: string;
   environnement?: string;
   version?: string;
-  nomDocument?: string;
-  dateCreation: string;
+  nom_document?: string;
+  date_creation: string;
   statut: string;
   role?: string;
   createdBy?: number;

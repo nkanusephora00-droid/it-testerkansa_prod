@@ -24,8 +24,38 @@
   color: white;
 }
 
+/* Alignement et responsive du Header */
+.header-right-actions {
+  display: flex;
+  align-items: center; /* Aligne verticalement la cloche et le logout */
+  gap: 1rem;
+  margin-left: auto;
+  padding-right: 1rem;
+}
+
+.notification-btn, .logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px; /* Zone tactile minimale pour mobile */
+  min-height: 44px;
+  padding: 8px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
 .App-link {
   color: #61dafb;
+}
+
+@media (max-width: 768px) {
+  .header-right-actions {
+    gap: 0.5rem;
+  }
+  .logout-btn span {
+    display: none; /* Cache le texte sur mobile pour économiser l'espace */
+  }
 }
 
 @keyframes App-logo-spin {
