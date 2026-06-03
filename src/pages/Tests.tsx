@@ -562,13 +562,13 @@ const Tests: React.FC = () => {
          applicationId: sessionForm.applicationId || undefined,
          environnement: sessionForm.environnement || undefined,
          version: sessionForm.version || undefined,
-         nom_document: sessionForm.nom_document || undefined,
+        nomDocument: sessionForm.nomDocument || undefined,
          statut: sessionForm.statut
        };
        const newSession = await testSessionsAPI.create(sessionData);
        setMessage({ type: 'success', text: 'Session créée avec succès!' });
        setShowSessionModal(false);
-       setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nom_document: '', statut: 'En cours' });
+      setSessionForm({ nom: '', description: '', applicationId: 0, environnement: '', version: '', nomDocument: '', statut: 'En cours' });
        fetchSessions();
        // Automatically select the newly created session
        setSelectedSession(newSession.id);
@@ -710,7 +710,7 @@ const Tests: React.FC = () => {
       applicationId: session.applicationId || 0,
       environnement: session.environnement || '',
       version: session.version || '',
-      nom_document: session.nomDocument || '',
+      nomDocument: session.nomDocument || '',
       statut: session.statut || 'En cours'
     });
     setShowEditSessionModal(true);
@@ -727,7 +727,7 @@ const Tests: React.FC = () => {
         applicationId: editSessionForm.applicationId || undefined,
         environnement: editSessionForm.environnement || undefined,
         version: editSessionForm.version || undefined,
-        nom_document: editSessionForm.nom_document || undefined,
+        nomDocument: editSessionForm.nomDocument || undefined,
         statut: editSessionForm.statut
       };
       await testSessionsAPI.update(editingSession.id, sessionData);
@@ -1847,8 +1847,8 @@ const Tests: React.FC = () => {
                    <label className="tests-label">Nom du document de test</label>
                    <input
                      type="text"
-                     value={editSessionForm.nom_document}
-                     onChange={(e) => setEditSessionForm({ ...editSessionForm, nom_document: e.target.value })}
+                    value={editSessionForm.nomDocument}
+                    onChange={(e) => setEditSessionForm({ ...editSessionForm, nomDocument: e.target.value })}
                      className="tests-session-modal-input"
                      placeholder="Ex: Plan de tests v1.0"
                    />
