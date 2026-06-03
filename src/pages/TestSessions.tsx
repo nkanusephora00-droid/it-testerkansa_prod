@@ -15,23 +15,6 @@ const TestSessions: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingSession, setEditingSession] = useState<TestSession | null>(null);
-  const [selectedSession, setSelectedSession] = useState<TestSession | null>(null);
-  const [testsLoading] = useState(false);
-  const [showTestForm, setShowTestForm] = useState(false);
-  const [editingTest, setEditingTest] = useState<Test | null>(null);
-  const [testForm, setTestForm] = useState<Test>({
-    id: 0,
-    sessionId: 0,
-    applicationId: 0,
-    fonction: '',
-    precondition: '',
-    etapes: '',
-    resultatAttendu: '',
-    resultatObtenu: '',
-    statut: '',
-    commentaires: '',
-    image: '',
-  });
   const [viewMode, setViewMode] = useState<'all' | 'user' | 'global'>('all');
 
   const [sessionForm, setSessionForm] = useState({ 
@@ -40,7 +23,7 @@ const TestSessions: React.FC = () => {
     applicationId: 0,
     environnement: '',
     version: '',
-    nom_document: '',
+    nomDocument: '',
     statut: 'En cours',
     role: ''
   });
@@ -51,7 +34,7 @@ const TestSessions: React.FC = () => {
     applicationId: 0,
     environnement: '', 
     version: '',
-    nom_document: '',
+    nomDocument: '',
     statut: 'En cours',
     role: ''
   });
@@ -106,45 +89,6 @@ const TestSessions: React.FC = () => {
     return consolidatedGlobal;
   }, [viewMode, sessions, consolidatedByUser, consolidatedGlobal]);
 
-  const emptyTestForm = (): Test => ({
-    id: 0,
-    sessionId: selectedSession?.id || 0,
-    applicationId: selectedSession?.applicationId || 0,
-    fonction: '',
-    precondition: '',
-    etapes: '',
-    resultatAttendu: '',
-    resultatObtenu: '',
-    statut: '',
-    commentaires: '',
-    image: '',
-  });
-
-  const sessionTests: Test[] = selectedSession?.tests || [];
-
-  const openEditTest = (test: Test) => {
-    setEditingTest(test);
-    setTestForm(test);
-    setShowTestForm(true);
-  };
-
-  const handleDeleteTest = (testId: number) => {
-    setMessage({ type: 'info', text: 'Suppression de l\'étape non implémentée pour le moment.' });
-  };
-
-  const handleDeclareBug = (test: Test) => {
-    setMessage({ type: 'info', text: 'Déclaration de bug non implémentée pour le moment.' });
-  };
-
-  const handleSaveTest = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedSession) return;
-    setMessage({ type: 'success', text: editingTest ? 'Étape mise à jour.' : 'Nouvelle étape ajoutée.' });
-    setShowTestForm(false);
-    setEditingTest(null);
-    setTestForm(emptyTestForm());
-  };
-
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -154,7 +98,7 @@ const TestSessions: React.FC = () => {
         applicationId: sessionForm.applicationId || undefined,
         environnement: sessionForm.environnement || undefined,
         version: sessionForm.version || undefined,
-        nom_document: sessionForm.nom_document || undefined,
+        nomDocument: sessionForm.nomDocument || undefined,
         statut: sessionForm.statut,
         role: sessionForm.role || undefined
       };
@@ -191,7 +135,7 @@ const TestSessions: React.FC = () => {
       applicationId: session.applicationId || 0,
       environnement: session.environnement || '',
       version: session.version || '',
-      nom_document: session.nomDocument || '',
+      nomDocument: session.nomDocument || '',
       statut: session.statut || 'En cours',
       role: session.role || ''
     };
@@ -869,8 +813,8 @@ const TestSessions: React.FC = () => {
                  <label className="test-sessions-label">Nom du document</label>
                  <input
                    type="text"
-                   value={sessionForm.nom_document}
-                   onChange={(e) => setSessionForm({ ...sessionForm, nom_document: e.target.value })}
+                   value={sessionForm.nomDocument}
+                   onChange={(e) => setSessionForm({ ...sessionForm, nomDocument: e.target.value })}
                    className="test-sessions-input"
                    placeholder="Ex: Plan de tests v1.0"
                  />
@@ -966,8 +910,8 @@ const TestSessions: React.FC = () => {
                   <label className="test-sessions-label">Nom du document</label>
                   <input
                     type="text"
-                    value={editFormData.nom_document}
-                    onChange={(e) => setEditFormData({ ...editFormData, nom_document: e.target.value })}
+                    value={editFormData.nomDocument}
+                    onChange={(e) => setEditFormData({ ...editFormData, nomDocument: e.target.value })}
                     className="test-sessions-input"
                   />
                 </div>

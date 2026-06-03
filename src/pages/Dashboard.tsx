@@ -53,16 +53,6 @@ const Dashboard: React.FC = () => {
     sessions: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -148,7 +138,10 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="top-actions">
           <button className="btn-refresh" onClick={fetchData}><FontAwesomeIcon icon={faSyncAlt} /></button>
-          <span className="badge-role">{user?.role}</span>
+          <span className="badge-role">
+            <FontAwesomeIcon icon={user?.role === 'admin' ? faUserShield : faUser} style={{ marginRight: '8px' }} />
+            {user?.role}
+          </span>
         </div>
       </header>
 
@@ -181,7 +174,9 @@ const Dashboard: React.FC = () => {
             <div className="card-pro health-check">
               <div className="card-pro-title">
                 <h3><FontAwesomeIcon icon={faChartLine} /> État des Tests</h3>
-                <button onClick={() => navigate('/reports')}>Rapport Complet</button>
+                <button onClick={() => navigate('/reports')}>
+                  Rapport Complet <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: '8px' }} />
+                </button>
               </div>
               <div className="health-bar-container">
                 <div className="health-bar-label">

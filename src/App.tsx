@@ -12,7 +12,8 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Users = lazy(() => import('./pages/Users'));
 const Applications = lazy(() => import('./pages/Applications'));
 const Comptes = lazy(() => import('./pages/Comptes'));
-const Tests = lazy(() => import('./pages/TestSessions'));
+const TestSessions = lazy(() => import('./pages/TestSessions'));
+const Tests = lazy(() => import('./pages/Tests'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Todos = lazy(() => import('./pages/Todos'));
 const Reports = lazy(() => import('./pages/Reports'));
@@ -62,8 +63,8 @@ function App() {
             <Route path="/users" element={<PrivateRoute><Layout><Users /></Layout></PrivateRoute>} />
             <Route path="/applications" element={<PrivateRoute><Layout><Applications /></Layout></PrivateRoute>} />
             <Route path="/comptes" element={<PrivateRoute><Layout><Comptes /></Layout></PrivateRoute>} />
+            <Route path="/test-sessions" element={<PrivateRoute><Layout><TestSessions /></Layout></PrivateRoute>} />
             <Route path="/tests" element={<PrivateRoute><Layout><Tests /></Layout></PrivateRoute>} />
-            <Route path="/test-sessions" element={<PrivateRoute><Layout><Tests /></Layout></PrivateRoute>} />
             <Route path="/bugs" element={<PrivateRoute><Layout><Bugs /></Layout></PrivateRoute>} />
             <Route path="/todos" element={<PrivateRoute><Layout><Todos /></Layout></PrivateRoute>} />
             <Route path="/messages" element={<PrivateRoute><Layout><Messages /></Layout></PrivateRoute>} />
