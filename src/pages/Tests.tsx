@@ -216,7 +216,7 @@ const Tests: React.FC = () => {
     setConsolidationMode('global');
     setSelectionMode(false);
     setSelectedSessions([]);
-    setMessage({ type: 'success', text: `Consolidation globale: 1 session créée avec ${globalSession.total_tests} tests à partir de ${sessionsToConsolidate.length} session(s) sélectionnée(s)` });
+    setMessage({ type: 'success', text: `Consolidation globale: 1 session créée avec ${globalSession.totalTests} tests à partir de ${sessionsToConsolidate.length} session(s) sélectionnée(s)` });
   };
 
   const handleResetConsolidation = () => {
@@ -253,15 +253,15 @@ const Tests: React.FC = () => {
       id: consolidated.id,
       nom: consolidated.nom,
       description: consolidated.description,
-      dateCreation: consolidated.date_creation,
+      dateCreation: consolidated.dateCreation,
       statut: consolidated.statut,
       createdBy: consolidated.userId,
       createdByUsername: consolidated.username,
       tests: consolidated.consolidatedTests,
-      totalTests: consolidated.total_tests,
-      testsOk: consolidated.tests_ok,
-      testsBug: consolidated.tests_bug,
-      testsEnCours: consolidated.tests_en_cours
+      totalTests: consolidated.totalTests,
+      testsOk: consolidated.testsOk,
+      testsBug: consolidated.testsBug,
+      testsEnCours: consolidated.testsEnCours
     };
     
     setSelectedSession(consolidated.id);
@@ -328,7 +328,7 @@ const Tests: React.FC = () => {
           </div>
           <div class="info-item">
             <div class="info-label">Date</div>
-            <div class="info-value">${new Date(consolidated.date_creation).toLocaleDateString('fr-FR')}</div>
+            <div class="info-value">${new Date(consolidated.dateCreation).toLocaleDateString('fr-FR')}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Statut</div>
@@ -338,16 +338,16 @@ const Tests: React.FC = () => {
 
         <div class="stats">
           <div class="stat-box stat-total">
-            <div>Total: ${consolidated.total_tests}</div>
+            <div>Total: ${consolidated.totalTests}</div>
           </div>
           <div class="stat-box stat-ok">
-            <div>OK: ${consolidated.tests_ok}</div>
+            <div>OK: ${consolidated.testsOk}</div>
           </div>
           <div class="stat-box stat-bug">
-            <div>BUG: ${consolidated.tests_bug}</div>
+            <div>BUG: ${consolidated.testsBug}</div>
           </div>
           <div class="stat-box stat-encours">
-            <div>En cours: ${consolidated.tests_en_cours}</div>
+            <div>En cours: ${consolidated.testsEnCours}</div>
           </div>
         </div>
 
@@ -473,7 +473,7 @@ const Tests: React.FC = () => {
               children: [
                 new TextRun({ text: `Utilisateur: ${consolidated.username}` }),
                 new TextRun({ text: "\t" }),
-                new TextRun({ text: `Date: ${new Date(consolidated.date_creation).toLocaleDateString('fr-FR')}` }),
+                new TextRun({ text: `Date: ${new Date(consolidated.dateCreation).toLocaleDateString('fr-FR')}` }),
                 new TextRun({ text: "\t" }),
                 new TextRun({ text: `Statut: ${consolidated.statut}` })
               ],
@@ -484,13 +484,13 @@ const Tests: React.FC = () => {
             // Statistiques
             new Paragraph({
               children: [
-                new TextRun({ text: `Total: ${consolidated.total_tests}` }),
+                new TextRun({ text: `Total: ${consolidated.totalTests}` }),
                 new TextRun({ text: "\t" }),
-                new TextRun({ text: `OK: ${consolidated.tests_ok}` }),
+                new TextRun({ text: `OK: ${consolidated.testsOk}` }),
                 new TextRun({ text: "\t" }),
-                new TextRun({ text: `BUG: ${consolidated.tests_bug}` }),
+                new TextRun({ text: `BUG: ${consolidated.testsBug}` }),
                 new TextRun({ text: "\t" }),
-                new TextRun({ text: `En cours: ${consolidated.tests_en_cours}` })
+                new TextRun({ text: `En cours: ${consolidated.testsEnCours}` })
               ],
               alignment: AlignmentType.CENTER
             }),
@@ -1362,14 +1362,14 @@ const Tests: React.FC = () => {
               <p className="tests-session-description">{consolidated.description}</p>
               <div className="tests-session-meta">
                 <span><strong>Utilisateur:</strong> {consolidated.username}</span>
-                <span><strong>Tests:</strong> {consolidated.total_tests}</span>
-                <span><strong>OK:</strong> {consolidated.tests_ok}</span>
-                <span><strong>BUG:</strong> {consolidated.tests_bug}</span>
-                <span><strong>En cours:</strong> {consolidated.tests_en_cours}</span>
+                <span><strong>Tests:</strong> {consolidated.totalTests}</span>
+                <span><strong>OK:</strong> {consolidated.testsOk}</span>
+                <span><strong>BUG:</strong> {consolidated.testsBug}</span>
+                <span><strong>En cours:</strong> {consolidated.testsEnCours}</span>
               </div>
               <div className="tests-session-meta">
                 <span><strong>Sessions originales:</strong> {consolidated.originalSessions.length}</span>
-                <span><strong>Créé le:</strong> {new Date(consolidated.date_creation).toLocaleDateString()}</span>
+                <span><strong>Créé le:</strong> {new Date(consolidated.dateCreation).toLocaleDateString()}</span>
               </div>
               <div className="tests-session-actions">
                 <button 
