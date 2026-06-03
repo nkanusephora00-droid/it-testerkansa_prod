@@ -122,7 +122,7 @@ export interface TestSessionRequest {
   applicationId?: number;
   environnement?: string;
   version?: string;
-  nom_document?: string;
+  nomDocument?: string;
   statut?: string;
   role?: string;
 }
@@ -385,7 +385,9 @@ export const apkAPI = {
 export const testsAPI = {
   getAll: async (sessionId?: number) => {
     const params = sessionId ? { sessionId } : {};
-    return (await api.get<Test[]>("/tests", { params })).data;
+    const response = await api.get<any>("/tests", { params });
+    // Supporte à la fois le tableau direct et l'objet PageResponse (content)
+    return response.data.content || response.data;
   },
   getById: async (id: number) => (await api.get<Test>(`/tests/${id}`)).data,
   create: async (data: Partial<Test>) => (await api.post<Test>("/tests", data)).data,
@@ -435,7 +437,12 @@ export const habilitationsAPI = {
 
 // Test Sessions API
 export const testSessionsAPI = {
-  getAll: async () => (await api.get<TestSession[]>("/test-sessions")).data,
+  getAll: async (page = 0, size = 100, sortBy = 'id', sortDir = 'desc') => {
+    const response = await api.get<PageResponse<TestSession>>("/test-sessions", {
+      params: { page, size, sortBy, sortDir }
+    });
+    return response.data.content || (response.data as any);
+  },
   getById: async (id: number) => (await api.get<TestSession>(`/test-sessions/${id}`)).data,
   create: async (data: Partial<TestSessionRequest>) => (await api.post<TestSession>("/test-sessions", data)).data,
   update: async (id: number, data: Partial<TestSessionRequest>) =>
